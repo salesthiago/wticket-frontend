@@ -1,0 +1,283 @@
+<app-header></app-header>
+<div class="container mx-auto px-4 pt-20">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Atendimentos</h1>
+    <div class="flex gap-2">
+      <p-button icon="pi pi-refresh" [rounded]="true" [text]="true" severity="secondary" (onClick)="loadTickets()"
+        [loading]="loading" pTooltip="Atualizar lista" tooltipPosition="top">
+      </p-button>
+      <p-button icon="pi pi-sync" label="Sincronizar Contatos" (onClick)="syncContacts()" [loading]="syncLoading"
+        severity="help">
+      </p-button>
+      <p-button icon="pi pi-home" label="Voltar" (onClick)="onBack()" [loading]="syncLoading" severity="secondary">
+      </p-button>
+    </div>
+  </div>
+
+  @if(syncMessage) {
+
+  <div class="mb-4">
+    <p-message [severity]="syncMessage.includes('Erro') ? 'error' : 'success'" [text]="syncMessage">
+    </p-message>
+  </div>
+  }
+
+  <p-card header="Filtros" class="mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Sessão</label>
+        <p-select [options]="sessions" [(ngModel)]="sessionFilter" optionLabel="label" optionValue="value"
+          placeholder="Selecione a sessão">
+        </p-select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Status</label>
+        <p-select [options]="statusOptions" [(ngModel)]="statusFilter" optionLabel="label" optionValue="value"
+          placeholder="Selecione o status">
+        </p-select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Prioridade</label>
+        <p-select [options]="priorityOptions" [(ngModel)]="priorityFilter" optionLabel="label" optionValue="value"
+          placeholder="Selecione a prioridade">
+        </p-select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Buscar</label>
+        <input type="text" pInputText [(ngModel)]="searchText" placeholder="Número, nome ou assunto..." class="w-full">
+      </div>
+    </div>
+  </p-card>
+
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <p-card class="text-center">
+      <div class="text-2xl font-bold text-blue-600">{{ totalTickets }}</div>
+      <div class="text-sm text-gray-600">Total de Tickets</div>
+    </p-card>
+
+    <p-card class="text-center">
+      <div class="text-2xl font-bold text-yellow-600">
+        {{ openedTickets }}
+      </div>
+      <div class="text-sm text-gray-600">Abertos</div>
+    </p-card>
+
+    <p-card class="text-center">
+      <div class="text-2xl font-bold text-blue-600">
+        {{ inProgressTickets }}
+      </div>
+      <div class="text-sm text-gray-600">Em Andamento</div>
+    </p-card>
+
+    <p-card class="text-center">
+      <div class="text-2xl font-bold text-green-600">
+        {{ finishedTickets }}
+      </div>
+      <div class="text-sm text-gray-600">Finalizados</div>
+    </p-card>
+
+    <p-card class="text-center">
+      <div class="text-2xl font-bold text-red-600">
+        {{ canceledTickets }}
+      </div>
+      <div class="text-sm text-gray-600">Cancelados</div>
+    </p-card>
+  </div>
+
+  <p-card>
+    <p-table [value]="filteredTickets" [loading]="loading" [paginator]="true" [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]" styleClass="p-datatable-sm">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Contato</th>
+          <th>Assunto</th>
+          <th>Sessão</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Última Mensagem</th>
+          <th>Criado em</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-ticket>
+        <tr>
+          <td>
+            <div class="font-semibold">{{ ticket.contactName }}</div>
+            <div class="text-sm text-gray-500">{{ ticket.contactNumber }}</div>
+          </td>
+          <td>{{ ticket.subject }}</td>
+          <td>{{ ticket.sessionName }}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(ticket.status)" [severity]="getStatusSeverity(ticket.status)">
+            </p-tag>
+          </td>
+          <td>
+            <p-tag [value]="getPriorityLabel(ticket.priority)" [severity]="getPrioritySeverity(ticket.priority)">
+            </p-tag>
+          </td>
+          <td>
+            {{ ticket.lastMessage ? (ticket.lastMessage | date:'dd/MM/yyyy HH:mm') : 'Nenhuma' }}
+          </td>
+          <td>{{ ticket.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <div class="flex gap-2">
+              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info" (onClick)="openTicket(ticket)"
+                pTooltip="Ver detalhes" tooltipPosition="top">
+              </p-button>
+              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" (onClick)="destroyTicket(ticket._id, $event)"
+                pTooltip="Deletar" tooltipPosition="top">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center py-8 text-gray-500">
+            Nenhum ticket encontrado
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Dialog de detalhes do ticket -->
+  <!--<p-dialog header="Detalhes do Ticket" [(visible)]="displayDialog" [modal]="true" [style]="{ width: '50vw' }"
+    (onHide)="closeDialog()">
+    @if (selectedTicket) {
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Contato</label>
+          <p class="font-semibold">{{ selectedTicket.contactName }}</p>
+          <p class="text-sm text-gray-500">{{ selectedTicket.contactNumber }}</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Sessão</label>
+          <p>{{ selectedTicket.sessionName }}</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-600">Assunto</label>
+        <p>{{ selectedTicket.subject }}</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Status</label>
+          <p-tag [value]="getStatusLabel(selectedTicket.status)" [severity]="getStatusSeverity(selectedTicket.status)">
+          </p-tag>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Prioridade</label>
+          <p-tag [value]="getPriorityLabel(selectedTicket.priority)"
+            [severity]="getPrioritySeverity(selectedTicket.priority)">
+          </p-tag>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Criado em</label>
+          <p>{{ selectedTicket.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Última atualização</label>
+          <p>{{ selectedTicket.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+      </div>
+      @if(selectedTicket.tags && selectedTicket.tags.length > 0) {
+
+
+      <div>
+        <label class="block text-sm font-medium text-gray-600">Tags</label>
+        <div class="flex flex-wrap gap-2 mt-2">
+          @for(tag of selectedTicket.tags; track $index) {
+          <p-tag [value]="tag" severity="info">
+          </p-tag>
+          }
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </p-dialog>-->
+  <p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{ width: '50vw' }" (onHide)="closeDialog()">
+    @if (selectedTicket) {
+    <ng-template #header>
+      <div class="inline-flex items-center justify-center gap-2">
+        <h4>Atendimento {{ selectedTicket.contactName }}</h4>
+        <span class="font-bold whitespace-nowrap">{{ selectedTicket.contactNumber }}</span>
+        <div class="flex">
+          <label class="block text-sm font-medium text-gray-600">Criado em</label>
+          <p>{{ selectedTicket.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+
+      </div>
+    </ng-template>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="row-span-5">
+          <app-chat [messages]="selectedTicket.messages ?? []" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600">Sessão</label>
+            <p>{{ selectedTicket.sessionName }}</p>
+
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-600">Última atualização</label>
+            <p>{{ selectedTicket.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Assunto</label>
+          <p>{{ selectedTicket.subject }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600">Status</label>
+            <p-tag [value]="getStatusLabel(selectedTicket.status)"
+              [severity]="getStatusSeverity(selectedTicket.status)">
+            </p-tag>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-600">Prioridade</label>
+            <p-tag [value]="getPriorityLabel(selectedTicket.priority)"
+              [severity]="getPrioritySeverity(selectedTicket.priority)">
+            </p-tag>
+          </div>
+        </div>
+      </div>
+
+      @if(selectedTicket.tags && selectedTicket.tags.length > 0) {
+
+
+      <div>
+        <label class="block text-sm font-medium text-gray-600">Tags</label>
+        <div class="flex flex-wrap gap-2 mt-2">
+          @for(tag of selectedTicket.tags; track $index) {
+          <p-tag [value]="tag" severity="info">
+          </p-tag>
+          }
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </p-dialog>
+</div>
+<p-confirmdialog />

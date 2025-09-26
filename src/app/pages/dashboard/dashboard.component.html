@@ -1,0 +1,120 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+
+  <p-button icon="pi pi-refresh" class="p-4" label="Atualizar" [loading]="loading" (onClick)="refreshDashboard()"></p-button>
+  <div class="grid grid-cols-4 gap-4 dashboard-container">
+    @for(card of getSummaryCards(); track $index) {
+    @if (!loading) {
+    <p-card>
+      <div class="flex align-items-center w-full">
+        <div class="flex-1">
+          <h3 class="text-lg font-semibold mb-2">{{ card.title }}</h3>
+          <p class="text-3xl font-bold text-primary">{{ card.value }}</p>
+        </div>
+        <div [class]="'p-3 border-round ml-auto ' + card.color">
+          <i [class]="card.icon + ' text-2xl text-white'"></i>
+        </div>
+      </div>
+    </p-card>
+    }
+    @if (loading) {
+    <p-card>
+      <div class="flex align-items-center w-full">
+        <div class="flex-1">
+          <p-skeleton width="120px" height="24px" class="mb-2"></p-skeleton>
+          <p-skeleton width="80px" height="32px"></p-skeleton>
+        </div>
+        <p-skeleton size="3rem" shape="circle" class="ml-auto"></p-skeleton>
+      </div>
+    </p-card>
+    }
+}
+  </div>
+  <div class="grid grid-cols-2 gap-4 py-4">
+    <div class="">
+      <p-card>
+        @if (!loading && priorityChart) {
+
+        <p-chart type="doughnut" [data]="priorityChart.data" [options]="priorityChart.options" height="300px">
+        </p-chart>
+        }
+        @if (loading) {
+        <div class="h-20rem flex align-items-center justify-content-center">
+          <p-skeleton width="100%" height="300px"></p-skeleton>
+        </div>
+        }
+      </p-card>
+    </div>
+
+    <div class="">
+      <p-card>
+        @if (!loading && statusChart && statusChart.data.labels.length > 0) {
+
+        <p-chart type="pie" [data]="statusChart.data" [options]="statusChart.options" height="300px">
+        </p-chart>
+        }
+        @if (loading) {
+
+        <div class="h-20rem flex align-items-center justify-content-center">
+          <p-skeleton width="100%" height="300px"></p-skeleton>
+        </div>
+        }
+        @if (!loading && statusChart && statusChart.data.labels.length === 0) {
+        <div class="text-center p-4">
+          <i class="pi pi-chart-line text-6xl text-400 mb-3"></i>
+          <p class="text-600">Nenhum dado disponível para status</p>
+        </div>
+        }
+      </p-card>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 gap-4 py-4">
+    <div class="">
+      <p-card>
+        @if (!loading && hourlyChart) {
+
+        <p-chart type="line" [data]="hourlyChart.data" [options]="hourlyChart.options" height="300px">
+        </p-chart>
+        }
+        @if (loading) {
+        <div class="h-20rem flex align-items-center justify-content-center">
+          <p-skeleton width="100%" height="300px"></p-skeleton>
+        </div>
+        }
+      </p-card>
+    </div>
+
+    <div class="">
+      <p-card>
+        @if (!loading && weeklyChart) {
+
+        <p-chart type="bar" [data]="weeklyChart.data" [options]="weeklyChart.options" height="300px">
+        </p-chart>
+        } @if (loading) {
+
+        <div class="h-20rem flex align-items-center justify-content-center">
+          <p-skeleton width="100%" height="300px"></p-skeleton>
+        </div>
+        }
+      </p-card>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 gap-4 py-4">
+    <div class="">
+      <p-card>
+        @if (!loading && monthlyChart) {
+        <p-chart type="bar" [data]="monthlyChart.data" [options]="monthlyChart.options" height="300px">
+        </p-chart>
+        }
+        @if (loading) {
+
+        <div *ngIf="loading" class="h-20rem flex align-items-center justify-content-center">
+          <p-skeleton width="100%" height="300px"></p-skeleton>
+        </div>
+        }
+      </p-card>
+    </div>
+
+  </div>
+</div>

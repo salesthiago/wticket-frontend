@@ -1,0 +1,71 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+<p-card class="align-items-center mb-4" header="Cadastro de usuário">
+    <div class="field">
+        <label for="name" class="block mb-2">Nome</label>
+        <input
+          id="name"
+          type="text"
+          pInputText
+          [(ngModel)]="user.name"
+          required
+          placeholder="Seu Nome"
+          class="w-full"
+        />
+      </div>
+      <div class="field">
+        <label for="email" class="block mb-2">Email</label>
+        <input
+          id="email"
+          type="email"
+          pInputText
+          [(ngModel)]="user.email"
+          required
+          placeholder="Seu email"
+          class="w-full"
+        />
+      </div>
+      <div class="field">
+        <label class="block mb-2">Status</label>
+        <p-select [options]="optionStatus" [(ngModel)]="user.status" optionLabel="name" optionValue="value"
+          class="w-full md:w-56" />
+      </div>
+      <div class="field">
+        <label class="block mb-2">Perfil</label>
+        <p-select [options]="optionRole" [(ngModel)]="user.role" optionLabel="name" optionValue="value" [showClear]="true"
+          class="w-full md:w-56" />
+      </div>
+
+      <div class="field mt-4 flex">
+        <div class="flex-column">
+
+          <label for="password" class="block mb-2">Senha</label>
+          <p-password [(ngModel)]="password" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
+
+        </div>
+        <div class="flex-column mx-4">
+          <label for="confirmPassword" class="block mb-2">Confirmar Senha</label>
+          <p-password [(ngModel)]="confirmPassword" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
+        </div>
+      </div>
+      <div class="flex mt-4">
+         <p-button
+        label="Voltar"
+        [loading]="loading"
+        class="mx-4 "
+        severity="secondary"
+        (click)="onBack()"
+        ></p-button>
+
+        <p-button
+        type="submit"
+        label="Salvar"
+        [loading]="loading"
+        class="mx-4"
+        styleClass="p-button-primary"
+        (click)="onSubmit()"
+        ></p-button>
+      </div>
+</p-card>
+</div>

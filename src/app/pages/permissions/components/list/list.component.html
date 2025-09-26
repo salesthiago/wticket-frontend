@@ -1,0 +1,41 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+    <p-card class="flex align-items-center mb-4">
+      <p-table [value]="items" [loading]="loading" class="my-4">
+        <ng-template #caption>
+          <div>
+            <p-button icon="pi pi-plus" label="Adicionar" (click)="add()"></p-button>
+          </div>
+        <div class="flex">
+            <p-iconfield iconPosition="left" class="ml-auto">
+                <p-inputicon>
+                    <i class="pi pi-search"></i>
+                </p-inputicon>
+                <input pInputText type="text" placeholder="Pesquisar ..." />
+            </p-iconfield>
+        </div>
+    </ng-template>
+        <ng-template #header>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Data</th>
+            <th>Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-user>
+          <tr>
+            <td>{{ user._id }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.createdAt }}</td>
+            <td>
+              <p-button icon="pi pi-pencil" (onClick)="edit(user._id)" severity="primary" />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+</div>

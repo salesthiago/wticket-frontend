@@ -1,0 +1,43 @@
+.dashboard-container {
+  padding: 1rem;
+
+  .p-card {
+    height: 100%;
+
+    ::ng-deep .p-card-body {
+      height: 100%;
+    }
+
+    ::ng-deep .p-card-content {
+      height: calc(100% - 2rem);
+      padding: 1rem;
+    }
+
+    .card-content-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      .card-text {
+        flex: 1;
+      }
+
+      .card-icon {
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .h-20rem {
+    height: 20rem;
+  }
+}
+
+// Responsividade
+@media screen and (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+}

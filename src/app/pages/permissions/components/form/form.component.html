@@ -1,0 +1,47 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+<p-card class="align-items-center mb-4" header="Cadastro de usuário">
+    <div class="field">
+        <label for="name" class="block mb-2">Nome</label>
+        <input
+          id="name"
+          type="text"
+          pInputText
+          [(ngModel)]="permission.name"
+          required
+          placeholder="Seu Nome"
+          class="w-full"
+        />
+      </div>
+      <div class="field">
+        <label class="block mb-2">Status</label>
+        <p-select [options]="optionStatus" [(ngModel)]="permission.status" optionLabel="name" optionValue="value"
+          class="w-full md:w-56" />
+      </div>
+      <div class="field">
+        <label class="block mb-2">Sessões</label>
+        <p-select [options]="optionRole" [(ngModel)]="permission.sessions" optionLabel="name" optionValue="value"
+          class="w-full md:w-56" />
+      </div>
+
+      <div class="flex mt-4">
+         <p-button
+        label="Voltar"
+        [loading]="loading"
+        class="mx-4 "
+        severity="secondary"
+        (click)="onBack()"
+        ></p-button>
+
+        <p-button
+        type="submit"
+        label="Salvar"
+        [loading]="loading"
+        class="mx-4"
+        styleClass="p-button-primary"
+        (click)="onSubmit()"
+        ></p-button>
+      </div>
+</p-card>
+</div>

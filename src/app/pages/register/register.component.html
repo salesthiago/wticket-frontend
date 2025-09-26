@@ -1,0 +1,62 @@
+<div class="login-container">
+  <p-card class="login-card" header="Cadastro">
+    <form (ngSubmit)="onSubmit()">
+      <div class="field">
+        <label for="name" class="block mb-2">Nome</label>
+        <input
+          id="name"
+          type="text"
+          pInputText
+          [(ngModel)]="credentials.name"
+          name="name"
+          required
+          placeholder="Seu Nome"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        />
+      </div>
+      <div class="field">
+        <label for="email" class="block mb-2">Email</label>
+        <input
+          id="email"
+          type="email"
+          pInputText
+          [(ngModel)]="credentials.email"
+          name="email"
+          required
+          placeholder="Seu email"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        />
+      </div>
+
+      <div class="field mt-4">
+        <label for="password" class="block mb-2">Senha</label>
+        <input
+          id="password"
+          type="password"
+          pInputText
+          [(ngModel)]="credentials.password"
+          name="password"
+          required
+          placeholder="Sua senha"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        />
+      </div>
+      <div class="field mt-4">
+        <p-button
+        type="submit"
+        label="Salvar"
+        [loading]="loading"
+        class="w-full"
+        styleClass="p-button-primary"
+        ></p-button>
+      </div>
+    </form>
+    <ng-template #footer>
+        <div class="flex gap-4 mt-1">
+            <a href="/login" class="w-full">
+              Já possui cadastro ?
+              </a>
+        </div>
+    </ng-template>
+  </p-card>
+</div>

@@ -1,0 +1,92 @@
+<div class="chat-modal-container">
+  <!-- Header do chat -->
+  <div class="chat-header">
+    <p-avatar
+      [label]="getAvatarInitial()"
+      size="large"
+      shape="circle"
+      styleClass="chat-avatar">
+    </p-avatar>
+    <div class="chat-info">
+      <h4 class="contact-name">{{ name }}</h4>
+      <span class="contact-number">{{ number }}</span>
+    </div>
+  </div>
+
+  <div class="chat-content">
+    <!-- Área de mensagens -->
+    <div class="messages-container" #messagesContainer>
+      @for(message of messages; track message.id; let i = $index) {
+
+        <!-- Separador de data -->
+        @if (shouldShowDate(i)) {
+          <div class="date-separator">
+            <span class="date-text">{{ getDateText(message.timestamp) }}</span>
+          </div>
+        }
+
+        <!-- Mensagem -->
+        <div [class]="'message ' + (message.fromMe ? 'message-sent' : 'message-received')">
+          <!-- Avatar para mensagens recebidas -->
+          @if (!message.fromMe) {
+            <div class="message-avatar">
+              <p-avatar
+                [label]="getAvatarInitial()"
+                shape="circle"
+                styleClass="small-avatar">
+              </p-avatar>
+            </div>
+          }
+
+          <!-- Conteúdo da mensagem -->
+          <div class="message-bubble">
+            <div class="message-text">{{ message.body }}</div>
+            <div class="message-footer">
+              <span class="message-time">{{ message.timestamp | date: 'HH:mm' }}</span>
+              @if (message.fromMe && message.ack !== undefined) {
+                <i [class]="'message-status ' + getStatusClass(message.ack) + ' ' + getStatusIcon(message.ack)"></i>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Indicador de loading -->
+      @if (loading) {
+        <div class="loading-indicator">
+          <div class="typing-animation">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Input para nova mensagem -->
+    <div class="message-input-container">
+      <div class="message-input">
+        <textarea
+          #messageInput
+          pInputTextarea
+          [(ngModel)]="newMessage"
+          placeholder="Digite uma mensagem..."
+          (keydown)="handleKeyDown($event)"
+          rows="1"
+          autoResize
+          maxRows="5"
+          class="message-textarea">
+        </textarea>
+        <button
+          pButton
+          icon="pi pi-send"
+          class="send-button"
+          (click)="sendMessage()"
+          [disabled]="!newMessage.trim()"
+          pTooltip="Enviar mensagem"
+          tooltipPosition="top">
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

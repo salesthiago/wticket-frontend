@@ -1,0 +1,112 @@
+<div class="session-form-container">
+  <div class="form-card">
+    <h2 class="form-title">
+      <i class="icon whatsapp-icon"></i>
+      Nova Sessão WhatsApp
+    </h2>
+
+    <form [formGroup]="sessionForm" (ngSubmit)="onSubmit()" class="session-form">
+      <!-- Campo Nome da Sessão -->
+      <div class="form-group">
+        <label for="sessionName" class="form-label">
+          <i class="icon session-icon"></i>
+          Nome da Sessão *
+        </label>
+        <input
+          type="text"
+          id="sessionName"
+          pInputText
+          maxlength="50"
+          formControlName="sessionName"
+          placeholder="Ex: meu_whatsapp_principal"
+          class="form-input"
+          [class.error]="sessionForm.get('sessionName')?.invalid && sessionForm.get('sessionName')?.touched"
+        />
+        @if (isInvalid('username')) {
+            <p-message severity="error" size="small" variant="simple">Nome da sessão deve conter pelo menos 3 caracteres</p-message>
+        }
+
+
+      </div>
+
+      <!-- Informações da Sessão -->
+      <div class="info-section">
+        <h3 class="info-title">
+          <i class="icon info-icon"></i>
+          Informações Importantes
+        </h3>
+        <ul class="info-list">
+          <li>• Cada sessão representa um número diferente do WhatsApp</li>
+          <li>• Use nomes descritivos para identificar facilmente</li>
+          <li>• Após criar, você precisará escanear o QR Code</li>
+          <li>• Mantenha o WhatsApp Web aberto no celular</li>
+        </ul>
+      </div>
+
+      @if (loading) {
+
+        <div class="loading-section">
+          <div class="spinner"></div>
+          <p class="loading-text">Criando sessão...</p>
+        </div>
+      }
+      @if (errorMessage) {
+
+        <div class="error-section">
+          <div class="error-alert">
+            <i class="icon error-icon"></i>
+            {{ errorMessage }}
+          </div>
+        </div>
+      }
+      @if (successMessage) {
+
+        <div class="success-section">
+          <div class="success-alert">
+            <i class="icon success-icon"></i>
+            {{ successMessage }}
+          </div>
+        </div>
+      }
+
+      <!-- Botões de Ação -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="loading"
+        >
+          <i class="icon cancel-icon"></i>
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="sessionForm.invalid || loading"
+        >
+          <i class="icon create-icon"></i>
+          {{ loading ? 'Criando...' : 'Criar Sessão' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- QR Code Section (quando disponível) -->
+     @if (qrCodeData) {
+
+       <div class="qr-code-section">
+         <h3 class="qr-title">
+           <i class="icon qr-icon"></i>
+           Escaneie o QR Code
+          </h3>
+          <div class="qr-code-container">
+            <img [src]="qrCodeData" alt="QR Code WhatsApp" class="qr-code-image">
+          </div>
+          <p class="qr-instructions">
+            Abra o WhatsApp no seu celular, toque em ⋮ → Dispositivos conectados → Conectar um dispositivo
+          </p>
+        </div>
+      }
+  </div>
+</div>

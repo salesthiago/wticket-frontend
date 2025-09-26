@@ -1,0 +1,343 @@
+// Variáveis de cores
+$whatsapp-green: #25D366;
+$whatsapp-dark-green: #128C7E;
+$whatsapp-light-green: #DCF8C6;
+$error-red: #dc3545;
+$success-green: #28a745;
+$warning-orange: #ffc107;
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-600: #6c757d;
+$gray-800: #343a40;
+$white: #ffffff;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card-shadow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid $gray-200;
+}
+
+@mixin transition {
+  transition: all 0.3s ease;
+}
+
+.session-form-container {
+  @include flex-center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.form-card {
+  background: $white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  @include card-shadow;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+}
+
+.form-title {
+  color: $whatsapp-dark-green;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+
+  .whatsapp-icon {
+    color: $whatsapp-green;
+    font-size: 1.5rem;
+  }
+}
+
+.session-form {
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: $gray-800;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .session-icon {
+    color: $whatsapp-green;
+  }
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid $gray-300;
+  border-radius: 8px;
+  font-size: 1rem;
+  @include transition;
+
+  &:focus {
+    outline: none;
+    border-color: $whatsapp-green;
+    box-shadow: 0 0 0 3px rgba($whatsapp-green, 0.1);
+  }
+
+  &.error {
+    border-color: $error-red;
+  }
+
+  &::placeholder {
+    color: $gray-600;
+  }
+}
+
+.error-message {
+  color: $error-red;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.info-section {
+  background: lighten($whatsapp-light-green, 8%);
+  border: 1px solid $whatsapp-green;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+
+  .info-title {
+    color: $whatsapp-dark-green;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .info-icon {
+      color: $whatsapp-green;
+    }
+  }
+
+  .info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      color: $gray-800;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+      line-height: 1.4;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.loading-section {
+  text-align: center;
+  margin: 1.5rem 0;
+
+  .spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid $gray-300;
+    border-top: 2px solid $whatsapp-green;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  .loading-text {
+    color: $gray-600;
+    font-weight: 500;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-section, .success-section {
+  margin: 1rem 0;
+
+  .error-alert, .success-alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .error-alert {
+    background: lighten($error-red, 45%);
+    border: 1px solid lighten($error-red, 30%);
+    color: darken($error-red, 10%);
+
+    .error-icon {
+      color: $error-red;
+    }
+  }
+
+  .success-alert {
+    background: lighten($success-green, 45%);
+    border: 1px solid lighten($success-green, 30%);
+    color: darken($success-green, 10%);
+
+    .success-icon {
+      color: $success-green;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+}
+
+.btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  @include transition;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.btn-primary {
+    background: $whatsapp-green;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: darken($whatsapp-green, 10%);
+      transform: translateY(-1px);
+    }
+  }
+
+  &.btn-secondary {
+    background: $gray-200;
+    color: $gray-800;
+
+    &:hover:not(:disabled) {
+      background: darken($gray-200, 10%);
+    }
+  }
+}
+
+.qr-code-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid $gray-200;
+  text-align: center;
+
+  .qr-title {
+    color: $whatsapp-dark-green;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    .qr-icon {
+      color: $whatsapp-green;
+    }
+  }
+
+  .qr-code-container {
+    background: $white;
+    padding: 1rem;
+    border-radius: 12px;
+    @include card-shadow;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+
+  .qr-code-image {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+  }
+
+  .qr-instructions {
+    color: $gray-600;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
+  }
+}
+
+// Ícones (usando classes para font-awesome ou material icons)
+.icon {
+  font-family: 'Material Icons', 'Font Awesome', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.2em;
+  display: inline-block;
+  line-height: 1;
+}
+
+// Responsividade
+@media (max-width: 768px) {
+  .form-card {
+    margin: 1rem;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+}
+
+// Animações
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,36 @@
+
+.my-account-container {
+  padding: 2rem;
+
+  .p-card {
+    margin-bottom: 1.5rem;
+
+    ::ng-deep .p-card-body {
+      padding: 1.5rem;
+    }
+
+    ::ng-deep .p-card-header {
+      border-bottom: 1px solid var(--surface-border);
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  // Estilos responsivos
+  @media screen and (max-width: 768px) {
+    padding: 1rem;
+
+    .p-card {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+// Estilos para os campos de senha
+::ng-deep .p-password {
+  width: 100%;
+
+  input {
+    width: 100%;
+  }
+}

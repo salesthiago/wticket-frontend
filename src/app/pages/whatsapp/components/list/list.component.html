@@ -1,0 +1,149 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+  <div class="container mx-auto p-4">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Sessões WhatsApp</h1>
+      <div class="flex gap-2">
+        <p-button icon="pi pi-refresh" [rounded]="true" [text]="true" severity="secondary" (onClick)="refreshSessions()"
+          [loading]="loading" pTooltip="Atualizar lista" tooltipPosition="top">
+        </p-button>
+        <p-button icon="pi pi-plus" label="Nova Sessão" routerLink="/whatsapp/create-session" severity="primary">
+        </p-button>
+      </div>
+    </div>
+
+    <!-- Status da conexão -->
+    <div class="mb-4">
+      @if (connectionStatus === 'error') {
+
+      <p-message severity="warn" label="Conexão com servidor perdida. Tentando reconectar...">
+      </p-message>
+      }
+    </div>
+
+
+    @if(loading){
+    <div class="text-center py-8">
+      <p-progressSpinner></p-progressSpinner>
+      <p class="mt-2 text-gray-600">Carregando sessões...</p>
+    </div>
+    }
+
+    @if (errorMessage && !loading) {
+
+    <div class="mb-4">
+      <p-message severity="error" [text]="errorMessage"></p-message>
+    </div>
+    }
+    @if (sessions.length === 0 && !loading) {
+
+    <div class="text-center py-12">
+      <i class="pi pi-inbox text-4xl text-gray-400 mb-4"></i>
+      <h3 class="text-lg font-semibold text-gray-600">Nenhuma sessão encontrada</h3>
+      <p class="text-gray-500 mb-4">Crie sua primeira sessão para começar</p>
+      <p-button icon="pi pi-plus" label="Criar Sessão" routerLink="/whatsapp/create-session" severity="primary">
+      </p-button>
+    </div>
+    }
+    @if (sessions.length > 0 && !loading) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for(session of sessions; track $index) {
+      <p-card [header]="session.name">
+        <ng-template pTemplate="header">
+          <div class="p-3 bg-gray-50 border-b">
+            <div class="flex justify-between items-center">
+              <h3 class="font-semibold">{{ session.name }}</h3>
+              <i [class]="getStatusIcon(session.status)" [ngClass]="'text-' + getStatusColor(session.status)"
+                pTooltip="{{ getStatusText(session.status) }}" tooltipPosition="top">
+              </i>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="space-y-3">
+          <!-- QR Code -->
+          @if (session.qrCode) {
+
+          <div class="text-center">
+            <p class="text-sm text-gray-600 mb-2">Escaneie o QR Code</p>
+            <img [src]="session.qrCode" alt="QR Code" class="w-32 h-32 mx-auto border">
+          </div>
+
+           @if (session.phoneNumber) {
+
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Número:</span>
+              <span class="font-mono">{{ session.phoneNumber }}</span>
+            </div>
+            }
+            @if (session.lastActivity) {
+
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Última atividade:</span>
+              <span>{{ session.lastActivity | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            }
+          }
+
+          <!-- Informações da sessão -->
+           @if (!session.qrCode) {
+
+             <div class="space-y-2">
+               <div class="flex justify-between text-sm">
+                 <span class="text-gray-600">Status:</span>
+                 <span [ngClass]="{
+                   'text-green-600': session.status === 'connected',
+                   'text-yellow-600': session.status === 'connecting',
+                   'text-red-600': session.status === 'failed',
+                   'text-gray-600': session.status === 'disconnected'
+                  }">
+                {{ getStatusText(session.status) }}
+              </span>
+            </div>
+
+            @if (session.phoneNumber) {
+
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Número:</span>
+              <span class="font-mono">{{ session.phoneNumber }}</span>
+            </div>
+            }
+            @if (session.lastActivity) {
+
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Última atividade:</span>
+              <span>{{ session.lastActivity | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            }
+          </div>
+        }
+        </div>
+
+        <ng-template pTemplate="footer">
+          <div class="flex gap-2 justify-end">
+            @if (session.status === 'connected') {
+
+            <p-button icon="pi pi-power-off" severity="danger" [text]="true" (onClick)="disconnectSession(session.name)"
+              pTooltip="Desconectar" tooltipPosition="top">
+            </p-button>
+            }
+            @if (session.status === 'disconnected' || session.status === 'failed') {
+
+            <p-button icon="pi pi-refresh" severity="warn" [text]="true" (onClick)="reconnectSession(session.name)"
+              pTooltip="Reconectar" tooltipPosition="top">
+            </p-button>
+            }
+
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="deleteSession($event, session.name)"
+              pTooltip="Excluir sessão" tooltipPosition="top">
+            </p-button>
+          </div>
+        </ng-template>
+      </p-card>
+      }
+    </div>
+    }
+  </div>
+</div>
+<p-confirmdialog />

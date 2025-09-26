@@ -1,0 +1,197 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+
+  <div class="col-12">
+    <div class="flex justify-content-between align-items-center mb-4">
+      <h1 class="text-3xl font-bold">Minha Conta</h1>
+    </div>
+  </div>
+
+
+  <div class="grid grid-cols-2 gap-2 border border-gray-100">
+    <div>
+      <p-card header="Informações do Perfil" class="p-4">
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-user text-xl"></i>
+            <span class="text-xl font-semibold">Dados Pessoais</span>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-row m-2">
+          <div class="px-2">
+
+            <label for="name" class="block text-sm font-medium mb-2">Nome Completo</label>
+            <input id="name" type="text" pInputText [(ngModel)]="user.name" placeholder="Digite seu nome"
+              class="w-full" />
+          </div>
+          <div class="">
+            <label for="email" class="block text-sm font-medium mb-2">E-mail</label>
+            <input id="email" type="email" pInputText [(ngModel)]="user.email" placeholder="seu@email.com"
+              class="w-full" />
+          </div>
+        </div>
+
+
+        <div class="flex flex-row m-2">
+          <div class="px-2">
+
+            <label for="phone" class="block text-sm font-medium mb-2">Telefone</label>
+            <input id="phone" type="tel" pInputText [(ngModel)]="user.phone" placeholder="(11) 99999-9999"
+              class="w-full" />
+          </div>
+          <div class="">
+            <label for="company" class="block text-sm font-medium mb-2">Empresa</label>
+            <input id="company" type="text" pInputText [(ngModel)]="user.company" placeholder="Nome da empresa"
+              class="w-full" />
+          </div>
+        </div>
+
+
+        <ng-template pTemplate="footer">
+          <div class="flex gap-2 justify-content-end">
+            <p-button label="Cancelar" icon="pi pi-times" styleClass="p-button-outlined p-button-secondary"
+              (onClick)="resetForm()">
+            </p-button>
+            <p-button label="Salvar Alterações" icon="pi pi-check" (onClick)="saveMyProfile()"
+              styleClass="p-button-success">
+            </p-button>
+          </div>
+        </ng-template>
+      </p-card>
+    </div>
+    <div class="p-2">
+      <p-card header="Alterar Senha" class="p-4">
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-lock text-xl"></i>
+            <span class="text-xl font-semibold">Segurança</span>
+          </div>
+        </ng-template>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="">
+            <label for="currentPassword" class="block text-sm font-medium mb-2">Senha Atual</label>
+            <p-password id="currentPassword" [(ngModel)]="password" [feedback]="false"
+              placeholder="Digite sua senha atual" [toggleMask]="true" class="w-full">
+            </p-password>
+          </div>
+
+          <div class="">
+            <label for="newPassword" class="block text-sm font-medium mb-2">Nova Senha</label>
+            <p-password id="newPassword" [(ngModel)]="newPassword" [feedback]="true" placeholder="Digite a nova senha"
+              [toggleMask]="true" class="w-full">
+            </p-password>
+          </div>
+
+          <div>
+            <div class="text-sm text-600">
+              <div class="flex align-items-center gap-2 mb-1">
+                <i class="pi pi-info-circle"></i>
+                <span>A senha deve conter:</span>
+              </div>
+              <ul class="list-none ml-4 text-xs">
+                <li [class]="password.length >= 6 ? 'text-green-600' : 'text-500'">
+                  • Pelo menos 6 caracteres
+                </li>
+                <li [class]="hasUpperCase() ? 'text-green-600' : 'text-500'">
+                  • Letra maiúscula
+                </li>
+                <li [class]="hasNumber() ? 'text-green-600' : 'text-500'">
+                  • Número
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+          <div class="flex gap-2 justify-content-end">
+            <p-button label="Validar Senha" icon="pi pi-shield" styleClass="p-button-outlined p-button-help"
+              (onClick)="validatePassword()">
+            </p-button>
+            <p-button label="Alterar Senha" icon="pi pi-key" (onClick)="changePassword()" styleClass="p-button-warning"
+              [disabled]="!isPasswordValid()">
+            </p-button>
+          </div>
+        </ng-template>
+      </p-card>
+    </div>
+  </div>
+  <div class="my-2 grid grid-col-2 gap-2 border border-gray-100">
+    <p-card header="Informações da Conta">
+      <ng-template pTemplate="header">
+        <div class="flex align-items-center gap-2 p-4">
+          <i class="pi pi-info-circle text-xl"></i>
+          <span class="text-xl font-semibold">Detalhes da Conta</span>
+        </div>
+      </ng-template>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="align-items-center border-bottom-1 surface-border py-2">
+          <span class="font-medium">ID do Usuário:</span>
+          <span class="text-600">{{ user.id || 'N/A' }}</span>
+        </div>
+        <div class="">
+          <span class="font-medium">Data de Criação:</span>
+          <span class="text-600">{{ user.createdAt | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="flex justify-content-between align-items-center border-bottom-1 surface-border py-2">
+          <span class="font-medium">Último Acesso:</span>
+          <span class="text-600">{{ user.lastLogin | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <div class="flex justify-content-between align-items-center border-bottom-1 surface-border py-2">
+          <span class="font-medium">Status da Conta:</span>
+          <p-tag class="px-2" [value]="user.status === 'enabled' ? 'Ativa' : 'Inativa'"
+            [severity]="user.status === 'enabled' ? 'success' : 'danger'">
+          </p-tag>
+        </div>
+        <div class="flex justify-content-between align-items-center border-bottom-1 surface-border py-2">
+          <span class="font-medium">Permissões: </span>
+          <span class="text-600 px-2">{{ user.role || 'padrão' }}</span>
+        </div>
+      </div>
+
+
+    </p-card>
+  </div>
+
+
+  <div class="my-4">
+    <p-card header="Preferências">
+      <ng-template pTemplate="header">
+        <div class="flex align-items-center gap-2 p-4">
+          <i class="pi pi-cog text-xl"></i>
+          <span class="text-xl font-semibold">Configurações</span>
+        </div>
+      </ng-template>
+
+      <div class="grid">
+        <div class="col-12">
+          <div class="flex flex-column gap-3">
+            <div class="flex justify-content-between align-items-center py-2">
+              <span class="font-medium px-2">Notificações por E-mail</span>
+              <p-toggleswitch [(ngModel)]="user.emailNotifications"></p-toggleswitch>
+            </div>
+            <div class="flex justify-content-between align-items-center py-2">
+              <span class="font-medium px-2">Notificações Push</span>
+              <p-toggleswitch [(ngModel)]="user.pushNotifications"></p-toggleswitch>
+            </div>
+            <div class="flex justify-content-between align-items-center py-2">
+              <span class="font-medium px-2">Tema Escuro</span>
+              <p-toggleswitch [(ngModel)]="user.darkTheme"></p-toggleswitch>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <div class="flex gap-2 justify-content-end">
+          <p-button label="Salvar Preferências" icon="pi pi-save" styleClass="p-button-info">
+          </p-button>
+        </div>
+      </ng-template>
+    </p-card>
+  </div>
+</div>

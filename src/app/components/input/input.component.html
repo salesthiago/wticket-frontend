@@ -1,0 +1,22 @@
+<div class="flex flex-column relative">
+
+  @if(inputLabel()){
+  <label class="pb-1">{{inputLabel()}}</label>
+  }
+
+
+  <input pInputText [class.error]="invalid"
+    ngClass="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+    [placeholder]="inputPlaceholder()" [type]="inputType()" [(ngModel)]="inputValue" [ngModelOptions]="modelOptions"
+    [name]="inputName()" (focus)="onTouched && onTouched()" (input)="onChanged && onChanged(inputValue)"
+    [disabled]="isDisabled()" autocomplete="off" [style.background]="bgColor()" [style.border-color]="borderColor()" />
+
+
+
+  @if (invalid && errorMessage) {
+
+  <small class="error-message">{{ errorMessage }}</small>
+
+  }
+
+</div>

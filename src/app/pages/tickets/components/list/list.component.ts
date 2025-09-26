@@ -1,0 +1,412 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { CardModule } from 'primeng/card';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { FormsModule } from '@angular/forms';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
+import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
+import { TicketService } from '../services/ticket.service';
+import { Socket } from 'socket.io-client';
+import { ChatComponent } from '../chat/chat.component';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { HeaderComponent } from 'src/app/layout/header/header.component';
+
+interface Ticket {
+  _id: string;
+  contactNumber: string;
+  contactName: string;
+  sessionName: string;
+  subject: string;
+  status: 'opened' | 'in_progress' | 'finished' | 'canceled';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assignedTo?: any;
+  tags: string[];
+  lastMessage?: Date;
+  messages?: any | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+@Component({
+  selector: 'app-tickets',
+  providers: [ConfirmationService, MessageService],
+  imports: [
+    CommonModule,
+    RouterModule,
+    TableModule,
+    ButtonModule,
+    TagModule,
+    CardModule,
+    DialogModule,
+    InputTextModule,
+    SelectModule,
+    FormsModule,
+    ProgressSpinnerModule,
+    MessageModule,
+    TooltipModule,
+    ChatComponent,
+    ConfirmDialogModule,
+    HeaderComponent
+  ],
+  templateUrl: './list.component.html',
+  styleUrls: ['./list.component.scss']
+})
+export class TicketsComponent implements OnInit, OnDestroy {
+  tickets: Ticket[] = [];
+  loading = true;
+  errorMessage = '';
+  syncLoading = false;
+  syncMessage = '';
+
+  // Filtros
+  statusFilter: string = '';
+  priorityFilter: string = '';
+  sessionFilter: string = '';
+  searchText: string = '';
+  socket: any;
+  // Dialog
+  displayDialog = false;
+  selectedTicket: Ticket | null = null;
+
+  // Opções para filtros
+  statusOptions = [
+    { label: 'Todos', value: '' },
+    { label: 'Aberto', value: 'opened' },
+    { label: 'Em Andamento', value: 'in_progress' },
+    { label: 'Finalizado', value: 'finished' },
+    { label: 'Cancelado', value: 'canceled' }
+  ];
+
+  priorityOptions = [
+    { label: 'Todos', value: '' },
+    { label: 'Baixa', value: 'low' },
+    { label: 'Média', value: 'medium' },
+    { label: 'Alta', value: 'high' },
+    { label: 'Urgente', value: 'urgent' }
+  ];
+
+  sessions: any[] = [];
+
+  constructor(
+    private whatsappService: WhatsappService,
+    private ticketService: TicketService,
+    private router: Router,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService
+  ) { }
+
+
+  async ngOnInit() {
+    await this.loadSessions();
+    this.loadTickets();
+    this.initSocketConnection();
+  }
+
+  ngOnDestroy() {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  }
+
+  async loadSessions() {
+    try {
+      this.sessions = [
+        { label: 'Todas as sessões', value: '' }
+      ];
+      this.whatsappService.findAll({}).pipe().subscribe({
+        next: (resp: any) => {
+          resp.map((s: any) => {
+            this.sessions.push({ label: s.name, value: s.name })
+          })
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error);
+    }
+  }
+
+  async loadTickets() {
+    try {
+      this.loading = true;
+      this.ticketService.getTickets({}).pipe().subscribe({
+        next: (resp: Ticket[]) => {
+          this.tickets = resp;
+          this.loading = false;
+        }
+      });
+
+
+    } catch (error) {
+      this.tickets = [];
+      console.error('Erro ao carregar tickets:', error);
+      this.errorMessage = 'Erro ao carregar tickets';
+      this.loading = false;
+    }
+  }
+
+  async syncContacts() {
+    try {
+      this.syncLoading = true;
+      this.syncMessage = 'Sincronizando contatos...';
+      console.log('sessionFilter', this.sessionFilter)
+      if (!this.sessionFilter) {
+        throw ({ message: 'Erro na sincronização, selecione uma sessão antes' })
+      }
+      this.whatsappService.syncContacts(this.sessionFilter).pipe().subscribe({
+        next: (resp: any) => {
+          console.log('resp syncContacts >>>', resp)
+          this.syncMessage = 'Sincronização concluída com sucesso!';
+        }
+      });
+
+      setTimeout(() => {
+        this.syncMessage = '';
+        this.loadTickets();
+      }, 2000);
+    } catch (error: any) {
+      console.error('Erro na sincronização:', error);
+      this.syncMessage = error?.message || 'Erro na sincronização';
+    } finally {
+      this.syncLoading = false;
+    }
+  }
+
+  getStatusSeverity(status: string) {
+    switch (status) {
+      case 'opened': return 'warning';
+      case 'in_progress': return 'info';
+      case 'finished': return 'success';
+      case 'canceled': return 'danger';
+      default: return 'secondary';
+    }
+  }
+
+  getStatusLabel(status: string) {
+    switch (status) {
+      case 'opened': return 'Aberto';
+      case 'in_progress': return 'Em Andamento';
+      case 'finished': return 'Finalizado';
+      case 'canceled': return 'Cancelado';
+      default: return status;
+    }
+  }
+
+  getPrioritySeverity(priority: string) {
+    switch (priority) {
+      case 'low': return 'success';
+      case 'medium': return 'info';
+      case 'high': return 'warning';
+      case 'urgent': return 'danger';
+      default: return 'secondary';
+    }
+  }
+
+  getPriorityLabel(priority: string) {
+    switch (priority) {
+      case 'low': return 'Baixa';
+      case 'medium': return 'Média';
+      case 'high': return 'Alta';
+      case 'urgent': return 'Urgente';
+      default: return priority;
+    }
+  }
+
+  openTicket(ticket: Ticket) {
+    this.selectedTicket = ticket;
+    this.displayDialog = true;
+    this.socket.emit('rescueMessages', {
+      sessionName: ticket.sessionName, contactNumber: ticket.contactNumber
+    })
+  }
+
+  closeDialog() {
+    this.displayDialog = false;
+    this.selectedTicket = null;
+  }
+
+  get filteredTickets() {
+    return this.tickets.filter(ticket => {
+      const matchesStatus = !this.statusFilter || ticket.status === this.statusFilter;
+      const matchesPriority = !this.priorityFilter || ticket.priority === this.priorityFilter;
+      const matchesSession = !this.sessionFilter || ticket.sessionName === this.sessionFilter;
+      const matchesSearch = !this.searchText ||
+        ticket.contactNumber.includes(this.searchText) ||
+        (ticket.contactName && ticket.contactName.toLowerCase().includes(this.searchText.toLowerCase())) ||
+        ticket.subject.toLowerCase().includes(this.searchText.toLowerCase());
+
+      return matchesStatus && matchesPriority && matchesSession && matchesSearch;
+    });
+  }
+
+  get totalTickets() {
+    return this.filteredTickets.length;
+  }
+
+  get openedTickets() {
+    return this.filteredTickets.filter(t => t.status === 'opened').length;
+  }
+
+  get inProgressTickets() {
+    return this.filteredTickets.filter(t => t.status === 'in_progress').length;
+  }
+
+  get finishedTickets() {
+    return this.filteredTickets.filter(t => t.status === 'finished').length;
+  }
+
+  get canceledTickets() {
+    return this.filteredTickets.filter(t => t.status === 'canceled').length;
+  }
+
+  onBack() {
+    this.router.navigate(['/dashboard']);
+  }
+
+
+  initSocketConnection(): void {
+    console.log('Iniciando conexão Socket.io...');
+
+    import('socket.io-client').then(({ io }) => {
+      console.log('Socket.io client carregado');
+
+      const token = localStorage.getItem('authToken') || '';
+
+      this.socket = io('http://localhost:3000', {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        auth: {
+          token: token
+        }
+      });
+
+      this.socket.on('connect', () => {
+        console.log('✅ Conectado ao servidor Socket.io');
+      });
+
+      this.socket.on('connect_error', (error: any) => {
+        console.error('❌ Erro de conexão Socket.io:', error.message);
+
+        setTimeout(() => {
+          if (this.socket && !this.socket.connected) {
+            this.socket.connect();
+          }
+        }, 2000);
+      });
+
+      this.socket.on('disconnect', (reason: string) => {
+        console.log('📴 Desconectado do servidor Socket.io:', reason);
+      });
+
+      this.setupSocketListeners();
+    }).catch(error => {
+      console.error('❌ Erro ao carregar socket.io-client:', error);
+    });
+  }
+
+  setupSocketListeners(): void {
+    if (!this.socket) return;
+
+    this.socket.on('redirect', (data: any) => {
+      console.log('🔀 Redirecionando para:', data.route);
+      this.router.navigate([data.route]);
+    });
+
+    this.socket.on('statusUpdate', (data: any) => {
+      console.log('Status atualizado:', data.status);
+    });
+
+    this.socket.on('stateChange', (data: any) => {
+      console.log('Estado alterado:', data.state);
+    });
+
+    this.socket.on('loadingUpdate', (data: any) => {
+      console.log('Carregamento:', data.percent, '% -', data.message);
+    });
+
+    this.socket.on('success', (data: any) => {
+      console.log('Sucesso:', data.message);
+    });
+
+    this.socket.on('error', (data: any) => {
+      this.errorMessage = data;
+      this.loading = false;
+      console.error('Error:', data);
+    });
+
+    this.socket.on('newMessage', (data: any) => {
+      console.log('Nova mensagem:', data.message);
+    });
+
+    this.socket.on('onMessage', (data: any) => {
+      console.log('nova msg:', data.message);
+      this.loadTickets()
+    });
+
+    this.socket.on('recoveryMessages', (data: any) => {
+      console.log('recoveryMessages', data);
+      if (this.selectedTicket && data) {
+        // Converter objeto para array se necessário
+        let messagesArray;
+
+        if (Array.isArray(data)) {
+          // Já é um array
+          messagesArray = data;
+        } else if (typeof data === 'object' && data !== null) {
+          // É um objeto, converter para array
+          messagesArray = Object.values(data);
+        } else {
+          // Formato inesperado
+          console.error('Formato inesperado de dados em recoveryMessages:', data);
+          messagesArray = [];
+        }
+
+        console.log('Mensagens convertidas:', messagesArray);
+
+        this.selectedTicket.messages = messagesArray;
+      }
+    });
+  }
+
+  public destroyTicket(id: string, event: any) {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Realmente deseja deletar este ticket ?',
+      header: 'Atenção !!',
+      icon: 'pi pi-info-circle',
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+        label: 'Cancelar',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Deletar',
+        severity: 'danger',
+      },
+
+      accept: () => {
+        this.ticketService.destroy(id).pipe().subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Confirmed', detail: 'Ticket Deletado' });
+            this.loadTickets()
+          }
+        })
+      },
+      reject: () => {
+        //
+      },
+    });
+  }
+}
