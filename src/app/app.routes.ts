@@ -38,6 +38,11 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/tickets/ticket.route').then(m => m.routes),
     canActivate: [authGuard]
   },
+  {
+    path: 'bot-config',
+    loadChildren: () => import('./pages/bot-config/bot-config.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

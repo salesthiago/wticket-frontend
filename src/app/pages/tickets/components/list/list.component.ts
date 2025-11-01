@@ -8,7 +8,7 @@ import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
@@ -50,6 +50,7 @@ interface Ticket {
     InputTextModule,
     SelectModule,
     FormsModule,
+    ReactiveFormsModule,
     ProgressSpinnerModule,
     MessageModule,
     TooltipModule,
@@ -72,6 +73,8 @@ export class TicketsComponent implements OnInit, OnDestroy {
   priorityFilter: string = '';
   sessionFilter: string = '';
   searchText: string = '';
+  dialogStatus: boolean = false;
+  dialogPriority: boolean = false;
   socket: any;
   // Dialog
   displayDialog = false;
@@ -180,6 +183,47 @@ export class TicketsComponent implements OnInit, OnDestroy {
     }
   }
 
+  public changeStatus() {
+    this.dialogStatus = true
+  }
+  public changeTicket() {
+    this.dialogPriority = true
+  }
+  public updateStatusTicket() {
+    if ((this.selectedTicket?._id !== null) && (this.selectedTicket?.status !== null)) {
+      this.ticketService.updateStatus(this.selectedTicket?._id ?? '', this.selectedTicket?.status ?? '').pipe().subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Status Atualizado ' })
+        },
+        error: (err) => {
+          console.log(err, '<<<< erro ao atualizar status')
+          this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar status.' })
+        }
+      })
+    }
+  }
+  public updateTicket() {
+    if ((this.selectedTicket?._id !== null) && (this.selectedTicket?.status !== null)) {
+      this.ticketService.update(this.selectedTicket?._id ?? '', { priority: this.selectedTicket?.priority ?? 'medium' }).pipe().subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Prioridade Atualizada! ' })
+        },
+        error: (err: any) => {
+          console.log(err, '<<<< erro ao atualizar status')
+          this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar status.' })
+        }
+      })
+    }
+  }
+
+  getSelectedStatus(): any {
+    return this.statusOptions.find(opt => opt.value === this.selectedTicket?.status);
+  }
+  onStatusChange(event: any): void {
+     if (this.selectedTicket && event && event.value) {
+      this.selectedTicket.status = event.value;
+    }
+  }
   getStatusSeverity(status: string) {
     switch (status) {
       case 'opened': return 'warning';
@@ -353,6 +397,14 @@ export class TicketsComponent implements OnInit, OnDestroy {
       console.log('nova msg:', data.message);
       this.loadTickets()
     });
+    this.socket.on('sessionReconnectError', (data: any) => {
+      console.log('sessionReconnectError:', data);
+      const { session, error } = data
+      this.messageService.add({
+        severity: 'error',
+        summary: session + ' - ' + error
+      })
+    });
 
     this.socket.on('recoveryMessages', (data: any) => {
       console.log('recoveryMessages', data);
@@ -408,5 +460,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
         //
       },
     });
+  }
+
+  public sendMessage(event: any) {
+    console.log('sendingMessage', event)
+    this.socket.emit('sendMessage', event)
   }
 }

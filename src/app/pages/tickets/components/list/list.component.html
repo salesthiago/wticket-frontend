@@ -228,7 +228,9 @@
     <div class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div class="row-span-5">
-          <app-chat [messages]="selectedTicket.messages ?? []" />
+          <app-chat [messages]="selectedTicket.messages ?? []"
+            (onMessageSent)="sendMessage($event)" [session]="selectedTicket.sessionName"
+            [name]="selectedTicket.contactName" [number]="selectedTicket.contactNumber" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -252,6 +254,7 @@
             <p-tag [value]="getStatusLabel(selectedTicket.status)"
               [severity]="getStatusSeverity(selectedTicket.status)">
             </p-tag>
+            <p-button icon="pi pi-pencil" text (click)="changeStatus()" />
           </div>
 
           <div>
@@ -262,6 +265,28 @@
           </div>
         </div>
       </div>
+      <p-dialog [(visible)]="dialogStatus">
+
+            <p-select class="w-full" appendTo="body" [ngModel]="getSelectedStatus()" [checkmark]="true" [showClear]="true"
+             [options]="statusOptions" optionLabel="label" optionValue="value" (onChange)="onStatusChange($event)" />
+
+          <div class="flex justify-end gap-2 py-4">
+            <p-button label="Cancelar" severity="secondary" (click)="dialogStatus = false" />
+            <p-button label="Save" (click)="updateStatusTicket()" />
+        </div>
+
+      </p-dialog>
+      <p-dialog [(visible)]="dialogPriority">
+        <p-card header="Status do Ticket">
+          <div>
+            <p-select [(ngModel)]="selectedTicket.priority" [options]="priorityOptions" optionLabel="label" optionValue="value" />
+          </div>
+          <div class="flex justify-end gap-2">
+            <p-button label="Cancelar" severity="secondary" (click)="dialogStatus = false" />
+            <p-button label="Save" (click)="updateTicket()" />
+        </div>
+        </p-card>
+      </p-dialog>
 
       @if(selectedTicket.tags && selectedTicket.tags.length > 0) {
 

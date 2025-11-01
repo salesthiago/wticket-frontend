@@ -33,6 +33,7 @@ interface ChatMessage {
 export class ChatComponent implements AfterViewChecked, OnChanges {
 
   @Input() name: string = '';
+  @Input() session: string = '';
   @Input() number: string = '';
   @Input() messages: ChatMessage[] = []
 
@@ -45,7 +46,7 @@ export class ChatComponent implements AfterViewChecked, OnChanges {
   loading: boolean = false;
   private shouldScrollToBottom: boolean = false;
 
-  constructor(private service: TicketService) {}
+  constructor(private service: TicketService) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['messages'] && changes['messages'].currentValue) {
@@ -84,7 +85,11 @@ export class ChatComponent implements AfterViewChecked, OnChanges {
 
     const messageToSend = this.newMessage.trim();
     this.newMessage = '';
-    this.onMessageSent.emit(messageToSend);
+    this.onMessageSent.emit({
+      message: messageToSend,
+      sessionName: this.session,
+      contactNumber: this.number
+    });
 
     // Focar novamente no input após enviar
     setTimeout(() => {

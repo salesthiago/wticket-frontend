@@ -1,17 +1,26 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/enviroment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TicketService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
   getTickets(filters: any = {}): Observable<any> {
     return this.http.get<any[]>(`${this.apiUrl}/tickets`, { params: filters });
+  }
+
+  updateStatus(id: string, status: string): Observable<any> {
+    return this.http.patch<any[]>(`${this.apiUrl}/tickets/${id}/${status}`, {});
+  }
+
+  update(id: string, data: any): Observable<any> {
+    return this.http.put<any[]>(`${this.apiUrl}/tickets/${id}`, { ...data });
   }
 
   syncContacts(sessionName: string): Observable<any> {

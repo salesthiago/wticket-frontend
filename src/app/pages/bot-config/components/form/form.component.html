@@ -1,0 +1,106 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+
+  <p-card class="align-items-center mb-4" header="Cadastro de BOT">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-2">
+      <div>
+        <label for="name" class="block mb-2">Nome</label>
+        <input id="name" type="text" pInputText [(ngModel)]="botConfig.name" required placeholder="Nome do bot"
+          class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Selecione uma Sessão</label>
+        <p-select [options]="sessions" [(ngModel)]="botConfig.sessionId" optionLabel="label" optionValue="value"
+          placeholder="Selecione a sessão">
+        </p-select>
+      </div>
+      <div class="md:row-span-2">
+        <label for="welcomeMessage" class="block mb-2">Mensagem De Bem vindo</label>
+        <input id="welcomeMessage" type="text" pInputText [(ngModel)]="botConfig.welcomeMessage" required placeholder=""
+          class="w-full" />
+      </div>
+      <div class="md:row-span-2">
+        <label for="defaultResponse" class="block mb-2">Resposta padrão</label>
+        <input id="defaultResponse" type="text" pInputText [(ngModel)]="botConfig.defaultResponse" required placeholder=""
+          class="w-full" />
+      </div>
+      <div class="">
+        <label class="block mb-2">Ativo</label>
+        <p-select [options]="statusOptions" [(ngModel)]="botConfig.enabled" optionLabel="label" optionValue="value"
+          class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Desativar por Horário</label>
+        <p-toggleSwitch [(ngModel)]="botConfig.businessHours.enabled" />
+        @if (botConfig.businessHours.enabled) {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div class="">
+            <label class="block">Início</label>
+            <p-input-mask [(ngModel)]="botConfig.businessHours.startTime" mask="99:99" />
+          </div>
+          <div class="">
+            <label class="block">Fim</label>
+            <p-input-mask [(ngModel)]="botConfig.businessHours.endTime" mask="99:99" />
+          </div>
+          <div class="md:row-span-2">
+            <label class="block mb-2">Mensagem</label>
+            <input pInputText [(ngModel)]="botConfig.businessHours.offHoursMessage" class="w-full" />
+          </div>
+        </div>
+        }
+
+      </div>
+    </div>
+
+    @if (botConfig.id) {
+      <div class="my-4">
+        <p-button label="Adicionar Interação" (onClick)="addResponse()"></p-button>
+        <p-table [value]="autoResponses" [paginator]="false">
+          <ng-template #header>
+        <tr>
+            <th style="width:25%">Prioridade</th>
+            <th style="width:25%">Status</th>
+            <th style="width:25%">Ação</th>
+            <th style="width:25%">Resposta</th>
+            <th></th>
+        </tr>
+    </ng-template>
+    <ng-template #body let-item>
+        <tr>
+            <td>{{ item.priority }}</td>
+            <td>{{ item.enabled ? 'Ativo' : 'Desativado' }}</td>
+            <td>{{ item.trigger }}</td>
+            <td>{{ item.response }}</td>
+        </tr>
+    </ng-template>
+        </p-table>
+      </div>
+    }
+
+    <div class="flex my-4">
+      <p-button label="Voltar" [loading]="loading" class="mr-2" severity="secondary" [disabled]="loading"
+        (click)="onBack()"></p-button>
+      <p-button  label="Salvar" [loading]="loading" class="" styleClass="p-button-primary" [disabled]="loading" [loading]="loading"
+        (click)="onSubmit()"></p-button>
+    </div>
+  </p-card>
+</div>
+<p-dialog [header]="autoResponse?._id ? 'Atualizando Interação': 'Criando Interação!'" [(visible)]="dialogResponses">
+ <div class="flex items-center gap-4 mb-4">
+    <label for="username" class="font-semibold w-24">Prioridade</label>
+    <input pInputText id="username" class="flex-auto" [(ngModel)]="autoResponse.priority" />
+  </div>
+ <div class="flex items-center gap-4 mb-4">
+    <label for="username" class="font-semibold w-24">Questão</label>
+    <input pInputText id="username" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.question" />
+  </div>
+ <div class="flex items-center gap-4 mb-4">
+    <label for="triggerType" class="font-semibold w-24">Tipo de Ação</label>
+    <input pInputText id="triggerType" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.triggerType" />
+  </div>
+ <div class="flex items-center gap-4 mb-4">
+    <label for="triggerType" class="font-semibold w-24">Ação</label>
+    <input pInputText id="triggerType" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.trigger" />
+  </div>
+</p-dialog>
