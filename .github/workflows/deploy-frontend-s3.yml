@@ -1,0 +1,93 @@
+name: Deploy Frontend to S3 + CloudFront
+
+on:
+  push:
+    branches:
+      - main
+      - development
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - development
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to S3
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular app for production
+        run: npm run build -- --configuration production
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+
+      - name: List build output
+        run: |
+          echo "📦 Arquivos gerados no build:"
+          ls -lah dist/frontend/browser/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Sync files to S3
+        run: |
+          echo "🚀 Fazendo upload para S3..."
+          aws s3 sync dist/frontend/browser/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.json"
+
+          echo "📄 Fazendo upload de arquivos HTML (sem cache)..."
+          aws s3 sync dist/frontend/browser/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.json" \
+            --cache-control "public, max-age=0, must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          echo "🔄 Invalidando cache do CloudFront..."
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "✅ ========================================="
+          echo "✅ FRONTEND DEPLOYMENT SUCCESSFUL!"
+          echo "✅ ========================================="
+          echo "📍 S3 Bucket: ${{ secrets.S3_BUCKET_NAME }}"
+          echo "🌐 CloudFront URL: https://${{ secrets.CLOUDFRONT_DOMAIN }}"
+          echo "🔄 Cache invalidado com sucesso"
+          echo ""
+          echo "🎉 Seu frontend está no ar!"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ ========================================="
+          echo "❌ FRONTEND DEPLOYMENT FAILED!"
+          echo "❌ ========================================="
+          echo "Verifique os logs acima para mais detalhes"
+          exit 1
