@@ -12,6 +12,7 @@ import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { environment } from '../../../../../environments/enviroment';
 
 interface Session {
   id: string;
@@ -142,7 +143,7 @@ export class ListComponent implements OnInit, OnDestroy {
     import('socket.io-client').then(({ io }) => {
       const token = localStorage.getItem('authToken') || '';
 
-      this.socket = io('http://localhost:3000', {
+      this.socket = io(environment.socketUrl, {
         transports: ['websocket', 'polling'],
         auth: { token }
       });

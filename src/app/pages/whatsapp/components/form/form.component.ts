@@ -5,6 +5,7 @@ import { Socket } from 'socket.io-client';
 import { MessageModule } from 'primeng/message'
 import { InputMaskModule } from 'primeng/inputmask'
 import { Router } from '@angular/router';
+import { environment } from '../../../../../environments/enviroment';
 
 
 @Component({
@@ -67,7 +68,7 @@ export class FormComponent implements OnInit, OnDestroy {
 
       const token = localStorage.getItem('authToken') || '';
 
-      this.socket = io('http://localhost:3000', {
+      this.socket = io(environment.socketUrl, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,

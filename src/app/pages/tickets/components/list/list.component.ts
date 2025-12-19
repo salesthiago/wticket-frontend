@@ -19,6 +19,7 @@ import { ChatComponent } from '../chat/chat.component';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { HeaderComponent } from 'src/app/layout/header/header.component';
+import { environment } from '../../../../../environments/enviroment';
 
 interface Ticket {
   _id: string;
@@ -324,7 +325,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
 
       const token = localStorage.getItem('authToken') || '';
 
-      this.socket = io('http://localhost:3000', {
+      this.socket = io(environment.socketUrl, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,

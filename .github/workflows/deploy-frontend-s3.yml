@@ -66,10 +66,14 @@ jobs:
 
       - name: Invalidate CloudFront cache
         run: |
-          echo "🔄 Invalidando cache do CloudFront..."
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+          if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            echo "🔄 Invalidando cache do CloudFront..."
+            aws cloudfront create-invalidation \
+              --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+              --paths "/*"
+          else
+            echo "⚠️ CLOUDFRONT_DISTRIBUTION_ID não configurado - pulando invalidação de cache"
+          fi
 
       - name: Deployment summary
         if: success()
