@@ -1,0 +1,106 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+  <p-card class="flex align-items-center mb-4">
+    <p-table
+      [value]="items"
+      [loading]="loading"
+      class="my-4"
+      [rows]="rows"
+      [paginator]="true"
+      [lazy]="true"
+      [totalRecords]="totalRecords"
+      (onLazyLoad)="findAppointments($event)"
+      [first]="first"
+      [globalFilterFields]="['description', 'service', 'phone']"
+      [tableStyle]="{ 'min-width': '75rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate="{first} de {last} de {totalRecords}"
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div>
+          <p-button icon="pi pi-plus" label="Adicionar" (click)="add()"></p-button>
+        </div>
+        <div class="flex">
+          <p-iconfield iconPosition="left" class="ml-auto">
+            <p-inputicon>
+              <i class="pi pi-search"></i>
+            </p-inputicon>
+            <input pInputText type="text" placeholder="Pesquisar ..." [(ngModel)]="search"
+              (change)="searchAppointment($event)" />
+          </p-iconfield>
+          @if(search) {
+            <p-button icon="pi pi-times" severity="secondary"
+            (click)="clearSearch()" class="ml-2"></p-button>
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">Nenhum agendamento encontrado</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Contato</th>
+          <th>Telefone</th>
+          <th>Descrição</th>
+          <th>Atribuído a</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-appointment>
+        <tr>
+          <td>{{ appointment.scheduledDate | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ appointment.scheduledTime }}</td>
+          <td>{{ getContactName(appointment) }}</td>
+          <td>{{ getContactPhone(appointment) }}</td>
+          <td>{{ appointment.description }}</td>
+          <td>{{ getAssignedToName(appointment) }}</td>
+          <td>
+            <p-tag
+              [value]="getStatusLabel(appointment.status)"
+              [severity]="getStatusColor(appointment.status)">
+            </p-tag>
+          </td>
+          <td>
+            <p-button
+              icon="pi pi-pencil"
+              (onClick)="edit(appointment._id)"
+              severity="primary"
+              [text]="true"
+              size="small"
+            />
+            @if(appointment.status !== 'cancelled' && appointment.status !== 'completed') {
+              <p-button
+                icon="pi pi-ban"
+                (onClick)="confirmCancel(appointment._id)"
+                severity="warn"
+                [text]="true"
+                size="small"
+                class="px-1"
+              />
+            }
+            <p-button
+              icon="pi pi-trash"
+              (onClick)="confirmDelete(appointment._id)"
+              severity="danger"
+              [text]="true"
+              size="small"
+              class="px-1"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+<p-confirmDialog />

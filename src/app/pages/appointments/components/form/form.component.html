@@ -1,0 +1,165 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+  <p-card class="align-items-center mb-4" [header]="isEditMode ? 'Editar Agendamento' : 'Novo Agendamento'">
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="contactId" class="block mb-2">Contato *</label>
+          <p-select
+            id="contactId"
+            [options]="contacts"
+            [(ngModel)]="appointment.contactId"
+            optionLabel="name"
+            optionValue="value"
+            [loading]="loadingContacts"
+            (onChange)="onContactChange($event)"
+            placeholder="Selecione um contato"
+            [filter]="true"
+            filterPlaceholder="Buscar contato"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="phone" class="block mb-2">Telefone *</label>
+          <input
+            id="phone"
+            type="text"
+            pInputText
+            [(ngModel)]="appointment.phone"
+            required
+            placeholder="Telefone do contato"
+            class="w-full"
+            [disabled]="true"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="scheduledDate" class="block mb-2">Data *</label>
+          <p-datepicker
+            id="scheduledDate"
+            [(ngModel)]="appointment.scheduledDate"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            placeholder="Selecione a data"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="scheduledTime" class="block mb-2">Horário *</label>
+          <input
+            id="scheduledTime"
+            type="time"
+            pInputText
+            [(ngModel)]="appointment.scheduledTime"
+            required
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="service" class="block mb-2">Serviço</label>
+          <input
+            id="service"
+            type="text"
+            pInputText
+            [(ngModel)]="appointment.service"
+            placeholder="Tipo de serviço"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="assignedTo" class="block mb-2">Atribuído a</label>
+          <p-select
+            id="assignedTo"
+            [options]="users"
+            [(ngModel)]="appointment.assignedTo"
+            optionLabel="name"
+            optionValue="value"
+            [loading]="loadingUsers"
+            placeholder="Selecione um profissional"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Buscar profissional"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="field">
+          <label for="description" class="block mb-2">Descrição *</label>
+          <textarea
+            id="description"
+            pInputTextarea
+            [(ngModel)]="appointment.description"
+            required
+            placeholder="Descreva o motivo do agendamento"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="field">
+          <label for="status" class="block mb-2">Status</label>
+          <p-select
+            id="status"
+            [options]="optionStatus"
+            [(ngModel)]="appointment.status"
+            optionLabel="name"
+            optionValue="value"
+            class="w-full"
+          />
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="field">
+          <label for="notes" class="block mb-2">Observações</label>
+          <textarea
+            id="notes"
+            pInputTextarea
+            [(ngModel)]="appointment.notes"
+            placeholder="Observações adicionais"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex mt-4">
+      <p-button
+        label="Voltar"
+        [loading]="loading"
+        class="mx-4"
+        severity="secondary"
+        (click)="onBack()"
+      ></p-button>
+
+      <p-button
+        type="submit"
+        label="Salvar"
+        [loading]="loading"
+        class="mx-4"
+        styleClass="p-button-primary"
+        (click)="onSubmit()"
+      ></p-button>
+    </div>
+  </p-card>
+</div>

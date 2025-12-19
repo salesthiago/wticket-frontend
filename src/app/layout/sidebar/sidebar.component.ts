@@ -57,6 +57,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       link: '/bot-config',
       icon: 'pi pi-android',
       permissions: []
+    },
+    {
+      id: 6,
+      name: 'Agendamentos',
+      link: '/appointments',
+      icon: 'pi pi-calendar',
+      permissions: []
     }
   ];
 

@@ -43,6 +43,11 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/bot-config/bot-config.route').then(m => m.routes),
     canActivate: [authGuard]
   },
+  {
+    path: 'appointments',
+    loadChildren: () => import('./pages/appointments/appointments.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

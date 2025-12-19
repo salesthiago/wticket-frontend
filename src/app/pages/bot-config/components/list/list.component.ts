@@ -75,7 +75,7 @@ export class ListComponent implements OnInit, OnDestroy {
       this.loading = true
       this.botConfigService.findAll({ ...this.params }).pipe().subscribe({
         next: (resp: any) => {
-          this.items = resp
+          this.items = resp?.items || []
           this.loading = false
         }
       })
