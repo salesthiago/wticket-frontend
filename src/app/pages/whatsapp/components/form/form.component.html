@@ -25,8 +25,60 @@
         @if (isInvalid('username')) {
             <p-message severity="error" size="small" variant="simple">Nome da sessão deve conter pelo menos 3 caracteres</p-message>
         }
+      </div>
 
+      <!-- Mensagem de Iniciação -->
+      <div class="form-group">
+        <label for="initiationMessage" class="form-label">
+          <i class="icon info-icon"></i>
+          Mensagem de Iniciação
+        </label>
+        <textarea
+          id="initiationMessage"
+          pInputText
+          formControlName="initiationMessage"
+          placeholder="Mensagem exibida ao iniciar conversa"
+          class="form-input"
+          rows="3"
+          style="resize: vertical; min-height: 60px;"
+        ></textarea>
+        <small style="color: #94a3b8; font-size: 0.875rem;">Mensagem enviada quando o contato inicia uma conversa</small>
+      </div>
 
+      <!-- Palavra-chave de Iniciação -->
+      <div class="form-group">
+        <label for="initiationKeyword" class="form-label">
+          <i class="icon session-icon"></i>
+          Palavra-chave para Iniciar *
+        </label>
+        <input
+          type="text"
+          id="initiationKeyword"
+          pInputText
+          formControlName="initiationKeyword"
+          placeholder="Ex: PROSSEGUIR"
+          class="form-input"
+          style="text-transform: uppercase;"
+        />
+        <small style="color: #94a3b8; font-size: 0.875rem;">Palavra que o usuário deve digitar para começar</small>
+      </div>
+
+      <!-- Mensagem de Finalização -->
+      <div class="form-group">
+        <label for="finalizationMessage" class="form-label">
+          <i class="icon success-icon"></i>
+          Mensagem de Finalização
+        </label>
+        <textarea
+          id="finalizationMessage"
+          pInputText
+          formControlName="finalizationMessage"
+          placeholder="Mensagem exibida ao finalizar atendimento"
+          class="form-input"
+          rows="3"
+          style="resize: vertical; min-height: 60px;"
+        ></textarea>
+        <small style="color: #94a3b8; font-size: 0.875rem;">Mensagem enviada quando o bot finaliza o atendimento</small>
       </div>
 
       <!-- Informações da Sessão -->

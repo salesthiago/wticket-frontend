@@ -12,8 +12,19 @@
       <div>
         <label class="block text-sm font-medium mb-2">Selecione uma Sessão</label>
         <p-select [options]="sessions" [(ngModel)]="botConfig.sessionId" optionLabel="label" optionValue="value"
-          placeholder="Selecione a sessão">
+         dataKey="value" valuePrimitive=true [showClear]="true" placeholder="Selecione a sessão">
         </p-select>
+      </div>
+      <div>
+        <label for="triggerKeyword" class="block mb-2">Palavra-chave para Ativar</label>
+        <input id="triggerKeyword" type="text" pInputText [(ngModel)]="botConfig.triggerKeyword"
+          placeholder="Ex: ORACAO" class="w-full" style="text-transform: uppercase;" />
+        <small class="text-gray-500">Palavra que o usuário deve digitar para ativar este bot no menu</small>
+      </div>
+      <div>
+        <label class="block mb-2">Mostrar no Menu</label>
+        <p-toggleSwitch [(ngModel)]="botConfig.isActive" />
+        <small class="block text-gray-500 mt-1">Se desativado, este bot não aparecerá no menu de opções</small>
       </div>
       <div class="md:row-span-2">
         <label for="welcomeMessage" class="block mb-2">Mensagem De Bem vindo</label>
@@ -56,24 +67,36 @@
     @if (botConfig.id) {
       <div class="my-4">
         <p-button label="Adicionar Interação" (onClick)="addResponse()"></p-button>
-        <p-table [value]="autoResponses" [paginator]="false">
+        <p-table [value]="autoResponses" [paginator]="false" [tableStyle]="{ 'min-width': '50rem' }">
           <ng-template #header>
-        <tr>
-            <th style="width:25%">Prioridade</th>
-            <th style="width:25%">Status</th>
-            <th style="width:25%">Ação</th>
-            <th style="width:25%">Resposta</th>
-            <th></th>
-        </tr>
-    </ng-template>
-    <ng-template #body let-item>
-        <tr>
-            <td>{{ item.priority }}</td>
-            <td>{{ item.enabled ? 'Ativo' : 'Desativado' }}</td>
-            <td>{{ item.trigger }}</td>
-            <td>{{ item.response }}</td>
-        </tr>
-    </ng-template>
+            <tr>
+              <th style="width:10%">Prioridade</th>
+              <th style="width:15%">Status</th>
+              <th style="width:20%">Tipo Gatilho</th>
+              <th style="width:15%">Gatilho</th>
+              <th style="width:30%">Questão</th>
+              <th style="width:10%">Ações</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-item>
+            <tr>
+              <td>{{ item.priority }}</td>
+              <td>
+                <span [class]="item.enabled ? 'text-green-600' : 'text-red-600'">
+                  {{ item.enabled ? 'Ativo' : 'Desativado' }}
+                </span>
+              </td>
+              <td>{{ item.triggerType }}</td>
+              <td>{{ item.trigger || '-' }}</td>
+              <td>{{ item.question | slice:0:50 }}{{ item.question?.length > 50 ? '...' : '' }}</td>
+              <td>
+                <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info"
+                  (onClick)="editResponse(item)" />
+                <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
+                  (onClick)="deleteResponse(item._id)" />
+              </td>
+            </tr>
+          </ng-template>
         </p-table>
       </div>
     }
@@ -86,21 +109,93 @@
     </div>
   </p-card>
 </div>
-<p-dialog [header]="autoResponse?._id ? 'Atualizando Interação': 'Criando Interação!'" [(visible)]="dialogResponses">
- <div class="flex items-center gap-4 mb-4">
-    <label for="username" class="font-semibold w-24">Prioridade</label>
-    <input pInputText id="username" class="flex-auto" [(ngModel)]="autoResponse.priority" />
+<p-dialog [header]="autoResponse?._id ? 'Atualizando Interação': 'Criando Interação!'" [(visible)]="dialogResponses" [style]="{width: '600px'}">
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-4">
+      <label for="priority" class="font-semibold w-32">Prioridade</label>
+      <input pInputText id="priority" type="number" class="flex-auto" [(ngModel)]="autoResponse.priority" />
+    </div>
+
+    <div class="flex items-center gap-4">
+      <label for="question" class="font-semibold w-32">Questão</label>
+      <input pInputText id="question" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.question" />
+    </div>
+
+    <div class="flex items-center gap-4">
+      <label for="triggerType" class="font-semibold w-32">Tipo de Gatilho</label>
+      <p-select id="triggerType" [options]="triggerTypeOptions" [(ngModel)]="autoResponse.triggerType"
+        optionLabel="label" optionValue="value" class="flex-auto" />
+    </div>
+
+    <div class="flex items-center gap-4">
+      <label for="trigger" class="font-semibold w-32">Gatilho</label>
+      <input pInputText id="trigger" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.trigger" />
+    </div>
+
+    <div class="flex items-center gap-4">
+      <label for="enabled" class="font-semibold w-32">Ativo</label>
+      <p-toggleSwitch id="enabled" [(ngModel)]="autoResponse.enabled" />
+    </div>
+
+    <!-- Seção de Opções -->
+    <div class="border-t pt-4 mt-4">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="font-semibold">Opções de Resposta</h4>
+        <p-button label="Adicionar Opção" size="small" (onClick)="addOption()" />
+      </div>
+
+      @if (autoResponse.options && autoResponse.options.length > 0) {
+        <div class="space-y-3">
+          @for (option of autoResponse.options; track $index) {
+            <div class="border rounded p-3 bg-gray-50">
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label class="text-sm font-medium">Valor</label>
+                  <input pInputText [(ngModel)]="option.value" placeholder="1, 2, 3..." class="w-full" />
+                </div>
+                <div>
+                  <label class="text-sm font-medium">Texto</label>
+                  <input pInputText [(ngModel)]="option.text" placeholder="Descrição da opção" class="w-full" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="text-sm font-medium">Ação</label>
+                  <p-select [options]="actionOptions" [(ngModel)]="option.action"
+                    optionLabel="label" optionValue="value" class="w-full" />
+                </div>
+
+                @if (option.action === 'nextStep') {
+                  <div>
+                    <label class="text-sm font-medium">Próximo Passo</label>
+                    <input pInputText type="number" [(ngModel)]="option.nextStep" class="w-full" />
+                  </div>
+                }
+
+                @if (option.action === 'callBot') {
+                  <div class="col-span-2">
+                    <label class="text-sm font-medium">Bot Destino</label>
+                    <p-select [options]="availableBots" [(ngModel)]="option.targetBotId"
+                      optionLabel="label" optionValue="value" placeholder="Selecione o bot" class="w-full" />
+                  </div>
+                }
+              </div>
+
+              <div class="mt-2 flex justify-end">
+                <p-button label="Remover" severity="danger" size="small" (onClick)="removeOption($index)" />
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-gray-500 text-sm">Nenhuma opção adicionada. Clique em "Adicionar Opção" para criar.</p>
+      }
+    </div>
   </div>
- <div class="flex items-center gap-4 mb-4">
-    <label for="username" class="font-semibold w-24">Questão</label>
-    <input pInputText id="username" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.question" />
-  </div>
- <div class="flex items-center gap-4 mb-4">
-    <label for="triggerType" class="font-semibold w-24">Tipo de Ação</label>
-    <input pInputText id="triggerType" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.triggerType" />
-  </div>
- <div class="flex items-center gap-4 mb-4">
-    <label for="triggerType" class="font-semibold w-24">Ação</label>
-    <input pInputText id="triggerType" class="flex-auto" autocomplete="off" [(ngModel)]="autoResponse.trigger" />
+
+  <div class="flex justify-end gap-2 mt-4 pt-4 border-t">
+    <p-button label="Cancelar" severity="secondary" (onClick)="dialogResponses = false" />
+    <p-button label="Salvar" (onClick)="saveAutoResponse()" />
   </div>
 </p-dialog>

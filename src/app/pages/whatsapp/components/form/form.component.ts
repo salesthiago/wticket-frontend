@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { WhatsappService } from '../services/whatsapp.service';
-import { Socket } from 'socket.io-client';
 import { MessageModule } from 'primeng/message'
 import { InputMaskModule } from 'primeng/inputmask'
+import { InputTextModule } from 'primeng/inputtext'
 import { Router } from '@angular/router';
 import { environment } from '../../../../../environments/enviroment';
 
@@ -15,6 +15,7 @@ import { environment } from '../../../../../environments/enviroment';
     ReactiveFormsModule,
     MessageModule,
     InputMaskModule,
+    InputTextModule,
   ],
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss']
@@ -41,7 +42,10 @@ export class FormComponent implements OnInit, OnDestroy {
         Validators.required,
         Validators.minLength(3),
         Validators.pattern(/^[a-zA-Z0-9_]+$/)
-      ]]
+      ]],
+      initiationMessage: ['👋 Olá! Bem-vindo(a) ao nosso atendimento automático.\n\nPara continuar, por favor digite: PROSSEGUIR'],
+      initiationKeyword: ['PROSSEGUIR', [Validators.required]],
+      finalizationMessage: ['✅ Atendimento finalizado.\n\nObrigado pelo contato! Para iniciar um novo atendimento, envie outra mensagem.']
     });
   }
 
@@ -167,15 +171,23 @@ export class FormComponent implements OnInit, OnDestroy {
 
     try {
       const sessionName = this.sessionForm.get('sessionName')?.value;
-      this.currentSession = sessionName;
+      const initiationMessage = this.sessionForm.get('initiationMessage')?.value;
+      const initiationKeyword = this.sessionForm.get('initiationKeyword')?.value;
+      const finalizationMessage = this.sessionForm.get('finalizationMessage')?.value;
 
+      this.currentSession = sessionName;
 
       if (this.socket) {
         this.socket.emit('join-session', sessionName);
         console.log('Entrou na sala:', sessionName);
       }
 
-      this.whatsappService.create({ name: sessionName }).subscribe({
+      this.whatsappService.create({
+        name: sessionName,
+        initiationMessage,
+        initiationKeyword,
+        finalizationMessage
+      }).subscribe({
         next: (response) => {
           this.successMessage = 'Sessão criada com sucesso! Aguardando QR Code...';
           console.log('Sessão criada:', response);

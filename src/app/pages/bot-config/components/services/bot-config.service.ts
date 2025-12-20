@@ -30,4 +30,16 @@ export class BotConfigService {
   public delete(id: string): Observable<any> {
     return this.http.delete<any>(this.apiUrl + '/bot-config/' + id, {})
   }
+
+  public createAutoResponse(botId: string, data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/bot-config/${botId}/auto-response`, data)
+  }
+
+  public updateAutoResponse(botId: string, responseId: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/bot-config/${botId}/auto-response/${responseId}`, data)
+  }
+
+  public deleteAutoResponse(botId: string, responseId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/bot-config/${botId}/auto-response/${responseId}`)
+  }
 }
