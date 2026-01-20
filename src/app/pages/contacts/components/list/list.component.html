@@ -2,7 +2,7 @@
 <app-sidebar />
 <div class="p-4 sm:ml-64 pt-20">
     <p-card class="flex align-items-center mb-4">
-      <p-table [value]="items" [loading]="loading" class="my-4">
+      <p-table [value]="items" [loading]="loading" [paginator]="true" [rows]="10" [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" [rowsPerPageOptions]="[10, 25, 50]" class="my-4">
         <ng-template #caption>
           <div>
             <p-button icon="pi pi-plus" label="Adicionar" (click)="add()"></p-button>

@@ -143,12 +143,16 @@ export class TicketsComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.ticketService.getTickets({}).pipe().subscribe({
         next: (resp: Ticket[]) => {
+          console.log('Tickets carregados:', resp);
           this.tickets = resp;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Erro ao carregar tickets:', error);
+          this.errorMessage = 'Erro ao carregar tickets';
           this.loading = false;
         }
       });
-
-
     } catch (error) {
       this.tickets = [];
       console.error('Erro ao carregar tickets:', error);
@@ -266,11 +270,34 @@ export class TicketsComponent implements OnInit, OnDestroy {
   }
 
   openTicket(ticket: Ticket) {
+    console.log('Opening ticket:', ticket);
+
+    if (!ticket.contactNumber) {
+      console.error('Erro: contactNumber está undefined ou vazio', ticket);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Erro',
+        detail: 'Número de contato não encontrado para este ticket'
+      });
+      return;
+    }
+
+    if (!ticket.sessionName) {
+      console.error('Erro: sessionName está undefined ou vazio', ticket);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Erro',
+        detail: 'Sessão não encontrada para este ticket'
+      });
+      return;
+    }
+
     this.selectedTicket = ticket;
     this.displayDialog = true;
     this.socket.emit('rescueMessages', {
-      sessionName: ticket.sessionName, contactNumber: ticket.contactNumber
-    })
+      sessionName: ticket.sessionName,
+      contactNumber: ticket.contactNumber
+    });
   }
 
   closeDialog() {

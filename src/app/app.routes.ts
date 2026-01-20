@@ -48,6 +48,11 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/appointments/appointments.route').then(m => m.routes),
     canActivate: [authGuard]
   },
+  {
+    path: 'gemini',
+    loadChildren: () => import('./pages/gemini/gemini.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

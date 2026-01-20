@@ -1,0 +1,157 @@
+<app-header></app-header>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-20">
+  <p-toast />
+
+  <p-card class="align-items-center mb-4" header="Configuração do Gemini">
+    <p class="text-gray-600 mb-4">
+      Configure o agente de IA Gemini para automatizar o atendimento. Preencha os campos abaixo com as informações necessárias.
+    </p>
+
+    @if (loading) {
+      <div class="flex justify-center items-center py-8">
+        <i class="pi pi-spin pi-spinner text-4xl text-blue-500"></i>
+        <span class="ml-3 text-gray-600">Carregando configurações...</span>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 gap-4 my-4">
+        <!-- Nome do Agente -->
+        <div>
+          <label for="agentName" class="block mb-2 font-medium">
+            Nome do Agente <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="agentName"
+            type="text"
+            pInputText
+            [(ngModel)]="geminiConfig.agentName"
+            required
+            placeholder="Ex: Atendente Virtual, Assistente de Vendas..."
+            class="w-full"
+          />
+          <small class="text-gray-500">Nome que identificará o agente no sistema</small>
+        </div>
+
+        <!-- Token API -->
+        <div>
+          <label for="token" class="block mb-2 font-medium">
+            Token da API Gemini <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="token"
+            type="password"
+            pInputText
+            [(ngModel)]="geminiConfig.token"
+            required
+            placeholder="Cole aqui sua API Key do Google Gemini"
+            class="w-full"
+          />
+          <small class="text-gray-500">
+            Obtenha sua chave de API em:
+            <a href="https://makersuite.google.com/app/apikey" target="_blank" class="text-blue-500 hover:underline">
+              Google AI Studio
+            </a>
+          </small>
+        </div>
+
+        <!-- Prompt do Sistema -->
+        <div>
+          <label for="prompt" class="block mb-2 font-medium">
+            Prompt do Sistema <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="prompt"
+            pInputTextarea
+            [(ngModel)]="geminiConfig.prompt"
+            required
+            placeholder="Descreva o comportamento e o tipo de atendimento que o agente deve realizar. Ex: Você é um assistente prestativo que ajuda clientes com informações sobre produtos e serviços..."
+            rows="8"
+            class="w-full"
+          ></textarea>
+          <small class="text-gray-500">
+            Instruções detalhadas sobre como o agente deve se comportar e responder aos clientes
+          </small>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label for="status" class="block mb-2 font-medium">Status</label>
+          <p-select
+            id="status"
+            [options]="statusOptions"
+            [(ngModel)]="geminiConfig.status"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Selecione o status"
+            class="w-full"
+          />
+          <small class="text-gray-500">Define se o agente está ativo ou desativado</small>
+        </div>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div class="flex gap-2 my-4">
+        <p-button
+          label="Salvar Configuração"
+          icon="pi pi-save"
+          [loading]="isSaving"
+          [disabled]="isSaving || isDeleting"
+          (click)="onSubmit()"
+        ></p-button>
+
+        @if (settingsExists) {
+          <p-button
+            label="Deletar"
+            icon="pi pi-trash"
+            severity="danger"
+            [loading]="isDeleting"
+            [disabled]="isSaving || isDeleting"
+            (click)="onDelete()"
+          ></p-button>
+        }
+      </div>
+    }
+  </p-card>
+
+  <!-- Card de Teste -->
+  @if (settingsExists && !loading) {
+    <p-card class="align-items-center mt-4" header="Testar Integração">
+      <p class="text-gray-600 mb-4">
+        Use este formulário para testar se a integração com o Gemini está funcionando corretamente.
+      </p>
+
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label for="testMessage" class="block mb-2 font-medium">Mensagem de Teste</label>
+          <textarea
+            id="testMessage"
+            pInputTextarea
+            [(ngModel)]="testMessage"
+            placeholder="Digite uma mensagem para testar o Gemini..."
+            rows="3"
+            class="w-full"
+          ></textarea>
+        </div>
+
+        <div>
+          <p-button
+            label="Enviar Teste"
+            icon="pi pi-send"
+            [loading]="isTesting"
+            [disabled]="isTesting || !testMessage"
+            (click)="onTestMessage()"
+          ></p-button>
+        </div>
+
+        @if (testResponse) {
+          <div class="mt-2">
+            <label class="block mb-2 font-medium">Resposta do Gemini:</label>
+            <div class="bg-gray-50 border border-gray-200 rounded p-4">
+              <p class="whitespace-pre-wrap">{{ testResponse }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+</div>
