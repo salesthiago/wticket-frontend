@@ -105,13 +105,19 @@ export class FormComponent {
         return
       }
     if (id) {
-      if (this.password !== this.confirmPassword) {
+      if (this.password && this.password !== this.confirmPassword) {
           this.messageService.add({
             severity: 'error',
             summary: 'Erro',
             detail: 'As senhas não conferem'
           });
         return
+      }
+      // Inclui a senha no objeto data apenas se foi preenchida
+      if (this.password) {
+        data.password = this.password;
+      } else {
+        delete data.password; // Remove password vazio para não sobrescrever
       }
       this.service.update(data, id).subscribe({
         next: () => {
@@ -159,6 +165,8 @@ export class FormComponent {
           });
         return
       }
+      // Inclui a senha no objeto data para criação
+      data.password = this.password;
       this.service.create(data).subscribe({
         next: () => {
           this.messageService.add({

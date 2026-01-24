@@ -1,18 +1,22 @@
-import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Route, Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
 import { WhatsappService } from '../services/whatsapp.service';
-import { Socket } from 'socket.io-client';
 import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { environment } from '../../../../../environments/enviroment';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { FormsModule } from '@angular/forms';
+import { ToastModule } from 'primeng/toast';
 
 interface Session {
   id: string;
@@ -36,7 +40,12 @@ interface Session {
     TooltipModule,
     HeaderComponent,
     SidebarComponent,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    DialogModule,
+    InputTextModule,
+    TextareaModule,
+    FormsModule,
+    ToastModule
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './list.component.html',
@@ -48,6 +57,16 @@ export class ListComponent implements OnInit, OnDestroy {
   errorMessage = '';
   socket: any;
   connectionStatus = 'disconnected';
+
+  // Modal de edição
+  editDialogVisible = false;
+  editLoading = false;
+  selectedSessionName = '';
+  sessionForm = {
+    initiationMessage: '',
+    initiationKeyword: '',
+    finalizationMessage: ''
+  };
 
   constructor(
     private whatsappService: WhatsappService,
@@ -374,5 +393,69 @@ export class ListComponent implements OnInit, OnDestroy {
     } else {
       this.loadSessions();
     }
+  }
+
+  openEditDialog(sessionName: string): void {
+    this.selectedSessionName = sessionName;
+    this.editLoading = true;
+    this.editDialogVisible = true;
+
+    this.whatsappService.getSession(sessionName).subscribe({
+      next: (session: any) => {
+        this.sessionForm = {
+          initiationMessage: session.initiationMessage || '',
+          initiationKeyword: session.initiationKeyword || 'PROSSEGUIR',
+          finalizationMessage: session.finalizationMessage || ''
+        };
+        this.editLoading = false;
+      },
+      error: (error) => {
+        console.error('Erro ao carregar sessão:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: 'Erro ao carregar dados da sessão'
+        });
+        this.editLoading = false;
+        this.editDialogVisible = false;
+      }
+    });
+  }
+
+  closeEditDialog(): void {
+    this.editDialogVisible = false;
+    this.selectedSessionName = '';
+    this.sessionForm = {
+      initiationMessage: '',
+      initiationKeyword: '',
+      finalizationMessage: ''
+    };
+  }
+
+  saveSession(): void {
+    if (!this.selectedSessionName) return;
+
+    this.editLoading = true;
+
+    this.whatsappService.updateSession(this.selectedSessionName, this.sessionForm).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: 'Sessão atualizada com sucesso'
+        });
+        this.editLoading = false;
+        this.closeEditDialog();
+      },
+      error: (error) => {
+        console.error('Erro ao atualizar sessão:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error.error?.error || 'Erro ao atualizar sessão'
+        });
+        this.editLoading = false;
+      }
+    });
   }
 }

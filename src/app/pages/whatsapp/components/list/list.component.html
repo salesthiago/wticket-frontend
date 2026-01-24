@@ -135,6 +135,10 @@
             </p-button>
             }
 
+            <p-button icon="pi pi-cog" severity="info" [text]="true" (onClick)="openEditDialog(session.name)"
+              pTooltip="Configurações" tooltipPosition="top">
+            </p-button>
+
             <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="deleteSession($event, session.name)"
               pTooltip="Excluir sessão" tooltipPosition="top">
             </p-button>
@@ -147,3 +151,80 @@
   </div>
 </div>
 <p-confirmdialog />
+<p-toast />
+
+<!-- Modal de Edição da Sessão -->
+<p-dialog
+  header="Configurações da Sessão"
+  [(visible)]="editDialogVisible"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [closable]="true"
+  (onHide)="closeEditDialog()">
+
+  @if (editLoading) {
+    <div class="text-center py-8">
+      <p-progressSpinner></p-progressSpinner>
+      <p class="mt-2 text-gray-600">Carregando...</p>
+    </div>
+  } @else {
+    <div class="space-y-4">
+      <div class="mb-4">
+        <label for="initiationKeyword" class="block text-sm font-medium text-gray-700 mb-1">
+          Palavra-chave de Iniciação
+        </label>
+        <input
+          id="initiationKeyword"
+          type="text"
+          pInputText
+          [(ngModel)]="sessionForm.initiationKeyword"
+          class="w-full"
+          placeholder="Ex: PROSSEGUIR" />
+        <small class="text-gray-500">Palavra que o usuário deve digitar para iniciar o atendimento</small>
+      </div>
+
+      <div class="mb-4">
+        <label for="initiationMessage" class="block text-sm font-medium text-gray-700 mb-1">
+          Mensagem de Iniciação
+        </label>
+        <textarea
+          id="initiationMessage"
+          pTextarea
+          [(ngModel)]="sessionForm.initiationMessage"
+          rows="4"
+          class="w-full"
+          placeholder="Mensagem de boas-vindas..."></textarea>
+        <small class="text-gray-500">Mensagem enviada quando o usuário inicia a conversa</small>
+      </div>
+
+      <div class="mb-4">
+        <label for="finalizationMessage" class="block text-sm font-medium text-gray-700 mb-1">
+          Mensagem de Finalização
+        </label>
+        <textarea
+          id="finalizationMessage"
+          pTextarea
+          [(ngModel)]="sessionForm.finalizationMessage"
+          rows="4"
+          class="w-full"
+          placeholder="Mensagem de encerramento..."></textarea>
+        <small class="text-gray-500">Mensagem enviada ao finalizar o atendimento</small>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-6">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeEditDialog()">
+      </p-button>
+      <p-button
+        label="Salvar"
+        severity="primary"
+        [loading]="editLoading"
+        (onClick)="saveSession()">
+      </p-button>
+    </div>
+  }
+</p-dialog>

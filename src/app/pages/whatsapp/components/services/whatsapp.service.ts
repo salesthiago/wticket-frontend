@@ -44,4 +44,12 @@ export class WhatsappService {
   getSyncStatus(sessionName: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/whatsapp/sync/status/${sessionName}`);
   }
+
+  getSession(sessionName: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/whatsapp/sessions/${sessionName}`);
+  }
+
+  updateSession(sessionName: string, data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/whatsapp/sessions/${sessionName}`, data);
+  }
 }
