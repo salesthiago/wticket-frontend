@@ -11,6 +11,17 @@
       <h4 class="contact-name">{{ name }}</h4>
       <span class="contact-number">{{ number }}</span>
     </div>
+    <div class="chat-session-selector">
+      <p-select
+        [options]="sessions"
+        [(ngModel)]="selectedSession"
+        (onChange)="onSessionChanged()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecione a sessão"
+        [style]="{ minWidth: '180px' }">
+      </p-select>
+    </div>
   </div>
 
   <div class="chat-content">

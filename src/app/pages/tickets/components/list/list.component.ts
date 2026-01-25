@@ -494,4 +494,23 @@ export class TicketsComponent implements OnInit, OnDestroy {
     console.log('sendingMessage', event)
     this.socket.emit('sendMessage', event)
   }
+
+  // Getter para sessões disponíveis para o chat (sem a opção "Todas")
+  get chatSessions() {
+    return this.sessions.filter(s => s.value !== '');
+  }
+
+  // Handler para mudança de sessão no chat
+  onChatSessionChange(newSession: string) {
+    if (this.selectedTicket && newSession) {
+      console.log('Alterando sessão de', this.selectedTicket.sessionName, 'para', newSession);
+      this.selectedTicket.sessionName = newSession;
+
+      // Recarregar mensagens com a nova sessão
+      this.socket.emit('rescueMessages', {
+        sessionName: newSession,
+        contactNumber: this.selectedTicket.contactNumber
+      });
+    }
+  }
 }

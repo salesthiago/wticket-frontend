@@ -1,10 +1,16 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewChecked, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewChecked, OnChanges, SimpleChanges, OnInit } from '@angular/core';
 import { TicketService } from '../services/ticket.service';
 import { AvatarModule } from 'primeng/avatar'
 import { TextareaModule } from 'primeng/textarea'
 import { DatePipe } from '@angular/common'
 import { ButtonModule } from 'primeng/button';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
+
+interface SessionOption {
+  label: string;
+  value: string;
+}
 
 interface ChatMessage {
   id: string;
@@ -25,19 +31,24 @@ interface ChatMessage {
     TextareaModule,
     ButtonModule,
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    SelectModule
   ],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements AfterViewChecked, OnChanges {
+export class ChatComponent implements AfterViewChecked, OnChanges, OnInit {
 
   @Input() name: string = '';
   @Input() session: string = '';
   @Input() number: string = '';
-  @Input() messages: ChatMessage[] = []
+  @Input() messages: ChatMessage[] = [];
+  @Input() sessions: SessionOption[] = [];
 
   @Output() onMessageSent = new EventEmitter<any>();
+  @Output() onSessionChange = new EventEmitter<string>();
+
+  selectedSession: string = '';
 
   @ViewChild('messagesContainer', { static: false }) messagesContainer!: ElementRef;
   @ViewChild('messageInput', { static: false }) messageInput!: ElementRef;
@@ -48,9 +59,22 @@ export class ChatComponent implements AfterViewChecked, OnChanges {
 
   constructor(private service: TicketService) { }
 
+  ngOnInit(): void {
+    this.selectedSession = this.session;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['messages'] && changes['messages'].currentValue) {
       this.shouldScrollToBottom = true;
+    }
+    if (changes['session'] && changes['session'].currentValue) {
+      this.selectedSession = changes['session'].currentValue;
+    }
+  }
+
+  onSessionChanged(): void {
+    if (this.selectedSession && this.selectedSession !== this.session) {
+      this.onSessionChange.emit(this.selectedSession);
     }
   }
 

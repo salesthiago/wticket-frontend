@@ -230,6 +230,7 @@
         <div class="row-span-5">
           <app-chat [messages]="selectedTicket.messages ?? []"
             (onMessageSent)="sendMessage($event)" [session]="selectedTicket.sessionName"
+            [sessions]="chatSessions" (onSessionChange)="onChatSessionChange($event)"
             [name]="selectedTicket.contactName" [number]="selectedTicket.contactNumber" />
         </div>
         <div class="grid grid-cols-2 gap-4">
