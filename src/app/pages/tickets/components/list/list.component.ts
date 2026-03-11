@@ -7,6 +7,7 @@ import { TagModule } from 'primeng/tag';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -14,12 +15,25 @@ import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
 import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
 import { TicketService } from '../services/ticket.service';
-import { Socket } from 'socket.io-client';
+import { ProductsService } from '../../../products/components/services/products.service';
 import { ChatComponent } from '../chat/chat.component';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { HeaderComponent } from 'src/app/layout/header/header.component';
+import { ToastModule } from 'primeng/toast';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { environment } from '../../../../../environments/enviroment';
+
+interface SaleItem {
+  product?: any;
+  productName?: string;
+  quantity: number;
+  unitPrice: number;
+  sold: boolean;
+  notes?: string;
+}
 
 interface Ticket {
   _id: string;
@@ -29,6 +43,8 @@ interface Ticket {
   subject: string;
   status: 'opened' | 'in_progress' | 'finished' | 'canceled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
+  category?: 'support' | 'sale';
+  saleItems?: SaleItem[];
   assignedTo?: any;
   tags: string[];
   lastMessage?: Date;
@@ -49,6 +65,7 @@ interface Ticket {
     CardModule,
     DialogModule,
     InputTextModule,
+    InputNumberModule,
     SelectModule,
     FormsModule,
     ReactiveFormsModule,
@@ -57,7 +74,11 @@ interface Ticket {
     TooltipModule,
     ChatComponent,
     ConfirmDialogModule,
-    HeaderComponent
+    ToastModule,
+    BreadcrumbModule,
+    SidebarComponent,
+    Tabs, TabList, Tab, TabPanels, TabPanel,
+    ToggleSwitchModule
   ],
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss']
@@ -69,7 +90,11 @@ export class TicketsComponent implements OnInit, OnDestroy {
   syncLoading = false;
   syncMessage = '';
 
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Tickets' }];
+
   // Filtros
+  categoryFilter: string = 'support';
   statusFilter: string = '';
   priorityFilter: string = '';
   sessionFilter: string = '';
@@ -77,9 +102,14 @@ export class TicketsComponent implements OnInit, OnDestroy {
   dialogStatus: boolean = false;
   dialogPriority: boolean = false;
   socket: any;
+
   // Dialog
   displayDialog = false;
   selectedTicket: Ticket | null = null;
+
+  // Sale items
+  sessionProductOptions: any[] = [];
+  saleItemsLoading = false;
 
   // Opções para filtros
   statusOptions = [
@@ -103,6 +133,7 @@ export class TicketsComponent implements OnInit, OnDestroy {
   constructor(
     private whatsappService: WhatsappService,
     private ticketService: TicketService,
+    private productsService: ProductsService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
@@ -141,9 +172,10 @@ export class TicketsComponent implements OnInit, OnDestroy {
   async loadTickets() {
     try {
       this.loading = true;
-      this.ticketService.getTickets({}).pipe().subscribe({
+      const params: any = {};
+      if (this.categoryFilter) params['category'] = this.categoryFilter;
+      this.ticketService.getTickets(params).pipe().subscribe({
         next: (resp: Ticket[]) => {
-          console.log('Tickets carregados:', resp);
           this.tickets = resp;
           this.loading = false;
         },
@@ -292,17 +324,83 @@ export class TicketsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.selectedTicket = ticket;
+    this.selectedTicket = { ...ticket, saleItems: ticket.saleItems ? [...ticket.saleItems] : [] };
     this.displayDialog = true;
     this.socket.emit('rescueMessages', {
       sessionName: ticket.sessionName,
       contactNumber: ticket.contactNumber
     });
+
+    if (ticket.category === 'sale') {
+      this.loadSessionProductOptions(ticket.sessionName);
+    }
+  }
+
+  loadSessionProductOptions(sessionName: string): void {
+    this.whatsappService.getSessionProducts(sessionName).subscribe({
+      next: (products: any) => {
+        this.sessionProductOptions = Array.isArray(products) ? products : (products?.products || []);
+      },
+      error: () => { this.sessionProductOptions = []; }
+    });
+  }
+
+  addSaleItem(): void {
+    if (!this.selectedTicket) return;
+    if (!this.selectedTicket.saleItems) this.selectedTicket.saleItems = [];
+    this.selectedTicket.saleItems.push({ quantity: 1, unitPrice: 0, sold: false });
+  }
+
+  removeSaleItem(index: number): void {
+    if (!this.selectedTicket?.saleItems) return;
+    this.selectedTicket.saleItems.splice(index, 1);
+  }
+
+  onSaleItemProductChange(item: SaleItem): void {
+    if (item.product) {
+      const found = this.sessionProductOptions.find((p: any) => p._id === item.product);
+      if (found) {
+        item.productName = found.name;
+        item.unitPrice = found.price || 0;
+      }
+    }
+  }
+
+  saveSaleItems(): void {
+    if (!this.selectedTicket) return;
+    this.saleItemsLoading = true;
+    this.ticketService.updateSaleItems(this.selectedTicket._id, {
+      saleItems: this.selectedTicket.saleItems
+    }).subscribe({
+      next: (resp: any) => {
+        this.saleItemsLoading = false;
+        if (this.selectedTicket) {
+          this.selectedTicket.saleItems = resp.saleItems || this.selectedTicket.saleItems;
+        }
+        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Itens de venda salvos!' });
+        this.loadTickets();
+      },
+      error: () => {
+        this.saleItemsLoading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar itens de venda' });
+      }
+    });
+  }
+
+  get saleTotal(): number {
+    if (!this.selectedTicket?.saleItems) return 0;
+    return this.selectedTicket.saleItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   }
 
   closeDialog() {
     this.displayDialog = false;
     this.selectedTicket = null;
+    this.sessionProductOptions = [];
+  }
+
+  onCategoryChange(category: string): void {
+    this.categoryFilter = category;
+    this.loadTickets();
   }
 
   get filteredTickets() {

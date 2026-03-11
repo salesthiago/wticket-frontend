@@ -3,7 +3,6 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { UsersService } from '../services/users.service';
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { Router } from '@angular/router';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -11,10 +10,11 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePipe } from '@angular/common';
 import { ConfirmDialog } from "primeng/confirmdialog";
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @Component({
   selector: 'app-list',
@@ -26,7 +26,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     CardModule,
     ButtonModule,
     TableModule,
-    HeaderComponent,
     SidebarComponent,
     IconFieldModule,
     InputIconModule,
@@ -34,13 +33,17 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     DatePipe,
     ConfirmDialog,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    BreadcrumbModule
   ]
 })
 export class ListComponent {
   public items: any = [];
   public loading: boolean = false;
   public search: string = '';
+
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Usuários' }];
 
   // Subject para controlar o debounce da busca
   private searchSubject = new Subject<string>();

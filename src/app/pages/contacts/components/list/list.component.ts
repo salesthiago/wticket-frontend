@@ -3,7 +3,6 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { ContactService } from '../services/contact.service';
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { Router } from '@angular/router';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -11,6 +10,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { DatePipe } from '@angular/common';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-list',
@@ -21,19 +22,22 @@ import { DatePipe } from '@angular/common';
     CardModule,
     ButtonModule,
     TableModule,
-    HeaderComponent,
     SidebarComponent,
     IconFieldModule,
     InputIconModule,
     InputTextModule,
     TagModule,
-    DatePipe
+    DatePipe,
+    BreadcrumbModule
 ]
 
 })
 export class ListComponent {
   public items: any = [];
   public loading: boolean = false
+
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Contatos' }];
 
   constructor(private service: ContactService, private router: Router) {
   }

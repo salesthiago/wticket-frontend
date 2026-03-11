@@ -1,0 +1,176 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card [header]="id ? 'Editar Cliente' : 'Novo Cliente'" class="align-items-center mb-4">
+
+    <!-- Dados Principais -->
+    <h3 class="text-base font-semibold mb-3 mt-1">Dados Principais</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div class="field">
+        <label for="name" class="block mb-2">Nome <span class="text-red-500">*</span></label>
+        <input
+          id="name"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.name"
+          placeholder="Nome completo"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="phone" class="block mb-2">Telefone <span class="text-red-500">*</span></label>
+        <input
+          id="phone"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.phone"
+          placeholder="Ex: 11999999999"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="email" class="block mb-2">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          pInputText
+          [(ngModel)]="customer.email"
+          placeholder="email@exemplo.com"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label class="block mb-2">Tipo de Documento</label>
+        <p-select
+          [options]="optionDocumentType"
+          [(ngModel)]="customer.documentType"
+          optionLabel="name"
+          optionValue="value"
+          placeholder="Selecione..."
+          [showClear]="true"
+          class="w-full"
+        />
+      </div>
+
+      @if (customer.documentType) {
+        <div class="field">
+          <label for="document" class="block mb-2">
+            {{ customer.documentType === 'cpf' ? 'CPF' : 'CNPJ' }}
+          </label>
+          <input
+            id="document"
+            type="text"
+            pInputText
+            [(ngModel)]="customer.document"
+            [placeholder]="customer.documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'"
+            class="w-full"
+          />
+        </div>
+      }
+
+    </div>
+
+    <!-- Endereço -->
+    <h3 class="text-base font-semibold mb-3 mt-6">Endereço</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div class="field md:col-span-2">
+        <label for="street" class="block mb-2">Rua / Logradouro</label>
+        <input
+          id="street"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.street"
+          placeholder="Nome da rua"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="number" class="block mb-2">Número</label>
+        <input
+          id="number"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.number"
+          placeholder="Ex: 123"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="complement" class="block mb-2">Complemento</label>
+        <input
+          id="complement"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.complement"
+          placeholder="Apto, sala..."
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="neighborhood" class="block mb-2">Bairro</label>
+        <input
+          id="neighborhood"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.neighborhood"
+          placeholder="Bairro"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="zipCode" class="block mb-2">CEP</label>
+        <input
+          id="zipCode"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.zipCode"
+          placeholder="00000-000"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field md:col-span-2">
+        <label for="city" class="block mb-2">Cidade</label>
+        <input
+          id="city"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.city"
+          placeholder="Cidade"
+          class="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="state" class="block mb-2">Estado (UF)</label>
+        <input
+          id="state"
+          type="text"
+          pInputText
+          [(ngModel)]="customer.address!.state"
+          placeholder="SP"
+          maxlength="2"
+          class="w-full"
+          style="text-transform: uppercase"
+        />
+      </div>
+
+    </div>
+
+    <div class="flex mt-6 gap-2">
+      <p-button label="Voltar" severity="secondary" [loading]="loading" (click)="onBack()"></p-button>
+      <p-button label="Salvar" [loading]="loading" (click)="onSubmit()"></p-button>
+    </div>
+
+  </p-card>
+</div>
+<p-toast />

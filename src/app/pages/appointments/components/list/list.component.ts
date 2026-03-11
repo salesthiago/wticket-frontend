@@ -4,7 +4,6 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { AppointmentsService } from '../services/appointments.service';
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { Router } from '@angular/router';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -12,11 +11,12 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePipe } from '@angular/common';
 import { ConfirmDialog } from "primeng/confirmdialog";
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { AppointmentModel, AppointmentStatusLabels, AppointmentStatusColors } from '../../appointment.interface';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @Component({
   selector: 'app-list',
@@ -29,7 +29,6 @@ import { AppointmentModel, AppointmentStatusLabels, AppointmentStatusColors } fr
     ButtonModule,
     TableModule,
     TagModule,
-    HeaderComponent,
     SidebarComponent,
     IconFieldModule,
     InputIconModule,
@@ -37,7 +36,8 @@ import { AppointmentModel, AppointmentStatusLabels, AppointmentStatusColors } fr
     DatePipe,
     ConfirmDialog,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    BreadcrumbModule
   ]
 })
 export class ListComponent {
@@ -46,6 +46,9 @@ export class ListComponent {
   public search: string = '';
   public totalRecords: number = 0;
   public rows: number = 10;
+
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Agendamentos' }];
   public first: number = 0;
 
   public statusLabels = AppointmentStatusLabels;

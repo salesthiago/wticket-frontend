@@ -53,6 +53,16 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/gemini/gemini.route').then(m => m.routes),
     canActivate: [authGuard]
   },
+  {
+    path: 'products',
+    loadChildren: () => import('./pages/products/products.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customers',
+    loadChildren: () => import('./pages/customers/customers.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

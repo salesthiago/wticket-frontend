@@ -7,16 +7,19 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
 import { WhatsappService } from '../services/whatsapp.service';
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { environment } from '../../../../../environments/enviroment';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { FormsModule } from '@angular/forms';
 import { ToastModule } from 'primeng/toast';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ProductsService } from '../../../products/components/services/products.service';
+import { SelectModule } from 'primeng/select';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
 interface Session {
   id: string;
@@ -38,14 +41,16 @@ interface Session {
     ProgressSpinnerModule,
     MessageModule,
     TooltipModule,
-    HeaderComponent,
     SidebarComponent,
     ConfirmDialogModule,
     DialogModule,
     InputTextModule,
     TextareaModule,
     FormsModule,
-    ToastModule
+    ToastModule,
+    BreadcrumbModule,
+    SelectModule,
+    Tabs, TabList, Tab, TabPanels, TabPanel
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './list.component.html',
@@ -54,6 +59,9 @@ interface Session {
 export class ListComponent implements OnInit, OnDestroy {
   sessions: Session[] = [];
   loading = true;
+
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Whatsapp' }, { label: 'Sessões' }];
   errorMessage = '';
   socket: any;
   connectionStatus = 'disconnected';
@@ -68,8 +76,15 @@ export class ListComponent implements OnInit, OnDestroy {
     finalizationMessage: ''
   };
 
+  // Produtos da sessão
+  sessionProducts: any[] = [];
+  allProducts: any[] = [];
+  selectedProductId: string = '';
+  productsLoading = false;
+
   constructor(
     private whatsappService: WhatsappService,
+    private productsService: ProductsService,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
     private router: Router
@@ -399,6 +414,8 @@ export class ListComponent implements OnInit, OnDestroy {
     this.selectedSessionName = sessionName;
     this.editLoading = true;
     this.editDialogVisible = true;
+    this.sessionProducts = [];
+    this.selectedProductId = '';
 
     this.whatsappService.getSession(sessionName).subscribe({
       next: (session: any) => {
@@ -420,6 +437,66 @@ export class ListComponent implements OnInit, OnDestroy {
         this.editDialogVisible = false;
       }
     });
+
+    this.loadSessionProducts(sessionName);
+    this.loadAllProducts();
+  }
+
+  loadSessionProducts(sessionName: string): void {
+    this.productsLoading = true;
+    this.whatsappService.getSessionProducts(sessionName).subscribe({
+      next: (products: any) => {
+        this.sessionProducts = Array.isArray(products) ? products : (products?.products || []);
+        this.productsLoading = false;
+      },
+      error: () => {
+        this.sessionProducts = [];
+        this.productsLoading = false;
+      }
+    });
+  }
+
+  loadAllProducts(): void {
+    this.productsService.findAll({ isActive: true }).subscribe({
+      next: (resp: any) => {
+        const list = Array.isArray(resp) ? resp : (resp?.products || resp?.data || []);
+        this.allProducts = list;
+      },
+      error: () => { this.allProducts = []; }
+    });
+  }
+
+  get availableProducts(): any[] {
+    const linkedIds = this.sessionProducts.map((p: any) => p._id || p.id);
+    return this.allProducts.filter((p: any) => !linkedIds.includes(p._id || p.id));
+  }
+
+  addProductToSession(): void {
+    if (!this.selectedProductId || !this.selectedSessionName) return;
+    this.productsLoading = true;
+    this.whatsappService.addSessionProduct(this.selectedSessionName, this.selectedProductId).subscribe({
+      next: () => {
+        this.selectedProductId = '';
+        this.loadSessionProducts(this.selectedSessionName);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao vincular produto' });
+        this.productsLoading = false;
+      }
+    });
+  }
+
+  removeProductFromSession(productId: string): void {
+    this.productsLoading = true;
+    this.whatsappService.removeSessionProduct(this.selectedSessionName, productId).subscribe({
+      next: () => {
+        this.loadSessionProducts(this.selectedSessionName);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover produto' });
+        this.productsLoading = false;
+      }
+    });
   }
 
   closeEditDialog(): void {
@@ -430,6 +507,9 @@ export class ListComponent implements OnInit, OnDestroy {
       initiationKeyword: '',
       finalizationMessage: ''
     };
+    this.sessionProducts = [];
+    this.allProducts = [];
+    this.selectedProductId = '';
   }
 
   saveSession(): void {

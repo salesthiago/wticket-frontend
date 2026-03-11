@@ -1,24 +1,60 @@
 <aside id="logo-sidebar"
   [class]="isDarkMode
-  ? 'fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-gray-950 sm:translate-x-0 border-gray-800'
-  : 'fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-gray-100 border-r border-gray-50 sm:translate-x-0'"
+  ? 'fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full bg-gray-950 border-r border-gray-800 sm:translate-x-0 flex flex-col'
+  : 'fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 flex flex-col'"
   aria-label="Sidebar">
-   <div [class]="isDarkMode
-   ? 'h-full px-3 pb-4 overflow-y-auto bg-gray-950'
-   : 'h-full px-3 pb-4 overflow-y-auto bg-gray-100'">
-      <ul class="space-y-2 font-medium">
-        @for (item of items; track $index) {
 
-          <li>
-            <a [href]="item.link" [class]="isDarkMode
-              ? 'flex items-center p-2 text-gray-200 rounded-lg hover:bg-gray-600 group'
-              : 'flex items-center p-2 rounded-lg text-gray-950 hover:bg-gray-400 group'">
-              <i [class]="item.icon" style="font-size: 1.5rem"></i>
-              <span class="ms-3"> {{ item.name }}</span>
+  <!-- Logo / Topo -->
+  <div [class]="isDarkMode
+    ? 'flex items-center gap-3 px-4 py-5 border-b border-gray-800'
+    : 'flex items-center gap-3 px-4 py-5 border-b border-gray-100'">
+    <img src="/assets/logo-navbar.png" class="h-8" alt="WTicket" />
+  </div>
+
+  <!-- Itens de navegação -->
+  <div class="flex-1 overflow-y-auto px-3 py-4">
+    <ul class="space-y-1 font-medium">
+      @for (menuItem of menuItems; track $index) {
+        <li>
+          @if (menuItem.panelModel) {
+            <p-panelMenu [model]="menuItem.panelModel"></p-panelMenu>
+          } @else {
+            <a
+              [routerLink]="menuItem.link"
+              routerLinkActive="active-nav-item"
+              [class]="isDarkMode
+                ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors'
+                : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors'">
+              <i [class]="menuItem.icon" style="font-size: 1.1rem; width: 1.25rem; text-align: center;"></i>
+              <span class="text-sm">{{ menuItem.name }}</span>
             </a>
-          </li>
-        }
+          }
+        </li>
+      }
+    </ul>
+  </div>
 
-      </ul>
-   </div>
+  <!-- Rodapé: perfil do usuário -->
+  <div [class]="isDarkMode
+    ? 'border-t border-gray-800 px-4 py-4'
+    : 'border-t border-gray-100 px-4 py-4'">
+    <div class="flex items-center gap-3 mb-3">
+      <div [class]="isDarkMode
+        ? 'w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'
+        : 'w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'">
+        {{ getAvatarLabel() }}
+      </div>
+      <span [class]="isDarkMode ? 'text-sm text-gray-200 truncate' : 'text-sm text-gray-700 truncate'">
+        {{ user?.name || 'Usuário' }}
+      </span>
+    </div>
+    <button
+      (click)="logout()"
+      [class]="isDarkMode
+        ? 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors text-sm'
+        : 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-red-500 transition-colors text-sm'">
+      <i class="pi pi-sign-out" style="font-size: 0.9rem;"></i>
+      <span>Sair</span>
+    </button>
+  </div>
 </aside>

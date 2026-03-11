@@ -39,4 +39,7 @@ export class TicketService {
     return this.http.get(`${this.apiUrl}/tickets/${id}`);
   }
 
+  updateSaleItems(id: string, data: { saleItems?: any[]; category?: string }): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/tickets/${id}/sale-items`, data);
+  }
 }

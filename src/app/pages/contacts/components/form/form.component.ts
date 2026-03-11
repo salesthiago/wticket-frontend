@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { ContactService } from '../services/contact.service';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -8,9 +8,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ContactModel } from '../../contact.interface';
 import { SelectModule } from "primeng/select";
 import { InputTextModule } from "primeng/inputtext"
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { InputMaskModule } from "primeng/inputmask";
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 @Component({
   selector: 'app-form',
   standalone: true,
@@ -23,12 +23,15 @@ import { InputMaskModule } from "primeng/inputmask";
     FormsModule,
     SelectModule,
     InputTextModule,
-    HeaderComponent,
     SidebarComponent,
-    InputMaskModule
+    InputMaskModule,
+    BreadcrumbModule
   ]
 })
 export class FormComponent {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Contatos', routerLink: '/contacts' }, { label: 'Formulário' }];
+
   public contact: ContactModel = {
     email: '',
     phone: '',
@@ -54,6 +57,15 @@ export class FormComponent {
       this.findById(id)
     }
   }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    this.breadcrumbItems = [
+      { label: 'Contatos', routerLink: '/contacts' },
+      { label: id ? 'Editar Contato' : 'Novo Contato' }
+    ];
+  }
+
   findById(id: string) {
     this.service.findById(id).subscribe({
       next: (resp: any) => {

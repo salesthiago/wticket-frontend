@@ -6,14 +6,14 @@ import { MessageModule } from 'primeng/message'
 
 import { ButtonModule  } from 'primeng/button'
 import { CardModule } from 'primeng/card'
-import { HeaderComponent } from 'src/app/layout/header/header.component';
 import { SidebarComponent } from 'src/app/layout/sidebar/sidebar.component';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { BotConfig } from 'src/app/components/interface/botConfig';
 import { AutoResponse } from 'src/app/components/interface/autoResponse';
 import { WhatsappService } from 'src/app/pages/whatsapp/components/services/whatsapp.service';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { ToggleSwitch } from "primeng/toggleswitch";
 import { InputMaskModule } from "primeng/inputmask";
 import { ActivatedRoute, Router } from '@angular/router';
@@ -29,8 +29,8 @@ import { Dialog } from "primeng/dialog";
     InputTextModule,
     ButtonModule,
     CardModule,
-    HeaderComponent,
     SidebarComponent,
+    BreadcrumbModule,
     SelectModule,
     ToggleSwitch,
     InputMaskModule,
@@ -43,6 +43,12 @@ providers: [MessageService],
   styleUrls: ['./form.component.scss']
 })
 export class BotConfigFormComponent implements OnInit, OnDestroy {
+
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [
+    { label: 'Bot Config', routerLink: '/bot-config/list' },
+    { label: 'Novo Bot' }
+  ];
 
   loading = false;
   errorMessage = '';
@@ -105,6 +111,10 @@ export class BotConfigFormComponent implements OnInit, OnDestroy {
     this.loadSessions()
     const id = this.route.snapshot.paramMap.get('id')
     if (id) {
+      this.breadcrumbItems = [
+        { label: 'Bot Config', routerLink: '/bot-config/list' },
+        { label: 'Editar Bot' }
+      ];
       this.findById(id)
     }
   }

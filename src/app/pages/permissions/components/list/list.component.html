@@ -1,6 +1,6 @@
-<app-header></app-header>
 <app-sidebar />
-<div class="p-4 sm:ml-64 pt-20">
+<div class="p-4 sm:ml-64 pt-4">
+    <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
     <p-card class="flex align-items-center mb-4">
       <p-table [value]="items" [loading]="loading" class="my-4">
         <ng-template #caption>

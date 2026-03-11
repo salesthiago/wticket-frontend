@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { AppointmentsService } from '../services/appointments.service';
 import { ContactService } from '../../../contacts/components/services/contact.service';
 import { UsersService } from '../../../users/components/services/users.service';
@@ -12,8 +12,8 @@ import { SelectModule } from "primeng/select";
 import { InputTextModule } from "primeng/inputtext";
 import { TextareaModule } from "primeng/textarea";
 import { DatePickerModule } from "primeng/datepicker";
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @Component({
   selector: 'app-form',
@@ -29,11 +29,14 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
     InputTextModule,
     TextareaModule,
     DatePickerModule,
-    HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
+    BreadcrumbModule
   ]
 })
 export class FormComponent {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Agendamentos', routerLink: '/appointments' }, { label: 'Novo Agendamento' }];
+
   public appointment: any = {
     contactId: '',
     phone: '',
@@ -79,6 +82,14 @@ export class FormComponent {
     }
     this.loadContacts();
     this.loadUsers();
+  }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    this.breadcrumbItems = [
+      { label: 'Agendamentos', routerLink: '/appointments' },
+      { label: id ? 'Editar Agendamento' : 'Novo Agendamento' }
+    ];
   }
 
   loadContacts() {

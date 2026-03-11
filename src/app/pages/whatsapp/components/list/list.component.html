@@ -1,6 +1,6 @@
-<app-header></app-header>
 <app-sidebar />
-<div class="p-4 sm:ml-64 pt-20">
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
   <div class="container mx-auto p-4">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">Sessões WhatsApp</h1>
@@ -158,7 +158,7 @@
   header="Configurações da Sessão"
   [(visible)]="editDialogVisible"
   [modal]="true"
-  [style]="{ width: '500px' }"
+  [style]="{ width: '600px' }"
   [closable]="true"
   (onHide)="closeEditDialog()">
 
@@ -168,63 +168,123 @@
       <p class="mt-2 text-gray-600">Carregando...</p>
     </div>
   } @else {
-    <div class="space-y-4">
-      <div class="mb-4">
-        <label for="initiationKeyword" class="block text-sm font-medium text-gray-700 mb-1">
-          Palavra-chave de Iniciação
-        </label>
-        <input
-          id="initiationKeyword"
-          type="text"
-          pInputText
-          [(ngModel)]="sessionForm.initiationKeyword"
-          class="w-full"
-          placeholder="Ex: PROSSEGUIR" />
-        <small class="text-gray-500">Palavra que o usuário deve digitar para iniciar o atendimento</small>
-      </div>
+    <p-tabs value="config">
+      <p-tablist>
+        <p-tab value="config">Configurações</p-tab>
+        <p-tab value="products">Produtos</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <!-- Tab: Configurações -->
+        <p-tabpanel value="config">
+          <div class="space-y-4 pt-2">
+            <div class="mb-4">
+              <label for="initiationKeyword" class="block text-sm font-medium text-gray-700 mb-1">
+                Palavra-chave de Iniciação
+              </label>
+              <input
+                id="initiationKeyword"
+                type="text"
+                pInputText
+                [(ngModel)]="sessionForm.initiationKeyword"
+                class="w-full"
+                placeholder="Ex: PROSSEGUIR" />
+              <small class="text-gray-500">Palavra que o usuário deve digitar para iniciar o atendimento</small>
+            </div>
 
-      <div class="mb-4">
-        <label for="initiationMessage" class="block text-sm font-medium text-gray-700 mb-1">
-          Mensagem de Iniciação
-        </label>
-        <textarea
-          id="initiationMessage"
-          pTextarea
-          [(ngModel)]="sessionForm.initiationMessage"
-          rows="4"
-          class="w-full"
-          placeholder="Mensagem de boas-vindas..."></textarea>
-        <small class="text-gray-500">Mensagem enviada quando o usuário inicia a conversa</small>
-      </div>
+            <div class="mb-4">
+              <label for="initiationMessage" class="block text-sm font-medium text-gray-700 mb-1">
+                Mensagem de Iniciação
+              </label>
+              <textarea
+                id="initiationMessage"
+                pTextarea
+                [(ngModel)]="sessionForm.initiationMessage"
+                rows="4"
+                class="w-full"
+                placeholder="Mensagem de boas-vindas..."></textarea>
+              <small class="text-gray-500">Mensagem enviada quando o usuário inicia a conversa</small>
+            </div>
 
-      <div class="mb-4">
-        <label for="finalizationMessage" class="block text-sm font-medium text-gray-700 mb-1">
-          Mensagem de Finalização
-        </label>
-        <textarea
-          id="finalizationMessage"
-          pTextarea
-          [(ngModel)]="sessionForm.finalizationMessage"
-          rows="4"
-          class="w-full"
-          placeholder="Mensagem de encerramento..."></textarea>
-        <small class="text-gray-500">Mensagem enviada ao finalizar o atendimento</small>
-      </div>
-    </div>
+            <div class="mb-4">
+              <label for="finalizationMessage" class="block text-sm font-medium text-gray-700 mb-1">
+                Mensagem de Finalização
+              </label>
+              <textarea
+                id="finalizationMessage"
+                pTextarea
+                [(ngModel)]="sessionForm.finalizationMessage"
+                rows="4"
+                class="w-full"
+                placeholder="Mensagem de encerramento..."></textarea>
+              <small class="text-gray-500">Mensagem enviada ao finalizar o atendimento</small>
+            </div>
+          </div>
 
-    <div class="flex justify-end gap-2 mt-6">
-      <p-button
-        label="Cancelar"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="closeEditDialog()">
-      </p-button>
-      <p-button
-        label="Salvar"
-        severity="primary"
-        [loading]="editLoading"
-        (onClick)="saveSession()">
-      </p-button>
-    </div>
+          <div class="flex justify-end gap-2 mt-4">
+            <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="closeEditDialog()"></p-button>
+            <p-button label="Salvar" severity="primary" (onClick)="saveSession()"></p-button>
+          </div>
+        </p-tabpanel>
+
+        <!-- Tab: Produtos -->
+        <p-tabpanel value="products">
+          <div class="pt-2">
+            <!-- Adicionar produto -->
+            <div class="flex gap-2 mb-4">
+              <p-select
+                [(ngModel)]="selectedProductId"
+                [options]="availableProducts"
+                optionLabel="name"
+                optionValue="_id"
+                placeholder="Selecionar produto..."
+                class="flex-1"
+                [filter]="true"
+                filterBy="name">
+              </p-select>
+              <p-button
+                icon="pi pi-plus"
+                label="Vincular"
+                severity="primary"
+                [disabled]="!selectedProductId"
+                [loading]="productsLoading"
+                (onClick)="addProductToSession()">
+              </p-button>
+            </div>
+
+            <!-- Lista de produtos vinculados -->
+            @if (productsLoading && sessionProducts.length === 0) {
+              <div class="text-center py-4">
+                <p-progressSpinner [style]="{ width: '30px', height: '30px' }"></p-progressSpinner>
+              </div>
+            } @else if (sessionProducts.length === 0) {
+              <div class="text-center py-6 text-gray-500">
+                <i class="pi pi-box text-3xl mb-2 block"></i>
+                <p>Nenhum produto vinculado a esta sessão</p>
+              </div>
+            } @else {
+              <div class="space-y-2">
+                @for (product of sessionProducts; track $index) {
+                  <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                    <div>
+                      <div class="font-medium">{{ product.name }}</div>
+                      <div class="text-sm text-gray-500">SKU: {{ product.sku }} | R$ {{ product.price | number:'1.2-2' }}</div>
+                    </div>
+                    <p-button
+                      icon="pi pi-times"
+                      severity="danger"
+                      [text]="true"
+                      [rounded]="true"
+                      pTooltip="Remover"
+                      tooltipPosition="top"
+                      (onClick)="removeProductFromSession(product._id)">
+                    </p-button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
   }
 </p-dialog>

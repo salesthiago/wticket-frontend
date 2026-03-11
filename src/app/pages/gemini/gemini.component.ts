@@ -4,13 +4,13 @@ import { GeminiService } from './services/gemini.service';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { HeaderComponent } from 'src/app/layout/header/header.component';
 import { SidebarComponent } from 'src/app/layout/sidebar/sidebar.component';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { TextareaModule } from 'primeng/textarea';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @Component({
   selector: 'app-gemini-config',
@@ -22,16 +22,18 @@ import { TextareaModule } from 'primeng/textarea';
     TextareaModule,
     ButtonModule,
     CardModule,
-    HeaderComponent,
     SidebarComponent,
     SelectModule,
-    ToastModule
+    ToastModule,
+    BreadcrumbModule
   ],
   providers: [MessageService],
   templateUrl: './gemini.component.html',
   styleUrls: ['./gemini.component.scss']
 })
 export class GeminiConfigComponent implements OnInit {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Whatsapp' }, { label: 'Gemini' }];
   loading = false;
   isSaving = false;
   isDeleting = false;

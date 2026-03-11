@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { UsersService } from '../services/users.service';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -8,9 +8,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UserModel } from '../../user.interface';
 import { SelectModule } from "primeng/select";
 import { InputTextModule } from "primeng/inputtext"
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
-import { PasswordModule } from 'primeng/password'
+import { PasswordModule } from 'primeng/password';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 @Component({
   selector: 'app-form',
   standalone: true,
@@ -23,12 +23,15 @@ import { PasswordModule } from 'primeng/password'
     FormsModule,
     SelectModule,
     InputTextModule,
-    HeaderComponent,
     SidebarComponent,
-    PasswordModule
+    PasswordModule,
+    BreadcrumbModule
 ]
 })
 export class FormComponent {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Usuários', routerLink: '/users' }, { label: 'Novo Usuário' }];
+
   public user: UserModel = {
     id: '',
     email: '',
@@ -60,6 +63,15 @@ export class FormComponent {
       this.findById(id)
     }
   }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    this.breadcrumbItems = [
+      { label: 'Usuários', routerLink: '/users' },
+      { label: id ? 'Editar Usuário' : 'Novo Usuário' }
+    ];
+  }
+
   findById(id: string) {
     this.service.findById(id).subscribe({
         next: (resp: any) => {

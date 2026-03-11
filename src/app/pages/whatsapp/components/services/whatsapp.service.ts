@@ -52,4 +52,16 @@ export class WhatsappService {
   updateSession(sessionName: string, data: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/whatsapp/sessions/${sessionName}`, data);
   }
+
+  getSessionProducts(sessionName: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/whatsapp/sessions/${sessionName}/products`);
+  }
+
+  addSessionProduct(sessionName: string, productId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/whatsapp/sessions/${sessionName}/products`, { productId });
+  }
+
+  removeSessionProduct(sessionName: string, productId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/whatsapp/sessions/${sessionName}/products/${productId}`);
+  }
 }

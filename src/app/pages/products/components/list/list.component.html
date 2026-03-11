@@ -1,0 +1,78 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card class="flex align-items-center mb-4">
+    <p-table
+      [value]="items"
+      [loading]="loading"
+      class="my-4"
+      [rows]="10"
+      [paginator]="true"
+      [globalFilterFields]="['name', 'sku', 'ncmCode']"
+      [tableStyle]="{ 'min-width': '75rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate=" {first} de {last} "
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <p-button icon="pi pi-plus" label="Adicionar Produto" (click)="add()"></p-button>
+          <div class="flex items-center gap-2">
+            <p-iconfield iconPosition="left">
+              <p-inputicon>
+                <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input pInputText type="text" placeholder="Pesquisar por nome ou SKU..."
+                [(ngModel)]="search" (input)="onSearch()" class="w-64" />
+            </p-iconfield>
+            @if (search) {
+              <p-button icon="pi pi-times" severity="secondary" (click)="clearSearch()"></p-button>
+            }
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">Nenhum produto encontrado.</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>Nome</th>
+          <th>SKU</th>
+          <th>NCM</th>
+          <th>Preço</th>
+          <th>Estoque</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-product>
+        <tr>
+          <td>{{ product.name }}</td>
+          <td><span class="font-mono text-sm">{{ product.sku }}</span></td>
+          <td>{{ product.ncmCode || '—' }}</td>
+          <td>{{ product.price | currency: 'BRL' }}</td>
+          <td>{{ product.stock }}</td>
+          <td>
+            <p-tag
+              [value]="product.isActive ? 'Ativo' : 'Inativo'"
+              [severity]="product.isActive ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td>
+            <p-button icon="pi pi-pencil" (onClick)="edit(product._id)" severity="primary" />
+            <p-button icon="pi pi-trash" (onClick)="confirmDelete(product._id)" severity="danger" class="px-2" />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-confirmDialog />
+<p-toast />

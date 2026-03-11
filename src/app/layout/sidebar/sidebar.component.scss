@@ -1,0 +1,30 @@
+.active-nav-item {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+
+  i {
+    color: #ffffff !important;
+  }
+
+  &:hover {
+    background-color: #15803d !important;
+  }
+}
+
+// Destaque no item ativo dentro do PanelMenu
+:host ::ng-deep {
+  .p-panelmenu-item-link.p-panelmenu-item-link-active,
+  .p-panelmenu .p-panelmenu-item > .p-panelmenu-item-content .p-panelmenu-item-link.p-menuitem-link-active {
+    background-color: #16a34a !important;
+    color: #ffffff !important;
+
+    .p-menuitem-icon,
+    .p-menuitem-text {
+      color: #ffffff !important;
+    }
+  }
+
+  .p-panelmenu .p-panelmenu-item-link:not(.p-disabled):hover {
+    background-color: #f0fdf4;
+  }
+}

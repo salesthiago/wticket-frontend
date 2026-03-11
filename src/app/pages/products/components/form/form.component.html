@@ -1,0 +1,191 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  <p-card [header]="id ? 'Editar Produto' : 'Novo Produto'">
+    <p-tabs [value]="activeTab">
+      <p-tablist>
+        <p-tab value="cadastro">
+          <i class="pi pi-box mr-2"></i>Cadastro
+        </p-tab>
+        <p-tab value="imagens" [disabled]="!id">
+          <i class="pi pi-images mr-2"></i>Imagens
+          @if (images.length > 0) {
+            <span class="ml-2 bg-green-500 text-white text-xs rounded-full px-2 py-0.5">{{ images.length }}</span>
+          }
+        </p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+
+        <!-- TAB: CADASTRO -->
+        <p-tabpanel value="cadastro">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+
+            <div class="field">
+              <label for="name" class="block mb-2">Nome <span class="text-red-500">*</span></label>
+              <input id="name" type="text" pInputText [(ngModel)]="product.name"
+                placeholder="Nome do produto" class="w-full" />
+            </div>
+
+            <div class="field">
+              <label for="sku" class="block mb-2">SKU <span class="text-red-500">*</span></label>
+              <input id="sku" type="text" pInputText [(ngModel)]="product.sku"
+                placeholder="Ex: PROD-001" class="w-full" style="text-transform: uppercase" />
+            </div>
+
+            <div class="field">
+              <label for="ncmCode" class="block mb-2">Código NCM</label>
+              <input id="ncmCode" type="text" pInputText [(ngModel)]="product.ncmCode"
+                placeholder="Ex: 8471.30.19" class="w-full" />
+            </div>
+
+            <div class="field">
+              <label class="block mb-2">Status</label>
+              <p-select [options]="optionStatus" [(ngModel)]="product.isActive"
+                optionLabel="name" optionValue="value" class="w-full" />
+            </div>
+
+            <div class="field">
+              <label for="price" class="block mb-2">Preço <span class="text-red-500">*</span></label>
+              <p-inputnumber id="price" [(ngModel)]="product.price"
+                mode="currency" currency="BRL" locale="pt-BR" class="w-full" />
+            </div>
+
+            <div class="field">
+              <label class="block mb-2">Tipo de Produto</label>
+              <div class="flex items-center gap-3 mt-1">
+                <p-toggleSwitch [(ngModel)]="product.isVirtual" />
+                <span class="text-sm">{{ product.isVirtual ? 'Virtual (digital)' : 'Físico' }}</span>
+              </div>
+            </div>
+
+            @if (!product.isVirtual) {
+              <div class="field">
+                <label class="block mb-2">Controlar Estoque</label>
+                <div class="flex items-center gap-3 mt-1">
+                  <p-toggleSwitch [(ngModel)]="product.trackStock" />
+                  <span class="text-sm">{{ product.trackStock ? 'Ativo' : 'Sem controle' }}</span>
+                </div>
+              </div>
+
+              @if (product.trackStock) {
+                <div class="field">
+                  <label for="stock" class="block mb-2">Quantidade em Estoque</label>
+                  <p-inputnumber id="stock" [(ngModel)]="product.stock" [min]="0" class="w-full" />
+                </div>
+              }
+            }
+
+            @if (product.isVirtual) {
+              <div class="field md:col-span-2">
+                <label for="downloadUrl" class="block mb-2">
+                  Link do Produto Digital <span class="text-red-500">*</span>
+                </label>
+                <input id="downloadUrl" type="text" pInputText [(ngModel)]="product.downloadUrl"
+                  placeholder="https://..." class="w-full" />
+                <small class="text-gray-500">URL para download ou acesso ao produto digital.</small>
+              </div>
+            }
+
+          </div>
+
+          <div class="field mt-4">
+            <label for="description" class="block mb-2">Descrição</label>
+            <textarea id="description" pTextarea [(ngModel)]="product.description"
+              placeholder="Descrição detalhada do produto..." rows="4" class="w-full"></textarea>
+          </div>
+
+          <div class="flex mt-4 gap-2">
+            <p-button label="Voltar" severity="secondary" [loading]="loading" (click)="onBack()" />
+            <p-button label="Salvar" [loading]="loading" (click)="onSubmit()" />
+          </div>
+        </p-tabpanel>
+
+        <!-- TAB: IMAGENS -->
+        <p-tabpanel value="imagens">
+          @if (id) {
+            <div class="pt-2">
+
+              <!-- Barra de ações -->
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-sm text-gray-500">
+                  {{ images.length }} imagem(ns) cadastrada(s)
+                </span>
+                <label for="imageUpload"
+                  class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+                  [class.opacity-50]="uploadingImage"
+                  [class.cursor-not-allowed]="uploadingImage">
+                  <i class="pi" [class.pi-upload]="!uploadingImage" [class.pi-spin]="uploadingImage" [class.pi-spinner]="uploadingImage"></i>
+                  {{ uploadingImage ? 'Enviando...' : 'Adicionar Imagem' }}
+                  <input id="imageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                    class="hidden" (change)="onFileSelected($event)" [disabled]="uploadingImage" />
+                </label>
+              </div>
+              <small class="block text-gray-400 mb-4">Formatos aceitos: JPEG, PNG, WEBP, GIF · Tamanho máximo: 5MB</small>
+
+              <!-- Grid de imagens -->
+              @if (images.length > 0) {
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  @for (img of images; track img._id) {
+                    <div class="relative group rounded-xl overflow-hidden border-2 shadow-sm transition-all"
+                      [class.border-green-500]="isMainImage(img)"
+                      [class.border-gray-200]="!isMainImage(img)">
+
+                      <img [src]="img.url" [alt]="img.altText || img.filename || 'Imagem'"
+                        class="w-full h-40 object-cover" />
+
+                      <!-- Badge principal -->
+                      @if (isMainImage(img)) {
+                        <div class="absolute top-2 left-2 flex items-center gap-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full shadow">
+                          <i class="pi pi-star-fill text-xs"></i> Principal
+                        </div>
+                      }
+
+                      <!-- Overlay com ações -->
+                      <div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                        @if (!isMainImage(img)) {
+                          <p-button
+                            icon="pi pi-star"
+                            label="Definir como principal"
+                            size="small"
+                            severity="success"
+                            [text]="true"
+                            styleClass="!text-white !border-white/40 w-full justify-center text-xs"
+                            (onClick)="setMainImage(img._id!)" />
+                        }
+                        <p-button
+                          icon="pi pi-trash"
+                          label="Remover"
+                          size="small"
+                          severity="danger"
+                          [text]="true"
+                          styleClass="!text-white !border-white/40 w-full justify-center text-xs"
+                          (onClick)="confirmDeleteImage($event, img._id!)" />
+                      </div>
+
+                      <!-- Footer com nome do arquivo -->
+                      <div class="bg-white/90 px-2 py-1 text-xs text-gray-600 truncate border-t border-gray-100">
+                        {{ img.filename || 'imagem' }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="flex flex-col items-center justify-center py-16 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                  <i class="pi pi-image text-5xl mb-3"></i>
+                  <p class="text-base font-medium mb-1">Nenhuma imagem cadastrada</p>
+                  <p class="text-sm">Clique em "Adicionar Imagem" para enviar a primeira.</p>
+                </div>
+              }
+
+            </div>
+          }
+        </p-tabpanel>
+
+      </p-tabpanels>
+    </p-tabs>
+  </p-card>
+</div>
+<p-toast />
+<p-confirmdialog />

@@ -2,13 +2,13 @@ import { Component, OnInit, inject, ChangeDetectorRef, OnDestroy } from '@angula
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
-import { HeaderComponent } from "../../layout/header/header.component";
 import { SidebarComponent } from "../../layout/sidebar/sidebar.component";
 import { DashboardService } from './services/dashboard.service';
 import { CommonModule } from '@angular/common';
 import { SkeletonModule } from 'primeng/skeleton';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,14 +20,16 @@ import { ToastModule } from 'primeng/toast';
     CardModule,
     ButtonModule,
     ChartModule,
-    HeaderComponent,
     SidebarComponent,
     SkeletonModule,
-    ToastModule
+    ToastModule,
+    BreadcrumbModule
   ],
   providers: [MessageService]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Dashboard' }];
   private service = inject(DashboardService);
   private cd = inject(ChangeDetectorRef);
   private messageService = inject(MessageService);

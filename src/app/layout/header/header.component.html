@@ -1,31 +1,14 @@
 <nav [class]="dark
-  ? 'fixed top-0 z-50 w-full bg-gray-950 border-b border-gray-900'
-  : 'fixed top-0 z-50 w-full bg-blue-950 border-b border-gray-50'">
-  <div class="px-3 py-3 lg:px-5 lg:pl-3">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center justify-start rtl:justify-end">
-        <a href="https://wticket.com.br" class="flex ms-2 md:me-24">
-          <img src="/assets/logo-navbar.png" class="h-8 me-3" alt="w-ticket" />
-        </a>
-      </div>
-      <div class="flex items-center">
-        <p-menubar [model]="items">
-          <ng-template #end>
-            <div class="flex items-center gap-2">
-              @if (dark) {
-              <i class="pi pi-moon text-blue-400"></i>
-              } @else {
-              <i class="pi pi-sun text-yellow-500"></i>
-              }
-              <p-toggleswitch [(ngModel)]="dark" (onChange)="toggleTheme()" class="w-12"></p-toggleswitch>
-            </div>
-          </ng-template>
-        </p-menubar>
-        <div class="flex items-center gap-4">
-
-
-        </div>
-      </div>
+  ? 'fixed top-0 z-50 left-0 sm:left-64 right-0 bg-gray-950 border-b border-gray-900'
+  : 'fixed top-0 z-50 left-0 sm:left-64 right-0 bg-white border-b border-gray-200'">
+  <div class="px-4 py-3">
+    <div class="flex items-center justify-end gap-3">
+      @if (dark) {
+        <i class="pi pi-moon text-blue-400 text-lg"></i>
+      } @else {
+        <i class="pi pi-sun text-yellow-500 text-lg"></i>
+      }
+      <p-toggleswitch [(ngModel)]="dark" (onChange)="toggleTheme()" class="w-12"></p-toggleswitch>
     </div>
   </div>
 </nav>

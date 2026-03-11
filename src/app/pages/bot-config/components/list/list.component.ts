@@ -6,10 +6,11 @@ import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
-import { HeaderComponent } from '../../../../layout/header/header.component';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { BotConfigService } from '../services/bot-config.service';
 import { BotConfig } from 'src/app/components/interface/botConfig';
 import { TableModule } from "primeng/table";
@@ -25,9 +26,10 @@ import { TableModule } from "primeng/table";
     ProgressSpinnerModule,
     MessageModule,
     TooltipModule,
-    HeaderComponent,
     SidebarComponent,
     ConfirmDialogModule,
+    ToastModule,
+    BreadcrumbModule,
     TableModule
 ],
   providers: [ConfirmationService, MessageService],
@@ -35,6 +37,9 @@ import { TableModule } from "primeng/table";
   styleUrls: ['./list.component.scss']
 })
 export class ListComponent implements OnInit, OnDestroy {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Bot Config' }];
+
   items: any = [];
   loading = true;
   errorMessage = '';

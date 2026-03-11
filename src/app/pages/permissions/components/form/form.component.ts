@@ -1,16 +1,16 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
 import { PermissionService } from '../services/permission.service';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SelectModule } from "primeng/select";
-import { InputTextModule } from "primeng/inputtext"
-import { HeaderComponent } from '../../../../layout/header/header.component';
+import { InputTextModule } from "primeng/inputtext";
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
-import { PasswordModule } from 'primeng/password'
+import { PasswordModule } from 'primeng/password';
 import { PermissionModel } from '../../permission.interface';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 @Component({
   selector: 'app-form',
   standalone: true,
@@ -23,12 +23,15 @@ import { PermissionModel } from '../../permission.interface';
     FormsModule,
     SelectModule,
     InputTextModule,
-    HeaderComponent,
     SidebarComponent,
-    PasswordModule
+    PasswordModule,
+    BreadcrumbModule
 ]
 })
 export class FormComponent {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [{ label: 'Permissões', routerLink: '/permissions' }, { label: 'Nova Permissão' }];
+
   public permission: PermissionModel = {
     _id: null,
     name: '',
@@ -58,6 +61,15 @@ export class FormComponent {
       this.findById(id)
     }
   }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    this.breadcrumbItems = [
+      { label: 'Permissões', routerLink: '/permissions' },
+      { label: id ? 'Editar Permissão' : 'Nova Permissão' }
+    ];
+  }
+
   findById(id: string) {
     this.service.findById(id).subscribe({
         next: (resp: any) => {
