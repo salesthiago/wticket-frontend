@@ -63,6 +63,16 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/customers/customers.route').then(m => m.routes),
     canActivate: [authGuard]
   },
+  {
+    path: 'ai-agents',
+    loadChildren: () => import('./pages/ai-agents/ai-agents.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ai-providers',
+    loadChildren: () => import('./pages/ai-providers/ai-providers.route').then(m => m.routes),
+    canActivate: [authGuard]
+  },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }
 ];

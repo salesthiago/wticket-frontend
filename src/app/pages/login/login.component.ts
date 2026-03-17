@@ -33,6 +33,7 @@ export class LoginComponent {
   };
 
   loading = false;
+  showPassword = false;
 
   constructor(
     private authService: AuthService,

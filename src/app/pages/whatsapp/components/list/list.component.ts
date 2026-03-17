@@ -18,6 +18,8 @@ import { FormsModule } from '@angular/forms';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ProductsService } from '../../../products/components/services/products.service';
+import { AiAgentService } from '../../../ai-agents/services/ai-agent.service';
+import { AiAgent } from '../../../ai-agents/ai-agent.interface';
 import { SelectModule } from 'primeng/select';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
@@ -82,9 +84,16 @@ export class ListComponent implements OnInit, OnDestroy {
   selectedProductId: string = '';
   productsLoading = false;
 
+  // Agente IA da sessão
+  sessionAiAgentId: string | null = null;
+  availableAgents: AiAgent[] = [];
+  agentOptions: { label: string; value: string | null }[] = [];
+  aiAgentLoading = false;
+
   constructor(
     private whatsappService: WhatsappService,
     private productsService: ProductsService,
+    private aiAgentService: AiAgentService,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
     private router: Router
@@ -416,6 +425,7 @@ export class ListComponent implements OnInit, OnDestroy {
     this.editDialogVisible = true;
     this.sessionProducts = [];
     this.selectedProductId = '';
+    this.sessionAiAgentId = null;
 
     this.whatsappService.getSession(sessionName).subscribe({
       next: (session: any) => {
@@ -424,6 +434,8 @@ export class ListComponent implements OnInit, OnDestroy {
           initiationKeyword: session.initiationKeyword || 'PROSSEGUIR',
           finalizationMessage: session.finalizationMessage || ''
         };
+        // Carrega agente IA vinculado (pode ser objeto populado ou só o ID)
+        this.sessionAiAgentId = session.aiAgentId?._id || session.aiAgentId || null;
         this.editLoading = false;
       },
       error: (error) => {
@@ -440,6 +452,7 @@ export class ListComponent implements OnInit, OnDestroy {
 
     this.loadSessionProducts(sessionName);
     this.loadAllProducts();
+    this.loadAvailableAgents();
   }
 
   loadSessionProducts(sessionName: string): void {
@@ -499,6 +512,49 @@ export class ListComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadAvailableAgents(): void {
+    this.aiAgentLoading = true;
+    this.aiAgentService.list(undefined, 'ativo').subscribe({
+      next: (agents) => {
+        this.availableAgents = agents.filter(a => a.tipo === 'atendimento' || a.tipo === 'vendas');
+        this.agentOptions = [
+          { label: '— Nenhum agente IA —', value: null },
+          ...this.availableAgents.map(a => ({
+            label: `${a.nome} (${a.tipo})`,
+            value: a._id!
+          }))
+        ];
+        this.aiAgentLoading = false;
+      },
+      error: () => {
+        this.agentOptions = [{ label: '— Nenhum agente IA —', value: null }];
+        this.aiAgentLoading = false;
+      }
+    });
+  }
+
+  saveAiAgent(): void {
+    if (!this.selectedSessionName) return;
+    this.aiAgentLoading = true;
+
+    this.whatsappService.linkAiAgent(this.selectedSessionName, this.sessionAiAgentId).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: this.sessionAiAgentId
+            ? 'Agente IA vinculado com sucesso'
+            : 'Agente IA desvinculado'
+        });
+        this.aiAgentLoading = false;
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao vincular agente IA' });
+        this.aiAgentLoading = false;
+      }
+    });
+  }
+
   closeEditDialog(): void {
     this.editDialogVisible = false;
     this.selectedSessionName = '';
@@ -510,6 +566,8 @@ export class ListComponent implements OnInit, OnDestroy {
     this.sessionProducts = [];
     this.allProducts = [];
     this.selectedProductId = '';
+    this.sessionAiAgentId = null;
+    this.availableAgents = [];
   }
 
   saveSession(): void {

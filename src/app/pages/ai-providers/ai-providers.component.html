@@ -1,0 +1,191 @@
+<p-toast />
+<app-sidebar />
+
+<div class="ml-[280px] p-6 min-h-screen bg-surface-50 dark:bg-surface-900">
+  <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" styleClass="mb-4" />
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-surface-800 dark:text-surface-100">Configurar Provedores de IA</h1>
+    <p class="text-sm text-surface-500 dark:text-surface-400 mt-1">
+      Conecte suas chaves de API para usar os agentes de inteligência artificial.
+      O sistema usará o primeiro provedor ativo na ordem: OpenAI → Claude → Gemini.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    @for (card of providers; track card.key) {
+      <div class="bg-white dark:bg-surface-800 rounded-2xl border-2 shadow-sm flex flex-col transition-all"
+        [class]="card.configured && card.config.status === 'enabled'
+          ? 'border-green-300 dark:border-green-700'
+          : card.configured
+            ? 'border-surface-300 dark:border-surface-600'
+            : 'border-surface-200 dark:border-surface-700'"
+      >
+        <!-- Header do card -->
+        <div class="p-5 border-b border-surface-100 dark:border-surface-700">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <!-- Ícone / Letra do provider -->
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shrink-0"
+                [style.background]="card.color"
+              >
+                @if (card.key === 'gemini')  { G }
+                @if (card.key === 'openai')  { <i class="pi pi-star-fill text-xs"></i> }
+                @if (card.key === 'claude')  { C }
+              </div>
+              <div>
+                <h3 class="font-semibold text-surface-800 dark:text-surface-100">{{ card.label }}</h3>
+                <a [href]="card.docsUrl" target="_blank"
+                  class="text-xs text-blue-500 hover:underline flex items-center gap-1">
+                  Obter chave de API <i class="pi pi-external-link text-[10px]"></i>
+                </a>
+              </div>
+            </div>
+            <!-- Status badge -->
+            @if (card.loading) {
+              <i class="pi pi-spin pi-spinner text-surface-400"></i>
+            } @else if (card.configured) {
+              <p-tag
+                [value]="card.config.status === 'enabled' ? 'Ativo' : 'Inativo'"
+                [severity]="card.config.status === 'enabled' ? 'success' : 'secondary'"
+              />
+            } @else {
+              <p-tag value="Não configurado" severity="secondary" />
+            }
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 flex flex-col gap-4 flex-1">
+
+          @if (card.loading) {
+            <div class="flex justify-center py-6">
+              <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+            </div>
+          } @else {
+
+            <!-- Chave de API -->
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">
+                Chave de API
+                @if (!card.configured) { <span class="text-red-500">*</span> }
+              </label>
+              <div class="relative flex items-center">
+                <input
+                  pInputText
+                  [type]="card.showToken ? 'text' : 'password'"
+                  [(ngModel)]="card.config.token"
+                  [placeholder]="card.configured ? '••••••••  (salva)' : card.tokenPlaceholder"
+                  class="w-full pr-9"
+                />
+                <button
+                  type="button"
+                  class="absolute right-3 text-surface-400 hover:text-surface-600 dark:hover:text-surface-200"
+                  (click)="card.showToken = !card.showToken"
+                >
+                  <i [class]="card.showToken ? 'pi pi-eye-slash text-sm' : 'pi pi-eye text-sm'"></i>
+                </button>
+              </div>
+              @if (card.configured && !card.config.token) {
+                <p class="text-xs text-surface-400">Deixe vazio para manter a chave atual</p>
+              }
+            </div>
+
+            <!-- Modelo -->
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Modelo</label>
+              <p-select
+                [(ngModel)]="card.config.model"
+                [options]="card.models"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+
+            <!-- Status -->
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Status</label>
+              <p-select
+                [(ngModel)]="card.config.status"
+                [options]="statusOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </div>
+
+            <!-- Resultado do teste -->
+            @if (card.testResult) {
+              <div class="rounded-lg p-3 text-sm"
+                [class.bg-green-50]="card.testResult.success"
+                [class.dark:bg-green-950]="card.testResult.success"
+                [class.border]="true"
+                [class.border-green-200]="card.testResult.success"
+                [class.dark:border-green-800]="card.testResult.success"
+                [class.bg-red-50]="!card.testResult.success"
+                [class.dark:bg-red-950]="!card.testResult.success"
+                [class.border-red-200]="!card.testResult.success"
+                [class.dark:border-red-800]="!card.testResult.success"
+              >
+                <div class="flex items-center gap-2 font-medium mb-1"
+                  [class.text-green-700]="card.testResult.success"
+                  [class.dark:text-green-300]="card.testResult.success"
+                  [class.text-red-700]="!card.testResult.success"
+                  [class.dark:text-red-300]="!card.testResult.success"
+                >
+                  <i [class]="card.testResult.success ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
+                  {{ card.testResult.success ? 'Conexão estabelecida' : 'Falha na conexão' }}
+                </div>
+                <p class="text-surface-600 dark:text-surface-300 text-xs">
+                  {{ card.testResult.text || card.testResult.message }}
+                </p>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Footer / Ações -->
+        @if (!card.loading) {
+          <div class="p-5 border-t border-surface-100 dark:border-surface-700 flex gap-2">
+            <p-button
+              label="Salvar"
+              icon="pi pi-save"
+              size="small"
+              [loading]="card.saving"
+              (onClick)="save(card)"
+              styleClass="flex-1"
+            />
+            <p-button
+              icon="pi pi-bolt"
+              size="small"
+              severity="secondary"
+              [loading]="card.testing"
+              [disabled]="!card.configured && !card.config.token"
+              pTooltip="Testar conexão"
+              (onClick)="test(card)"
+            />
+            @if (card.configured) {
+              <p-button
+                icon="pi pi-trash"
+                size="small"
+                severity="danger"
+                [text]="true"
+                pTooltip="Remover configuração"
+                (onClick)="remove(card)"
+              />
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Nota informativa -->
+  <div class="mt-6 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+    <i class="pi pi-info-circle text-blue-500 text-lg shrink-0 mt-0.5"></i>
+    <div class="text-sm text-blue-700 dark:text-blue-300">
+      <p class="font-medium mb-1">Como funciona a seleção de provedor</p>
+      <p>Quando um agente IA enviar uma mensagem, o sistema usará automaticamente o primeiro provedor <strong>Ativo</strong> na ordem de prioridade: <strong>OpenAI → Claude → Gemini</strong>. Configure ao menos um provedor para usar os agentes.</p>
+    </div>
+  </div>
+</div>

@@ -64,4 +64,8 @@ export class WhatsappService {
   removeSessionProduct(sessionName: string, productId: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/whatsapp/sessions/${sessionName}/products/${productId}`);
   }
+
+  linkAiAgent(sessionName: string, aiAgentId: string | null): Observable<any> {
+    return this.http.put(`${this.apiUrl}/whatsapp/sessions/${sessionName}`, { aiAgentId });
+  }
 }

@@ -1,0 +1,255 @@
+<p-toast />
+<app-sidebar />
+
+<div class="ml-[280px] p-6 min-h-screen bg-surface-50 dark:bg-surface-900">
+  <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" styleClass="mb-4" />
+
+  @if (loading) {
+    <div class="flex justify-center py-16">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+    </div>
+  }
+
+  @if (!loading && agent) {
+    <!-- Header do agente -->
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+        <i class="pi pi-robot text-primary"></i>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-surface-800 dark:text-surface-100">{{ agent.nome }}</h2>
+        @if (agent.descricao) {
+          <p class="text-sm text-surface-500">{{ agent.descricao }}</p>
+        }
+      </div>
+      <div class="ml-auto flex gap-2 items-center">
+        <p-tag [value]="agent.tom" severity="secondary" />
+        <p-button
+          label="Editar agente"
+          icon="pi pi-pencil"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          [routerLink]="['/ai-agents', agent._id, 'edit']"
+        />
+      </div>
+    </div>
+
+    <!-- ── Chat (atendimento / vendas) ── -->
+    @if (isChatType) {
+      <div class="flex flex-col h-[calc(100vh-220px)] bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+
+        <!-- Mensagens -->
+        <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+          @if (messages.length === 0) {
+            <div class="flex flex-col items-center justify-center h-full text-surface-400">
+              <i class="pi pi-comments text-5xl mb-3"></i>
+              <p class="text-sm">Inicie uma conversa com {{ agent.nome }}</p>
+            </div>
+          }
+          @for (msg of messages; track $index) {
+            <div class="flex gap-3" [class.flex-row-reverse]="msg.role === 'user'">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                [class.bg-primary]="msg.role === 'assistant'"
+                [class.bg-surface-200]="msg.role === 'user'"
+                [class.dark:bg-surface-600]="msg.role === 'user'"
+              >
+                <i [class]="msg.role === 'assistant' ? 'pi pi-robot text-white text-xs' : 'pi pi-user text-surface-600 text-xs'"></i>
+              </div>
+              <div class="max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap"
+                [class.bg-primary]="msg.role === 'assistant'"
+                [class.text-white]="msg.role === 'assistant'"
+                [class.bg-surface-100]="msg.role === 'user'"
+                [class.dark:bg-surface-700]="msg.role === 'user'"
+                [class.text-surface-800]="msg.role === 'user'"
+                [class.dark:text-surface-100]="msg.role === 'user'"
+              >{{ msg.content }}</div>
+            </div>
+          }
+
+          @if (sending) {
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <i class="pi pi-robot text-white text-xs"></i>
+              </div>
+              <div class="bg-primary rounded-2xl px-4 py-3">
+                <i class="pi pi-spin pi-spinner text-white text-sm"></i>
+              </div>
+            </div>
+          }
+          <div #messagesEnd></div>
+        </div>
+
+        <!-- Input -->
+        <div class="border-t border-surface-200 dark:border-surface-700 p-4">
+          <div class="flex gap-3 items-end">
+            <textarea
+              pTextarea
+              [(ngModel)]="messageInput"
+              placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"
+              rows="2"
+              class="flex-1 resize-none"
+              (keydown.enter)="onKeyEnter($event)"
+            ></textarea>
+            <div class="flex flex-col gap-2">
+              <p-button
+                icon="pi pi-send"
+                [loading]="sending"
+                [disabled]="!messageInput.trim()"
+                (onClick)="sendMessage()"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="secondary"
+                [text]="true"
+                pTooltip="Limpar conversa"
+                (onClick)="clearChat()"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Análise de Lead ── -->
+    @if (isLeadType) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Dados do Lead -->
+        <p-card header="Dados do Lead">
+          <div class="flex flex-col gap-4">
+            @for (field of leadFields; track $index) {
+              <div class="flex gap-2 items-center">
+                <input pInputText [(ngModel)]="field.key" placeholder="Campo" class="w-32 shrink-0" />
+                <input pInputText [(ngModel)]="field.value" placeholder="Valor" class="flex-1" />
+                <p-button icon="pi pi-times" severity="danger" [text]="true" size="small" (onClick)="removeLeadField($index)" />
+              </div>
+            }
+
+            <!-- Adicionar campo -->
+            <div class="flex gap-2 items-center pt-1 border-t border-surface-100 dark:border-surface-700">
+              <input pInputText [(ngModel)]="novoLeadKey" placeholder="Novo campo" class="w-32 shrink-0" />
+              <input pInputText [(ngModel)]="novoLeadValue" placeholder="Valor" class="flex-1" />
+              <p-button icon="pi pi-plus" severity="success" [text]="true" size="small" (onClick)="addLeadField()" />
+            </div>
+
+            <p-button
+              label="Analisar Lead"
+              icon="pi pi-chart-bar"
+              [loading]="analyzingLead"
+              (onClick)="analyzeLead()"
+              class="w-full"
+            />
+          </div>
+        </p-card>
+
+        <!-- Resultado -->
+        <p-card header="Resultado da Análise">
+          @if (!leadResult && !analyzingLead) {
+            <div class="flex flex-col items-center justify-center h-48 text-surface-400">
+              <i class="pi pi-chart-bar text-4xl mb-2"></i>
+              <p class="text-sm">Preencha os dados e clique em Analisar</p>
+            </div>
+          }
+          @if (analyzingLead) {
+            <div class="flex justify-center py-10">
+              <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+            </div>
+          }
+          @if (leadResult) {
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-surface-700 dark:text-surface-200">Classificação:</span>
+                <p-tag
+                  [value]="leadResult.classificacao"
+                  [severity]="getLeadColor(leadResult.classificacao)"
+                  styleClass="text-base px-3 py-1"
+                />
+              </div>
+              <div class="bg-surface-50 dark:bg-surface-700 rounded-lg p-4 text-sm text-surface-700 dark:text-surface-200 whitespace-pre-wrap leading-relaxed">
+                {{ leadResult.text }}
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+    }
+
+    <!-- ── Campanhas ── -->
+    @if (isCampaignType) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Parâmetros -->
+        <p-card header="Parâmetros da Campanha">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Canal</label>
+              <p-select [(ngModel)]="campaignParams.canal" [options]="canalOptions" optionLabel="label" optionValue="value" placeholder="Selecione o canal" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Objetivo *</label>
+              <input pInputText [(ngModel)]="campaignParams.objetivo" placeholder="Ex: vender o curso, gerar leads, divulgar promoção" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Público-alvo</label>
+              <input pInputText [(ngModel)]="campaignParams.publico" placeholder="Ex: empreendedores, mães 25-40 anos" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Instruções adicionais</label>
+              <textarea pTextarea [(ngModel)]="campaignParams.instrucoes" rows="3" placeholder="Ex: incluir urgência, sem emoji, tom formal"></textarea>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-sm font-medium text-surface-700 dark:text-surface-200">Variações:</label>
+              <div class="flex gap-2">
+                @for (n of [1, 2, 3]; track n) {
+                  <p-button
+                    [label]="'' + n"
+                    size="small"
+                    [outlined]="campaignParams.quantidade !== n"
+                    (onClick)="campaignParams.quantidade = n"
+                  />
+                }
+              </div>
+            </div>
+            <p-button
+              label="Gerar Campanha"
+              icon="pi pi-megaphone"
+              [loading]="generatingCampaign"
+              (onClick)="generateCampaign()"
+              class="w-full"
+            />
+          </div>
+        </p-card>
+
+        <!-- Resultado -->
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="px-5 pt-4 flex items-center justify-between">
+              <span class="font-semibold text-surface-800 dark:text-surface-100">Resultado</span>
+              @if (campaignResult) {
+                <p-button icon="pi pi-copy" label="Copiar" size="small" severity="secondary" [outlined]="true" (onClick)="copyCampaign()" />
+              }
+            </div>
+          </ng-template>
+
+          @if (!campaignResult && !generatingCampaign) {
+            <div class="flex flex-col items-center justify-center h-48 text-surface-400">
+              <i class="pi pi-megaphone text-4xl mb-2"></i>
+              <p class="text-sm">Configure os parâmetros e clique em Gerar</p>
+            </div>
+          }
+          @if (generatingCampaign) {
+            <div class="flex justify-center py-10">
+              <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+            </div>
+          }
+          @if (campaignResult) {
+            <div class="bg-surface-50 dark:bg-surface-700 rounded-lg p-4 text-sm text-surface-700 dark:text-surface-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+              {{ campaignResult }}
+            </div>
+          }
+        </p-card>
+      </div>
+    }
+  }
+</div>

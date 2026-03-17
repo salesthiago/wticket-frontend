@@ -27,10 +27,17 @@
         </p-iconfield>
         <p-iconfield icon-position="left">
           <p-inputicon class="pi pi-lock"></p-inputicon>
-          <input pInputText type="password"
-          [(ngModel)]="credentials.password"
+          <input pInputText
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="credentials.password"
             class="w-full"
-            placeholder="Senha" />
+            placeholder="Senha"
+            (keydown.enter)="onSubmit()" />
+          <p-inputicon
+            [class]="showPassword ? 'pi pi-eye-slash cursor-pointer' : 'pi pi-eye cursor-pointer'"
+            style="right: 0.75rem; left: auto; pointer-events: all;"
+            (click)="showPassword = !showPassword">
+          </p-inputicon>
         </p-iconfield>
       </div>
       <button pButton (click)="onSubmit()"

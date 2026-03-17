@@ -105,6 +105,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
       link: '/customers',
       icon: 'pi pi-users',
       permissions: []
+    },
+    {
+      id: 9,
+      name: 'Inteligência Artificial',
+      link: '',
+      icon: 'pi pi-sparkles',
+      permissions: [],
+      panelModel: [
+        {
+          label: 'Inteligência Artificial',
+          icon: 'pi pi-sparkles',
+          items: [
+            { label: 'Agentes IA', routerLink: '/ai-agents' },
+            { label: 'Configurar', routerLink: '/ai-providers' }
+          ]
+        }
+      ]
     }
   ];
 
