@@ -1,0 +1,354 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="flex justify-center items-center py-12">
+      <i class="pi pi-spinner pi-spin text-4xl"></i>
+    </div>
+  }
+
+  @if (order && !loading) {
+    <!-- Cabeçalho -->
+    <p-card class="mb-4">
+      <div class="flex justify-between items-start flex-wrap gap-4">
+        <div>
+          <h2 class="text-2xl font-bold mb-1">{{ order.orderNumber }}</h2>
+          <p class="text-gray-500">Criada em {{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <p-tag [value]="getStatusLabel(order.status)" [severity]="getStatusColor(order.status)" class="text-sm" />
+          <p-tag [value]="getPriorityLabel(order.priority)" [severity]="getPriorityColor(order.priority)" class="text-sm" />
+        </div>
+      </div>
+      <p-divider />
+      <div class="flex gap-2 flex-wrap">
+        <p-button label="Alterar Status" icon="pi pi-sync" (click)="openStatusDialog()" />
+        <p-button label="Diagnóstico" icon="pi pi-search" severity="warn" (click)="openDiagnosisDialog()" />
+        <p-button label="Editar" icon="pi pi-pencil" severity="secondary" (click)="edit()" />
+        <p-button label="Voltar" icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="onBack()" />
+      </div>
+    </p-card>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <!-- Cliente -->
+      <p-card header="Cliente">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <small class="text-gray-500 block">Nome</small>
+            <span class="font-semibold">{{ order.customerId?.name ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Telefone</small>
+            <span>{{ order.customerId?.phone ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">E-mail</small>
+            <span>{{ order.customerId?.email ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Documento</small>
+            <span>{{ order.customerId?.document ?? '—' }}</span>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Equipamento -->
+      <p-card header="Equipamento">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <small class="text-gray-500 block">Tipo</small>
+            <span class="font-semibold">{{ order.equipment?.type ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Marca</small>
+            <span>{{ order.equipment?.brand ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Modelo</small>
+            <span>{{ order.equipment?.model ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Nº Série</small>
+            <span>{{ order.equipment?.serialNumber ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Acessórios</small>
+            <span>{{ order.equipment?.accessories ?? '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Estado Físico</small>
+            <span>{{ order.equipment?.condition ?? '—' }}</span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Problema e Diagnóstico -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <p-card header="Problema Relatado">
+        <p class="whitespace-pre-wrap">{{ order.reportedIssue }}</p>
+      </p-card>
+
+      <p-card header="Diagnóstico Técnico">
+        @if (order.diagnosis) {
+          <p class="whitespace-pre-wrap">{{ order.diagnosis }}</p>
+        } @else {
+          <p class="text-gray-400 italic">Nenhum diagnóstico registrado</p>
+        }
+      </p-card>
+    </div>
+
+    <!-- Serviços e Peças -->
+    @if (order.services?.length || order.parts?.length) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        @if (order.services?.length) {
+          <p-card header="Serviços">
+            <p-table [value]="order.services" [tableStyle]="{ 'min-width': '100%' }">
+              <ng-template #header>
+                <tr>
+                  <th>Descrição</th>
+                  <th class="w-16">Qtd</th>
+                  <th class="w-28">Vlr. Unit.</th>
+                  <th class="w-28">Total</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item>
+                <tr>
+                  <td>{{ item.description }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.unitPrice | currency:'BRL' }}</td>
+                  <td class="font-semibold">{{ item.total | currency:'BRL' }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        }
+
+        @if (order.parts?.length) {
+          <p-card header="Peças">
+            <p-table [value]="order.parts" [tableStyle]="{ 'min-width': '100%' }">
+              <ng-template #header>
+                <tr>
+                  <th>Peça</th>
+                  <th class="w-16">Qtd</th>
+                  <th class="w-28">Vlr. Unit.</th>
+                  <th class="w-28">Total</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item>
+                <tr>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.unitPrice | currency:'BRL' }}</td>
+                  <td class="font-semibold">{{ item.total | currency:'BRL' }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        }
+      </div>
+    }
+
+    <!-- Valores e Informações -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <p-card header="Valores">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <small class="text-gray-500 block">Orçamento</small>
+            <span class="text-xl font-bold">{{ (order.estimatedCost || 0) | currency:'BRL' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Custo Final</small>
+            <span class="text-xl font-bold">{{ (order.finalCost || 0) | currency:'BRL' }}</span>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card header="Informações">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <small class="text-gray-500 block">Técnico</small>
+            <span>{{ order.technicianId?.name ?? 'Não atribuído' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Previsão de Conclusão</small>
+            <span>{{ order.estimatedCompletionDate ? (order.estimatedCompletionDate | date:'dd/MM/yyyy') : '—' }}</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Garantia</small>
+            <span>{{ order.warrantyDays }} dias</span>
+          </div>
+          <div>
+            <small class="text-gray-500 block">Garantia expira em</small>
+            <span>{{ order.warrantyExpiresAt ? (order.warrantyExpiresAt | date:'dd/MM/yyyy') : '—' }}</span>
+          </div>
+          @if (order.completedAt) {
+            <div>
+              <small class="text-gray-500 block">Concluída em</small>
+              <span>{{ order.completedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          }
+          @if (order.deliveredAt) {
+            <div>
+              <small class="text-gray-500 block">Entregue em</small>
+              <span>{{ order.deliveredAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          }
+        </div>
+        @if (order.internalNotes) {
+          <p-divider />
+          <div>
+            <small class="text-gray-500 block mb-1">Observações Internas</small>
+            <p class="whitespace-pre-wrap">{{ order.internalNotes }}</p>
+          </div>
+        }
+        @if (order.cancelReason) {
+          <p-divider />
+          <div>
+            <small class="text-red-500 block mb-1">Motivo do Cancelamento</small>
+            <p class="whitespace-pre-wrap">{{ order.cancelReason }}</p>
+          </div>
+        }
+      </p-card>
+    </div>
+
+    <!-- Histórico de Status -->
+    @if (order.statusHistory?.length) {
+      <p-card header="Histórico de Status" class="mb-4">
+        <p-timeline [value]="order.statusHistory" align="left">
+          <ng-template #content let-event>
+            <div class="mb-2">
+              <p-tag [value]="getStatusLabel(event.status)" [severity]="getStatusColor(event.status)" />
+              <p class="text-sm text-gray-500 mt-1">{{ event.changedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              @if (event.changedBy?.name) {
+                <small class="text-gray-400">por {{ event.changedBy.name }}</small>
+              }
+              @if (event.notes) {
+                <p class="text-sm mt-1">{{ event.notes }}</p>
+              }
+            </div>
+          </ng-template>
+          <ng-template #marker let-event>
+            <span class="flex w-8 h-8 items-center justify-center rounded-full border-2 border-primary bg-white">
+              <i [class]="getHistoryIcon(event.status)" class="text-sm"></i>
+            </span>
+          </ng-template>
+        </p-timeline>
+      </p-card>
+    }
+  }
+</div>
+
+<!-- Dialog Alterar Status -->
+<p-dialog header="Alterar Status" [(visible)]="showStatusDialog" [modal]="true" [style]="{ width: '450px' }">
+  <div class="grid grid-cols-1 gap-4 p-2">
+    <div class="field">
+      <label class="block mb-2">Novo Status <span class="text-red-500">*</span></label>
+      <p-select
+        [options]="statusOptions"
+        [(ngModel)]="newStatus"
+        optionLabel="name"
+        optionValue="value"
+        placeholder="Selecione o status..."
+        class="w-full" />
+    </div>
+    <div class="field">
+      <label class="block mb-2">Observação</label>
+      <textarea
+        pTextarea
+        [(ngModel)]="statusNotes"
+        rows="3"
+        placeholder="Observação sobre a mudança de status..."
+        class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (click)="showStatusDialog = false" />
+    <p-button label="Salvar" (click)="saveStatus()" />
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog Diagnóstico -->
+<p-dialog header="Diagnóstico Técnico" [(visible)]="showDiagnosisDialog" [modal]="true" [style]="{ width: '750px' }" [maximizable]="true">
+  <div class="grid grid-cols-1 gap-4 p-2">
+
+    <div class="field">
+      <label class="block mb-2">Diagnóstico <span class="text-red-500">*</span></label>
+      <textarea
+        pTextarea
+        [(ngModel)]="diagnosisText"
+        rows="4"
+        placeholder="Descreva o diagnóstico técnico detalhado..."
+        class="w-full"></textarea>
+    </div>
+
+    <!-- Serviços -->
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-semibold">Serviços</label>
+        <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addService()" />
+      </div>
+      @for (s of diagnosisServices; track $index) {
+        <div class="grid grid-cols-12 gap-2 mb-2 items-end">
+          <div class="col-span-5">
+            <input pInputText [(ngModel)]="s.description" placeholder="Descrição" class="w-full" />
+          </div>
+          <div class="col-span-2">
+            <p-inputNumber [(ngModel)]="s.quantity" [min]="1" placeholder="Qtd" (onInput)="onServiceChange($index)" class="w-full" />
+          </div>
+          <div class="col-span-2">
+            <p-inputNumber [(ngModel)]="s.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onServiceChange($index)" class="w-full" />
+          </div>
+          <div class="col-span-2 font-semibold text-right pt-2">
+            {{ s.total | currency:'BRL' }}
+          </div>
+          <div class="col-span-1">
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" (click)="removeService($index)" />
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Peças -->
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="font-semibold">Peças</label>
+        <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addPart()" />
+      </div>
+      @for (p of diagnosisParts; track $index) {
+        <div class="grid grid-cols-12 gap-2 mb-2 items-end">
+          <div class="col-span-5">
+            <input pInputText [(ngModel)]="p.name" placeholder="Nome da peça" class="w-full" />
+          </div>
+          <div class="col-span-2">
+            <p-inputNumber [(ngModel)]="p.quantity" [min]="1" placeholder="Qtd" (onInput)="onPartChange($index)" class="w-full" />
+          </div>
+          <div class="col-span-2">
+            <p-inputNumber [(ngModel)]="p.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onPartChange($index)" class="w-full" />
+          </div>
+          <div class="col-span-2 font-semibold text-right pt-2">
+            {{ p.total | currency:'BRL' }}
+          </div>
+          <div class="col-span-1">
+            <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" (click)="removePart($index)" />
+          </div>
+        </div>
+      }
+    </div>
+
+    <p-divider />
+    <div class="flex justify-end items-center gap-4">
+      <span class="text-gray-500">Orçamento Total:</span>
+      <span class="text-2xl font-bold">{{ estimatedCost | currency:'BRL' }}</span>
+    </div>
+
+  </div>
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (click)="showDiagnosisDialog = false" />
+    <p-button label="Salvar Diagnóstico" (click)="saveDiagnosis()" />
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />
+<p-toast />

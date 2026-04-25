@@ -107,6 +107,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       permissions: []
     },
     {
+      id: 10,
+      name: 'Ordens de Serviço',
+      link: '/service-orders',
+      icon: 'pi pi-wrench',
+      permissions: []
+    },
+    {
       id: 9,
       name: 'Inteligência Artificial',
       link: '',

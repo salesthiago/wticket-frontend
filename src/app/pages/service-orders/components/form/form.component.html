@@ -1,0 +1,175 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card [header]="id ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'" class="align-items-center mb-4">
+
+    <!-- Cliente e Prioridade -->
+    <h3 class="text-base font-semibold mb-3 mt-1">Dados Gerais</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div class="field">
+        <label for="customerId" class="block mb-2">Cliente <span class="text-red-500">*</span></label>
+        <p-select
+          [options]="customers"
+          [(ngModel)]="order.customerId"
+          optionLabel="name"
+          optionValue="value"
+          placeholder="Selecione o cliente..."
+          [filter]="true"
+          filterPlaceholder="Buscar cliente..."
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="priority" class="block mb-2">Prioridade</label>
+        <p-select
+          [options]="optionPriority"
+          [(ngModel)]="order.priority"
+          optionLabel="name"
+          optionValue="value"
+          placeholder="Selecione..."
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="technicianId" class="block mb-2">Técnico Responsável</label>
+        <p-select
+          [options]="technicians"
+          [(ngModel)]="order.technicianId"
+          optionLabel="name"
+          optionValue="value"
+          placeholder="Selecione o técnico..."
+          [showClear]="true"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="estimatedCompletionDate" class="block mb-2">Previsão de Conclusão</label>
+        <p-datepicker
+          [(ngModel)]="order.estimatedCompletionDate"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          placeholder="Selecione a data"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="warrantyDays" class="block mb-2">Garantia (dias)</label>
+        <p-inputNumber
+          [(ngModel)]="order.warrantyDays"
+          [min]="0"
+          [max]="365"
+          placeholder="90"
+          class="w-full" />
+      </div>
+
+    </div>
+
+    <!-- Equipamento -->
+    <h3 class="text-base font-semibold mb-3 mt-6">Equipamento</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div class="field">
+        <label for="equipmentType" class="block mb-2">Tipo <span class="text-red-500">*</span></label>
+        <input
+          id="equipmentType"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.type"
+          placeholder="Ex: Notebook, Celular, Impressora"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="equipmentBrand" class="block mb-2">Marca</label>
+        <input
+          id="equipmentBrand"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.brand"
+          placeholder="Ex: Dell, Samsung"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="equipmentModel" class="block mb-2">Modelo</label>
+        <input
+          id="equipmentModel"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.model"
+          placeholder="Ex: Inspiron 15"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="serialNumber" class="block mb-2">Número de Série</label>
+        <input
+          id="serialNumber"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.serialNumber"
+          placeholder="S/N do equipamento"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="accessories" class="block mb-2">Acessórios</label>
+        <input
+          id="accessories"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.accessories"
+          placeholder="Ex: Carregador, cabo USB"
+          class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="condition" class="block mb-2">Estado Físico</label>
+        <input
+          id="condition"
+          type="text"
+          pInputText
+          [(ngModel)]="order.equipment.condition"
+          placeholder="Ex: Tela trincada, sem riscos"
+          class="w-full" />
+      </div>
+
+    </div>
+
+    <!-- Problema -->
+    <h3 class="text-base font-semibold mb-3 mt-6">Problema Relatado</h3>
+    <div class="grid grid-cols-1 gap-4">
+
+      <div class="field">
+        <label for="reportedIssue" class="block mb-2">Descrição do Problema <span class="text-red-500">*</span></label>
+        <textarea
+          id="reportedIssue"
+          pTextarea
+          [(ngModel)]="order.reportedIssue"
+          rows="4"
+          placeholder="Descreva detalhadamente o problema relatado pelo cliente..."
+          class="w-full"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="internalNotes" class="block mb-2">Observações Internas</label>
+        <textarea
+          id="internalNotes"
+          pTextarea
+          [(ngModel)]="order.internalNotes"
+          rows="3"
+          placeholder="Notas internas visíveis apenas para a equipe..."
+          class="w-full"></textarea>
+      </div>
+
+    </div>
+
+    <div class="flex mt-6 gap-2">
+      <p-button label="Voltar" severity="secondary" [loading]="loading" (click)="onBack()"></p-button>
+      <p-button label="Salvar" [loading]="loading" (click)="onSubmit()"></p-button>
+    </div>
+
+  </p-card>
+</div>
+<p-toast />

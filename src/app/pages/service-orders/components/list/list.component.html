@@ -1,0 +1,113 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card class="flex align-items-center mb-4">
+    <p-table
+      [value]="items"
+      [loading]="loading"
+      class="my-4"
+      [rows]="10"
+      [paginator]="true"
+      [tableStyle]="{ 'min-width': '85rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate=" {first} de {last} "
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <p-button icon="pi pi-plus" label="Nova OS" (click)="add()"></p-button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <p-select
+              [options]="optionStatus"
+              [(ngModel)]="filterStatus"
+              optionLabel="name"
+              optionValue="value"
+              placeholder="Status"
+              (onChange)="onFilterChange()"
+              class="w-48" />
+            <p-select
+              [options]="optionPriority"
+              [(ngModel)]="filterPriority"
+              optionLabel="name"
+              optionValue="value"
+              placeholder="Prioridade"
+              (onChange)="onFilterChange()"
+              class="w-40" />
+            <p-iconfield iconPosition="left">
+              <p-inputicon>
+                <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input pInputText type="text" placeholder="Pesquisar OS, equipamento, cliente..."
+                [(ngModel)]="search" (input)="onSearch()" class="w-72" />
+            </p-iconfield>
+            @if (search) {
+              <p-button icon="pi pi-times" severity="secondary" (click)="clearSearch()"></p-button>
+            }
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">Nenhuma ordem de serviço encontrada.</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>N° OS</th>
+          <th>Cliente</th>
+          <th>Equipamento</th>
+          <th>Problema</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Técnico</th>
+          <th>Data</th>
+          <th>Ações</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-item>
+        <tr>
+          <td class="font-semibold">{{ item.orderNumber }}</td>
+          <td>
+            <div>{{ getCustomerName(item) }}</div>
+            <small class="text-gray-500">{{ getCustomerPhone(item) }}</small>
+          </td>
+          <td>
+            <div>{{ item.equipment?.type }}</div>
+            <small class="text-gray-500">{{ item.equipment?.brand }} {{ item.equipment?.model }}</small>
+          </td>
+          <td class="max-w-48 truncate" [pTooltip]="item.reportedIssue" tooltipPosition="top">
+            {{ item.reportedIssue }}
+          </td>
+          <td>
+            <p-tag
+              [value]="getStatusLabel(item.status)"
+              [severity]="getStatusColor(item.status)">
+            </p-tag>
+          </td>
+          <td>
+            <p-tag
+              [value]="getPriorityLabel(item.priority)"
+              [severity]="getPriorityColor(item.priority)">
+            </p-tag>
+          </td>
+          <td>{{ getTechnicianName(item) }}</td>
+          <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="flex gap-1">
+              <p-button icon="pi pi-eye" (onClick)="view(item._id)" severity="info" [rounded]="true" [text]="true" pTooltip="Visualizar" />
+              <p-button icon="pi pi-pencil" (onClick)="edit(item._id)" severity="primary" [rounded]="true" [text]="true" pTooltip="Editar" />
+              <p-button icon="pi pi-trash" (onClick)="confirmDelete(item._id)" severity="danger" [rounded]="true" [text]="true" pTooltip="Excluir" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-confirmDialog />
+<p-toast />
