@@ -1,0 +1,68 @@
+<p-toast></p-toast>
+<app-sidebar></app-sidebar>
+
+<div class="sm:ml-64 p-6 space-y-6">
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (company) {
+    <p-card>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Minha Empresa</h2>
+        <p-tag [value]="company.status"></p-tag>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Nome</label>
+          <input pInputText class="w-full" [(ngModel)]="company.name" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">E-mail</label>
+          <input pInputText class="w-full" [(ngModel)]="company.email" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Telefone</label>
+          <input pInputText class="w-full" [(ngModel)]="company.phone" />
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-sm mb-1">Tipo</label>
+            <select [(ngModel)]="company.documentType"
+              class="w-full border border-gray-300 rounded-md p-2 text-sm">
+              <option value="cnpj">CNPJ</option>
+              <option value="cpf">CPF</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm mb-1">Documento</label>
+            <input pInputText class="w-full" [(ngModel)]="company.document" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-right">
+        <p-button label="Salvar" icon="pi pi-save" [loading]="saving" (click)="save()"></p-button>
+      </div>
+    </p-card>
+
+    <p-card>
+      <h3 class="font-medium mb-3">Módulos contratados</h3>
+      @if (company.modules.length === 0) {
+        <p class="text-gray-400 text-sm">Nenhum módulo ativo. Entre em contato para contratar.</p>
+      }
+      <div class="space-y-2">
+        @for (m of company.modules; track m.code) {
+          <div class="flex items-center justify-between border rounded p-3">
+            <div>
+              <div class="font-medium">{{ moduleName(m.code) }}</div>
+              <div class="text-xs text-gray-500">Status: {{ m.subscriptionStatus }}</div>
+            </div>
+            <p-tag [value]="m.subscriptionStatus" [severity]="m.subscriptionStatus === 'active' ? 'success' : 'warn'"></p-tag>
+          </div>
+        }
+      </div>
+    </p-card>
+  }
+</div>

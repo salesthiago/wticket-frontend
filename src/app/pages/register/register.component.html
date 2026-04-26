@@ -1,62 +1,207 @@
-<div class="login-container">
-  <p-card class="login-card" header="Cadastro">
-    <form (ngSubmit)="onSubmit()">
-      <div class="field">
-        <label for="name" class="block mb-2">Nome</label>
-        <input
-          id="name"
-          type="text"
-          pInputText
-          [(ngModel)]="credentials.name"
-          name="name"
-          required
-          placeholder="Seu Nome"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        />
-      </div>
-      <div class="field">
-        <label for="email" class="block mb-2">Email</label>
-        <input
-          id="email"
-          type="email"
-          pInputText
-          [(ngModel)]="credentials.email"
-          name="email"
-          required
-          placeholder="Seu email"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        />
+<p-toast></p-toast>
+
+<div class="min-h-screen flex items-center justify-center bg-blue-950 px-4 py-10">
+  <div class="w-full max-w-3xl">
+    <div class="text-center mb-6">
+      <img src="/assets/logo-navbar.png" class="mx-auto h-10" alt="WTicket" />
+      <h1 class="text-white text-2xl font-medium mt-3">Cadastre sua empresa</h1>
+      <p class="text-blue-200 text-sm mt-1">Em poucos passos sua empresa estará pronta para usar o WTicket.</p>
+    </div>
+
+    <p-card>
+      <!-- Step header -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-2 text-sm">
+          <span [class]="step >= 1 ? 'font-semibold text-blue-700' : 'text-gray-400'">1. Empresa</span>
+          <span class="text-gray-300">›</span>
+          <span [class]="step >= 2 ? 'font-semibold text-blue-700' : 'text-gray-400'">2. Módulos</span>
+          <span class="text-gray-300">›</span>
+          <span [class]="step >= 3 ? 'font-semibold text-blue-700' : 'text-gray-400'">3. Responsável</span>
+          <span class="text-gray-300">›</span>
+          <span [class]="step >= 4 ? 'font-semibold text-blue-700' : 'text-gray-400'">4. Revisão</span>
+        </div>
+        <span class="text-xs text-gray-400">Passo {{ step }} de 4</span>
       </div>
 
-      <div class="field mt-4">
-        <label for="password" class="block mb-2">Senha</label>
-        <input
-          id="password"
-          type="password"
-          pInputText
-          [(ngModel)]="credentials.password"
-          name="password"
-          required
-          placeholder="Sua senha"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        />
-      </div>
-      <div class="field mt-4">
-        <p-button
-        type="submit"
-        label="Salvar"
-        [loading]="loading"
-        class="w-full"
-        styleClass="p-button-primary"
-        ></p-button>
-      </div>
-    </form>
-    <ng-template #footer>
-        <div class="flex gap-4 mt-1">
-            <a href="/login" class="w-full">
-              Já possui cadastro ?
-              </a>
+      <!-- Step 1: Company data -->
+      @if (step === 1) {
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1">Nome da empresa *</label>
+              <input pInputText class="w-full" [(ngModel)]="company.name" placeholder="Razão social ou fantasia" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">E-mail da empresa *</label>
+              <input pInputText class="w-full" type="email" [(ngModel)]="company.email" placeholder="contato@empresa.com" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Telefone</label>
+              <input pInputText class="w-full" [(ngModel)]="company.phone" placeholder="(00) 00000-0000" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-sm mb-1">Tipo</label>
+                <select [(ngModel)]="company.documentType"
+                  class="w-full border border-gray-300 rounded-md p-2 text-sm">
+                  <option value="cnpj">CNPJ</option>
+                  <option value="cpf">CPF</option>
+                </select>
+              </div>
+              <div class="col-span-2">
+                <label class="block text-sm mb-1">Documento</label>
+                <input pInputText class="w-full" [(ngModel)]="company.document" placeholder="Somente números" />
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t pt-4 mt-2">
+            <h3 class="text-sm font-medium text-gray-600 mb-2">Endereço (opcional)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input pInputText class="md:col-span-2" [(ngModel)]="company.address.street" placeholder="Rua / Avenida" />
+              <input pInputText [(ngModel)]="company.address.number" placeholder="Número" />
+              <input pInputText [(ngModel)]="company.address.complement" placeholder="Complemento" />
+              <input pInputText [(ngModel)]="company.address.neighborhood" placeholder="Bairro" />
+              <input pInputText [(ngModel)]="company.address.zipCode" placeholder="CEP" />
+              <input pInputText [(ngModel)]="company.address.city" placeholder="Cidade" />
+              <input pInputText [(ngModel)]="company.address.state" placeholder="UF" maxlength="2" />
+            </div>
+          </div>
         </div>
-    </ng-template>
-  </p-card>
+      }
+
+      <!-- Step 2: Module selection -->
+      @if (step === 2) {
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600">Escolha quais módulos sua empresa vai usar. Você poderá ajustar depois.</p>
+
+          @if (loadingModules) {
+            <div class="text-center text-gray-400 py-8">Carregando módulos...</div>
+          }
+
+          @for (mod of modules; track mod.code) {
+            <div class="border rounded-lg p-4"
+              [class.border-blue-500]="isSelected(mod.code)"
+              [class.bg-blue-50]="isSelected(mod.code)"
+              [class.border-gray-200]="!isSelected(mod.code)">
+              <div class="flex items-start gap-3">
+                <p-checkbox [binary]="true" [ngModel]="isSelected(mod.code)" (ngModelChange)="toggleModule(mod)"></p-checkbox>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-semibold">{{ mod.name }}</h4>
+                    @if ((mod.price ?? 0) > 0) {
+                      <span class="text-sm text-blue-700 font-medium">R$ {{ mod.price | number:'1.2-2' }}/mês</span>
+                    }
+                  </div>
+                  <p class="text-sm text-gray-600 mt-1">{{ mod.description }}</p>
+                  @if (getRequiresLabel(mod); as req) {
+                    <p class="text-xs text-amber-700 mt-2">
+                      <i class="pi pi-info-circle mr-1"></i>{{ req }}
+                    </p>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Step 3: Owner data -->
+      @if (step === 3) {
+        <div class="space-y-4">
+          <p class="text-sm text-gray-600">Esta será a primeira conta de administrador da empresa.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1">Nome completo *</label>
+              <input pInputText class="w-full" [(ngModel)]="owner.name" placeholder="Seu nome" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">E-mail *</label>
+              <input pInputText class="w-full" type="email" [(ngModel)]="owner.email" placeholder="voce@empresa.com" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Senha *</label>
+              <p-iconfield>
+                <input pInputText class="w-full" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="owner.password" />
+                <p-inputicon
+                  [class]="showPassword ? 'pi pi-eye-slash cursor-pointer' : 'pi pi-eye cursor-pointer'"
+                  style="right: 0.75rem; left: auto; pointer-events: all;"
+                  (click)="showPassword = !showPassword">
+                </p-inputicon>
+              </p-iconfield>
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Confirmar senha *</label>
+              <input pInputText class="w-full" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="owner.confirmPassword" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Step 4: Review -->
+      @if (step === 4) {
+        <div class="space-y-5">
+          <div>
+            <h4 class="font-semibold text-gray-700 mb-2">Empresa</h4>
+            <div class="text-sm text-gray-600">
+              <div><strong>Nome:</strong> {{ company.name }}</div>
+              <div><strong>E-mail:</strong> {{ company.email }}</div>
+              @if (company.phone) {
+                <div><strong>Telefone:</strong> {{ company.phone }}</div>
+              }
+              @if (company.document) {
+                <div>
+                  <strong>{{ company.documentType.toUpperCase() }}:</strong> {{ company.document }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-semibold text-gray-700 mb-2">Módulos selecionados</h4>
+            <div class="flex flex-wrap gap-2">
+              @for (m of selectedModuleSummary(); track m.code) {
+                <p-tag severity="info" [value]="m.name"></p-tag>
+              }
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-semibold text-gray-700 mb-2">Responsável</h4>
+            <div class="text-sm text-gray-600">
+              <div><strong>Nome:</strong> {{ owner.name }}</div>
+              <div><strong>E-mail:</strong> {{ owner.email }}</div>
+            </div>
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
+            <i class="pi pi-info-circle mr-1"></i>
+            Após o cadastro, sua empresa entrará em <strong>aguardando pagamento</strong>.
+            O acesso será liberado assim que a assinatura for confirmada.
+          </div>
+        </div>
+      }
+
+      <!-- Footer buttons -->
+      <div class="flex justify-between mt-6">
+        @if (step > 1) {
+          <p-button label="Voltar" severity="secondary" icon="pi pi-arrow-left" (click)="prevStep()"></p-button>
+        } @else {
+          <span></span>
+        }
+
+        <div class="flex gap-2">
+          @if (step < 4) {
+            <p-button label="Avançar" icon="pi pi-arrow-right" iconPos="right" (click)="nextStep()"></p-button>
+          } @else {
+            <p-button label="Confirmar cadastro" icon="pi pi-check" [loading]="submitting" (click)="submit()"></p-button>
+          }
+        </div>
+      </div>
+    </p-card>
+
+    <p class="text-center text-blue-200 text-xs mt-4">
+      Já possui cadastro? <a routerLink="/login" class="text-white underline">Faça login</a>
+    </p>
+  </div>
 </div>

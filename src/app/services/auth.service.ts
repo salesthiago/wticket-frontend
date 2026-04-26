@@ -4,12 +4,15 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/enviroment';
 
-export interface RegisterRequest {
+export type UserRole = 'super_admin' | 'company_admin' | 'administrator' | 'default';
+export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance';
+
+export interface AuthUser {
+  id: string;
   name: string;
-  password: string;
   email: string;
-  role?: string;
-  avatar?: string;
+  role: UserRole;
+  companyId: string | null;
 }
 
 export interface LoginRequest {
@@ -19,11 +22,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  user: AuthUser;
+  modules: ModuleCode[];
 }
 
 @Injectable({
@@ -33,22 +33,13 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
   private tokenKey = 'authToken';
   private userKey = 'userData';
+  private modulesKey = 'userModules';
   private isAuthenticated = new BehaviorSubject<boolean>(this.hasToken());
 
   constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<any>(`${this.apiUrl}/login`, credentials)
-      .pipe(
-        tap(response => {
-          this.setSession(response);
-          this.isAuthenticated.next(true);
-        })
-      );
-  }
-
-  register(credentials: RegisterRequest): Observable<any> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/register`, credentials)
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials)
       .pipe(
         tap(response => {
           this.setSession(response);
@@ -60,11 +51,13 @@ export class AuthService {
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.tokenKey, authResult.token);
     localStorage.setItem(this.userKey, JSON.stringify(authResult.user));
+    localStorage.setItem(this.modulesKey, JSON.stringify(authResult.modules || []));
   }
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
+    localStorage.removeItem(this.modulesKey);
     this.isAuthenticated.next(false);
     this.router.navigate(['/login']);
   }
@@ -73,12 +66,46 @@ export class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
-  updateUser(user: any): void {
+  updateUser(user: AuthUser): void {
     localStorage.setItem(this.userKey, JSON.stringify(user));
   }
-  getUser(): any {
+
+  getUser(): AuthUser | null {
     const user = localStorage.getItem(this.userKey);
     return user ? JSON.parse(user) : null;
+  }
+
+  getModules(): ModuleCode[] {
+    const raw = localStorage.getItem(this.modulesKey);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  hasModule(code: ModuleCode): boolean {
+    if (this.isSuperAdmin()) return true;
+    return this.getModules().includes(code);
+  }
+
+  hasAnyModule(...codes: ModuleCode[]): boolean {
+    if (this.isSuperAdmin()) return true;
+    const active = this.getModules();
+    return codes.some(c => active.includes(c));
+  }
+
+  getRole(): UserRole | null {
+    return this.getUser()?.role ?? null;
+  }
+
+  isSuperAdmin(): boolean {
+    return this.getRole() === 'super_admin';
+  }
+
+  isCompanyAdmin(): boolean {
+    const role = this.getRole();
+    return role === 'company_admin' || role === 'super_admin';
+  }
+
+  getCompanyId(): string | null {
+    return this.getUser()?.companyId ?? null;
   }
 
   isLoggedIn(): boolean {
