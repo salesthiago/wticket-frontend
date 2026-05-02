@@ -25,6 +25,17 @@
       <div class="flex gap-2 flex-wrap">
         <p-button label="Alterar Status" icon="pi pi-sync" (click)="openStatusDialog()" />
         <p-button label="Diagnóstico" icon="pi pi-search" severity="warn" (click)="openDiagnosisDialog()" />
+        @if (hasNfseModule) {
+          <p-button label="Emitir NFS-e" icon="pi pi-file-edit" severity="success"
+            (click)="openEmitNfseDialog()" />
+        }
+        @if (hasFinancialAccess) {
+          <p-button label="Faturar OS" icon="pi pi-wallet" severity="info"
+            [disabled]="!canInvoiceOS()"
+            [pTooltip]="invoiceTooltip()"
+            tooltipPosition="bottom"
+            (click)="openInvoiceDialog()" />
+        }
         <p-button label="Editar" icon="pi pi-pencil" severity="secondary" (click)="edit()" />
         <p-button label="Voltar" icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="onBack()" />
       </div>
@@ -213,6 +224,117 @@
       </p-card>
     </div>
 
+    <!-- Faturamento (Contas a Receber) -->
+    @if (hasFinancialAccess) {
+      <p-card class="mb-4">
+        <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+          <h3 class="text-lg font-semibold flex items-center gap-2">
+            <i class="pi pi-wallet"></i> Faturamento
+          </h3>
+          <p-button label="Faturar OS" icon="pi pi-plus" size="small" severity="info"
+            [disabled]="!canInvoiceOS()"
+            [pTooltip]="invoiceTooltip()"
+            tooltipPosition="left"
+            (click)="openInvoiceDialog()" />
+        </div>
+
+        @if (loadingReceivables) {
+          <div class="text-center text-gray-400 py-4">
+            <i class="pi pi-spinner pi-spin"></i> Carregando…
+          </div>
+        } @else if (receivables.length === 0) {
+          <p class="text-gray-400 text-sm">
+            @if (!order?.diagnosis || !order.diagnosis.trim()) {
+              Adicione um diagnóstico para poder faturar esta OS.
+            } @else {
+              Nenhum título a receber foi gerado para esta OS.
+            }
+          </p>
+        } @else {
+          <p-table [value]="receivables" [tableStyle]="{ 'min-width': '60rem' }">
+            <ng-template #header>
+              <tr>
+                <th>Número</th>
+                <th>Descrição</th>
+                <th class="text-right">Valor</th>
+                <th>Vencimento</th>
+                <th>Pagamento</th>
+                <th>Forma</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-r>
+              <tr class="cursor-pointer" (click)="viewReceivable(r)">
+                <td class="font-mono">{{ r.number }}</td>
+                <td class="max-w-md truncate" [pTooltip]="r.description">{{ r.description }}</td>
+                <td class="text-right font-mono">R$ {{ r.amount | number:'1.2-2' }}</td>
+                <td>{{ r.dueDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ r.paymentDate ? (r.paymentDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="text-xs">{{ paymentMethodLabel(r.paymentMethod) }}</td>
+                <td>
+                  <p-tag [value]="receivableStatusLabel(r.status)" [severity]="receivableStatusColor(r.status)" />
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-button icon="pi pi-eye" severity="info" [rounded]="true" [text]="true"
+                    pTooltip="Visualizar" (click)="viewReceivable(r)" />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+    }
+
+    <!-- NFS-e Vinculadas -->
+    @if (hasNfseModule) {
+      <p-card class="mb-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-lg font-semibold flex items-center gap-2">
+            <i class="pi pi-file-edit"></i> NFS-e Vinculadas
+          </h3>
+          <p-button label="Emitir NFS-e" icon="pi pi-plus" size="small" severity="success"
+            (click)="openEmitNfseDialog()" />
+        </div>
+
+        @if (loadingNfse) {
+          <div class="text-center text-gray-400 py-4">
+            <i class="pi pi-spinner pi-spin"></i> Carregando…
+          </div>
+        } @else if (nfseIssuances.length === 0) {
+          <p class="text-gray-400 text-sm">Nenhuma NFS-e foi emitida para esta OS.</p>
+        } @else {
+          <p-table [value]="nfseIssuances" [tableStyle]="{ 'min-width': '50rem' }">
+            <ng-template #header>
+              <tr>
+                <th>DPS</th>
+                <th>Nº NFS-e</th>
+                <th>Emissão</th>
+                <th class="text-right">Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-n>
+              <tr class="cursor-pointer" (click)="viewNfse(n)">
+                <td class="font-mono">{{ n.serie }}/{{ n.nDPS }}</td>
+                <td class="font-mono">{{ n.numeroNfse || '—' }}</td>
+                <td>{{ n.dhEmi | date:'dd/MM/yy HH:mm' }}</td>
+                <td class="text-right font-mono">R$ {{ (n.valores?.vServ ?? 0) | number:'1.2-2' }}</td>
+                <td>
+                  <p-tag [value]="nfseStatusLabel(n.status)" [severity]="nfseStatusColor(n.status)" />
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-button icon="pi pi-eye" severity="info" [rounded]="true" [text]="true"
+                    (click)="viewNfse(n)" />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+    }
+
     <!-- Histórico de Status -->
     @if (order.statusHistory?.length) {
       <p-card header="Histórico de Status" class="mb-4">
@@ -270,7 +392,8 @@
 </p-dialog>
 
 <!-- Dialog Diagnóstico -->
-<p-dialog header="Diagnóstico Técnico" [(visible)]="showDiagnosisDialog" [modal]="true" [style]="{ width: '750px' }" [maximizable]="true">
+<p-dialog header="Diagnóstico Técnico" [(visible)]="showDiagnosisDialog" [modal]="true"
+   [style]="{ width: '750px' }" [maximizable]="true">
   <div class="grid grid-cols-1 gap-4 p-2">
 
     <div class="field">
@@ -290,20 +413,21 @@
         <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addService()" />
       </div>
       @for (s of diagnosisServices; track $index) {
-        <div class="grid grid-cols-12 gap-2 mb-2 items-end">
-          <div class="col-span-5">
+        <div class="grid grid-cols-6 gap-2 mb-2">
+          <div class="col-span-2 min-w-0">
             <input pInputText [(ngModel)]="s.description" placeholder="Descrição" class="w-full" />
           </div>
-          <div class="col-span-2">
-            <p-inputNumber [(ngModel)]="s.quantity" [min]="1" placeholder="Qtd" (onInput)="onServiceChange($index)" class="w-full" />
+          <div class="col-span-1 min-w-0">
+            <p-inputNumber fluid [(ngModel)]="s.quantity" [min]="1" placeholder="Qtd" (onInput)="onServiceChange($index)"
+            class="w-full" />
           </div>
-          <div class="col-span-2">
-            <p-inputNumber [(ngModel)]="s.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onServiceChange($index)" class="w-full" />
+          <div class="col-span-1 min-w-0">
+            <p-inputNumber fluid [(ngModel)]="s.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onServiceChange($index)" class="w-full" />
           </div>
-          <div class="col-span-2 font-semibold text-right pt-2">
+          <div class="col-span-1 min-w-0 font-semibold text-right pt-2">
             {{ s.total | currency:'BRL' }}
           </div>
-          <div class="col-span-1">
+          <div class="col-span-1 min-w-0">
             <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" (click)="removeService($index)" />
           </div>
         </div>
@@ -322,10 +446,10 @@
             <input pInputText [(ngModel)]="p.name" placeholder="Nome da peça" class="w-full" />
           </div>
           <div class="col-span-2">
-            <p-inputNumber [(ngModel)]="p.quantity" [min]="1" placeholder="Qtd" (onInput)="onPartChange($index)" class="w-full" />
+            <p-inputNumber fluid [(ngModel)]="p.quantity" [min]="1" placeholder="Qtd" (onInput)="onPartChange($index)" class="w-full" />
           </div>
           <div class="col-span-2">
-            <p-inputNumber [(ngModel)]="p.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onPartChange($index)" class="w-full" />
+            <p-inputNumber fluid [(ngModel)]="p.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onPartChange($index)" class="w-full" />
           </div>
           <div class="col-span-2 font-semibold text-right pt-2">
             {{ p.total | currency:'BRL' }}
@@ -347,6 +471,69 @@
   <ng-template #footer>
     <p-button label="Cancelar" severity="secondary" [text]="true" (click)="showDiagnosisDialog = false" />
     <p-button label="Salvar Diagnóstico" (click)="saveDiagnosis()" />
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog Emitir NFS-e -->
+<p-dialog header="Emitir NFS-e a partir desta OS" [(visible)]="showNfseDialog"
+  [modal]="true" [style]="{ width: '600px' }" [closable]="!emittingNfse">
+  <div class="grid grid-cols-1 gap-4 p-2">
+    <div class="field">
+      <label class="block mb-1 text-sm">Código de Serviço *</label>
+      <p-select
+        [options]="optionNfseServiceCodes"
+        [(ngModel)]="nfseDraft.serviceCodeId"
+        [filter]="true" filterBy="label"
+        optionLabel="label" optionValue="value"
+        placeholder="Selecione um código do catálogo…"
+        (onChange)="onNfseServiceCodeChange()"
+        styleClass="w-full" />
+      <small class="text-gray-500">
+        Configure o catálogo em
+        <a routerLink="/nfse/service-codes" class="underline">NFS-e › Códigos de Serviço</a>.
+      </small>
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Descrição do serviço *</label>
+      <textarea pTextarea [(ngModel)]="nfseDraft.xDescServ"
+        rows="3" maxlength="2000" class="w-full"
+        placeholder="Descrição do serviço prestado"></textarea>
+      <small class="text-gray-500">Pré-preenchida com base nos serviços/diagnóstico da OS.</small>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <div class="field">
+        <label class="block mb-1 text-sm">Valor (R$) *</label>
+        <p-inputNumber [(ngModel)]="nfseDraft.vServ"
+          mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label class="block mb-1 text-sm">Alíquota ISS (%)</label>
+        <p-inputNumber [(ngModel)]="nfseDraft.pAliq"
+          [minFractionDigits]="2" [maxFractionDigits]="4"
+          [min]="0" [max]="100" suffix=" %" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label class="block mb-1 text-sm">Competência *</label>
+        <p-datePicker [(ngModel)]="nfseDraft.dCompet"
+          dateFormat="dd/mm/yy" [showButtonBar]="true" styleClass="w-full" />
+      </div>
+    </div>
+
+    <div class="text-xs text-gray-500 border-t pt-2">
+      <strong>Tomador:</strong> os dados serão derivados do cliente desta OS. Se o cliente não tiver
+      o código IBGE do município (cMun) cadastrado, a emissão pode ser rejeitada — nesse caso,
+      use a tela <a routerLink="/nfse/issuances/create" class="underline">Nova Emissão</a> para
+      preencher o endereço manualmente.
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true"
+      [disabled]="emittingNfse" (click)="showNfseDialog = false" />
+    <p-button label="Emitir" icon="pi pi-send" severity="success"
+      [loading]="emittingNfse" (click)="submitEmitNfse()" />
   </ng-template>
 </p-dialog>
 

@@ -11,6 +11,7 @@ import { SidebarComponent } from '../../layout/sidebar/sidebar.component';
 import { AuthService, ModuleCode } from '../../services/auth.service';
 import { CompanyService, Company } from '../../services/company.service';
 import { ModuleService, ModuleDef } from '../../services/module.service';
+import { StatusPipe } from 'src/app/shared/status-pipe';
 
 @Component({
   selector: 'app-my-company',
@@ -25,7 +26,8 @@ import { ModuleService, ModuleDef } from '../../services/module.service';
     InputTextModule,
     TagModule,
     ToastModule,
-    SidebarComponent
+    SidebarComponent,
+    StatusPipe
   ]
 })
 export class MyCompanyComponent implements OnInit {

@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { authGuard } from './guards/auth-guard';
 import { moduleGuard, superAdminGuard } from './guards/module-guard';
+import { roleGuard } from './guards/role-guard';
 import { RegisterComponent } from './pages/register/register.component';
 import { MyAccountComponent } from './pages/my-account/my-account.component';
 
@@ -95,6 +96,16 @@ export const routes: Routes = [
     path: 'service-orders',
     loadChildren: () => import('./pages/service-orders/service-orders.route').then(m => m.routes),
     canActivate: [authGuard, moduleGuard('service_order')]
+  },
+  {
+    path: 'nfse',
+    loadChildren: () => import('./pages/nfse/nfse.route').then(m => m.routes),
+    canActivate: [authGuard, moduleGuard('nfse')]
+  },
+  {
+    path: 'financial',
+    loadChildren: () => import('./pages/financial/financial.route').then(m => m.routes),
+    canActivate: [authGuard, moduleGuard('financial'), roleGuard('administrator', 'finance')]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }

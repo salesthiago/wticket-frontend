@@ -10,7 +10,7 @@
     <p-card>
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-semibold">Minha Empresa</h2>
-        <p-tag [value]="company.status"></p-tag>
+        <p-tag [value]="company.status | status"></p-tag>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -59,7 +59,7 @@
               <div class="font-medium">{{ moduleName(m.code) }}</div>
               <div class="text-xs text-gray-500">Status: {{ m.subscriptionStatus }}</div>
             </div>
-            <p-tag [value]="m.subscriptionStatus" [severity]="m.subscriptionStatus === 'active' ? 'success' : 'warn'"></p-tag>
+            <p-tag [value]="m.subscriptionStatus | status" [severity]="m.subscriptionStatus === 'active' ? 'success' : 'warn'"></p-tag>
           </div>
         }
       </div>

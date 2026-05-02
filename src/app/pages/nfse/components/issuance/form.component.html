@@ -1,0 +1,285 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (!loading) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <div class="lg:col-span-2 space-y-4">
+      <!-- ─── Tomador ──────────────────────────────────────────────────── -->
+      <p-card>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold">Tomador</h3>
+          <div class="flex items-center gap-2">
+            <p-toggleSwitch [(ngModel)]="useTomadorOverride" inputId="overrideTm" />
+            <label for="overrideTm" class="text-sm">Editar dados manualmente</label>
+          </div>
+        </div>
+
+        @if (!useTomadorOverride) {
+          <div>
+            <label class="block text-sm mb-1">Selecionar cliente</label>
+            <p-select
+              [options]="optionCustomers"
+              [(ngModel)]="customerId"
+              [filter]="true" filterBy="label"
+              optionLabel="label" optionValue="value"
+              placeholder="Buscar cliente cadastrado…"
+              (onChange)="onCustomerChange()"
+              styleClass="w-full" />
+            <small class="text-gray-500">
+              Se o cliente não tiver código IBGE do município (cMun) cadastrado,
+              ative "Editar dados manualmente" para informar o endereço completo.
+            </small>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm mb-1">Tipo *</label>
+              <p-select [options]="optionDocType" [(ngModel)]="tomadorOverride.documentType"
+                optionLabel="label" optionValue="value" styleClass="w-full" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm mb-1">CPF/CNPJ *</label>
+              <input pInputText class="w-full font-mono" [(ngModel)]="tomadorOverride.document" />
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-sm mb-1">Nome / Razão Social *</label>
+              <input pInputText class="w-full" [(ngModel)]="tomadorOverride.nome" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">E-mail</label>
+              <input pInputText class="w-full" [(ngModel)]="tomadorOverride.email" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Telefone</label>
+              <input pInputText class="w-full" [(ngModel)]="tomadorOverride.fone" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Inscrição Municipal</label>
+              <input pInputText class="w-full" [(ngModel)]="tomadorOverride.inscricaoMunicipal" />
+            </div>
+          </div>
+
+          <p-divider align="left"><span class="text-sm font-medium">Endereço</span></p-divider>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div class="md:col-span-2">
+              <label class="block text-sm mb-1">
+                Município (cMun IBGE) *
+                <i class="pi pi-info-circle text-gray-400"
+                  pTooltip="Digite o nome da cidade. Filtra por UF se informada."></i>
+              </label>
+              <p-autoComplete
+                [(ngModel)]="cMunSelected"
+                [suggestions]="cMunSuggestions"
+                (completeMethod)="onSearchCMun($event)"
+                (onSelect)="onCMunSelect($event)"
+                field="name"
+                placeholder="Ex.: Goiânia, Aparecida de Goiânia…"
+                [forceSelection]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full">
+                <ng-template let-m pTemplate="item">
+                  <div class="flex justify-between items-center">
+                    <span>{{ m.name }}</span>
+                    <span class="text-xs text-gray-500 font-mono">{{ m.uf }} • {{ m.cMun }}</span>
+                  </div>
+                </ng-template>
+              </p-autoComplete>
+              @if (tomadorOverride.endereco.cMun) {
+                <small class="text-gray-500 font-mono">cMun: {{ tomadorOverride.endereco.cMun }}</small>
+              }
+            </div>
+            <div>
+              <label class="block text-sm mb-1">UF</label>
+              <input pInputText class="w-full uppercase" maxlength="2"
+                [(ngModel)]="tomadorOverride.endereco.uf" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">CEP</label>
+              <input pInputText class="w-full font-mono"
+                [(ngModel)]="tomadorOverride.endereco.cep" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Bairro</label>
+              <input pInputText class="w-full"
+                [(ngModel)]="tomadorOverride.endereco.xBairro" />
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-sm mb-1">Logradouro</label>
+              <input pInputText class="w-full"
+                [(ngModel)]="tomadorOverride.endereco.xLgr" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Número</label>
+              <input pInputText class="w-full"
+                [(ngModel)]="tomadorOverride.endereco.nro" />
+            </div>
+            <div class="md:col-span-4">
+              <label class="block text-sm mb-1">Complemento</label>
+              <input pInputText class="w-full"
+                [(ngModel)]="tomadorOverride.endereco.xCpl" />
+            </div>
+          </div>
+        }
+      </p-card>
+
+      <!-- ─── Serviço ─────────────────────────────────────────────────── -->
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Serviço Prestado</h3>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <label class="block text-sm mb-1">Código de Serviço (catálogo)</label>
+            <p-select
+              [options]="optionServiceCodes"
+              [(ngModel)]="serviceCodeId"
+              [filter]="true" filterBy="label"
+              optionLabel="label" optionValue="value"
+              placeholder="Selecione um código cadastrado…"
+              (onChange)="onServiceCodeChange()"
+              [showClear]="true"
+              styleClass="w-full" />
+            <small class="text-gray-500">
+              Selecionar preenche automaticamente cTribNac/Mun/NBS, alíquota e retenções.
+            </small>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm mb-1">cTribNac *</label>
+              <input pInputText class="w-full font-mono" maxlength="6" [(ngModel)]="cTribNac" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">cTribMun</label>
+              <input pInputText class="w-full font-mono" [(ngModel)]="cTribMun" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">cNBS</label>
+              <input pInputText class="w-full font-mono" [(ngModel)]="cNBS" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Descrição do serviço *</label>
+            <textarea pInputTextarea class="w-full" rows="3" maxlength="2000"
+              [(ngModel)]="xDescServ" placeholder="Descrição completa do serviço prestado"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm mb-1">Local de prestação (cMun)</label>
+              <input pInputText class="w-full font-mono" maxlength="7" [(ngModel)]="cLocPrestacao"
+                placeholder="Padrão: município do prestador" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Data de competência *</label>
+              <p-datePicker [(ngModel)]="dCompet" dateFormat="dd/mm/yy" [showButtonBar]="true" styleClass="w-full" />
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- ─── Retenções ─────────────────────────────────────────────── -->
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Retenções</h3>
+        <div class="mb-3 flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="retencaoIss" inputId="retIssEmit" />
+          <label for="retIssEmit" class="text-sm">ISSQN retido na fonte</label>
+        </div>
+        <p-table [value]="retencoes" [tableStyle]="{ 'min-width': '40rem' }">
+          <ng-template #header>
+            <tr>
+              <th>Tributo</th>
+              <th class="text-center">Reter</th>
+              <th class="text-right">Alíquota (%)</th>
+              <th class="text-right">Valor</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-row>
+            <tr>
+              <td class="font-medium">{{ row.label }}</td>
+              <td class="text-center"><p-toggleSwitch [(ngModel)]="row.retido" /></td>
+              <td class="text-right" style="max-width: 12rem">
+                <p-inputNumber [(ngModel)]="row.aliq" [minFractionDigits]="2" [maxFractionDigits]="4"
+                  [min]="0" [max]="100" suffix=" %" [disabled]="!row.retido" styleClass="w-full" />
+              </td>
+              <td class="text-right font-mono">
+                R$ {{ (row.retido ? (vBC * (row.aliq || 0) / 100) : 0) | number:'1.2-2' }}
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <!-- ─── Painel lateral (valores) ─────────────────────────────────── -->
+    <div class="space-y-4">
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Valores</h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm mb-1">Valor do serviço (R$) *</label>
+            <p-inputNumber [(ngModel)]="vServ" mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Desconto incondicional (R$)</label>
+            <p-inputNumber [(ngModel)]="descIncond" mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Desconto condicional (R$)</label>
+            <p-inputNumber [(ngModel)]="descCond" mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Alíquota ISSQN (%) *</label>
+            <p-inputNumber [(ngModel)]="pAliq" [minFractionDigits]="2" [maxFractionDigits]="4" [min]="0" [max]="100" suffix=" %" styleClass="w-full" />
+          </div>
+        </div>
+
+        <p-divider />
+
+        <div class="space-y-1 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Base de cálculo</span>
+            <span class="font-mono">R$ {{ vBC | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">ISSQN</span>
+            <span class="font-mono">R$ {{ vISSQN | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Total retido</span>
+            <span class="font-mono">R$ {{ vTotalRet | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between text-lg font-semibold pt-1 border-t">
+            <span>Valor líquido</span>
+            <span class="font-mono">R$ {{ vLiq | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <p-divider />
+
+        <div class="flex flex-col gap-2">
+          <p-button label="Emitir NFS-e" icon="pi pi-send"
+            [loading]="submitting" styleClass="w-full" (onClick)="submit()" />
+          <p-button label="Cancelar" severity="secondary" [text]="true"
+            styleClass="w-full" (onClick)="cancel()" />
+        </div>
+      </p-card>
+
+      <p-message severity="info" styleClass="w-full">
+        A emissão é síncrona (método GerarNfse). Em caso de erro, você verá as mensagens
+        retornadas pela prefeitura na tela de detalhes.
+      </p-message>
+    </div>
+  </div>
+  }
+</div>
+
+<p-toast />

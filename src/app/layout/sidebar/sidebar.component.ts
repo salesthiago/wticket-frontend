@@ -149,6 +149,44 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ]
         }
       ]
+    },
+    {
+      id: 11,
+      name: 'NFS-e',
+      link: '',
+      icon: 'pi pi-file-edit',
+      modules: ['nfse'],
+      panelModel: [
+        {
+          label: 'NFS-e',
+          icon: 'pi pi-file-edit',
+          items: [
+            { label: 'Emissões', routerLink: '/nfse/issuances' },
+            { label: 'Nova Emissão', routerLink: '/nfse/issuances/create' },
+            { label: 'Códigos de Serviço', routerLink: '/nfse/service-codes' },
+            { label: 'Configurações', routerLink: '/nfse/config' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 12,
+      name: 'Financeiro',
+      link: '',
+      icon: 'pi pi-wallet',
+      modules: ['financial'],
+      roles: ['administrator', 'finance', 'super_admin'],
+      panelModel: [
+        {
+          label: 'Financeiro',
+          icon: 'pi pi-wallet',
+          items: [
+            { label: 'Dashboard', routerLink: '/financial/dashboard' },
+            { label: 'Contas a Receber', routerLink: '/financial/receivables' },
+            { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' }
+          ]
+        }
+      ]
     }
   ];
 

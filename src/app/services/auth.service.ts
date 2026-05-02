@@ -4,8 +4,8 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/enviroment';
 
-export type UserRole = 'super_admin' | 'company_admin' | 'administrator' | 'default';
-export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance';
+export type UserRole = 'super_admin' | 'company_admin' | 'administrator' | 'finance' | 'default';
+export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance' | 'nfse' | 'financial';
 
 export interface AuthUser {
   id: string;
@@ -102,6 +102,12 @@ export class AuthService {
   isCompanyAdmin(): boolean {
     const role = this.getRole();
     return role === 'company_admin' || role === 'super_admin';
+  }
+
+  hasAnyRole(...roles: UserRole[]): boolean {
+    if (this.isSuperAdmin()) return true; // super_admin sempre liberado
+    const r = this.getRole();
+    return r ? roles.includes(r) : false;
   }
 
   getCompanyId(): string | null {
