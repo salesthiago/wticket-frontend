@@ -1,0 +1,142 @@
+<p-card>
+  <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+    <h3 class="text-lg font-semibold flex items-center gap-2">
+      <i class="pi pi-cloud"></i> Storage S3
+    </h3>
+    <p-tag [value]="badgeLabel()" [severity]="badgeSeverity()" />
+  </div>
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-8">
+      <i class="pi pi-spinner pi-spin"></i> Carregando…
+    </div>
+  }
+
+  @if (!loading && config) {
+    @if (!config.defaultAvailable && !form.enabled) {
+      <p-message severity="warn" styleClass="w-full mb-3"
+        text="Não há storage padrão configurado no servidor. Configure um storage próprio para esta empresa ou peça ao administrador da plataforma para definir as variáveis S3_DEFAULT_* no .env." />
+    }
+
+    <p-message severity="info" styleClass="w-full mb-3">
+      A estrutura de pastas no bucket é fixa:
+      <code class="font-mono bg-black/5 dark:bg-white/10 px-1 rounded">
+        [prefix/]companies/&lcub;companyId&rcub;/&lcub;categoria&rcub;/&lcub;arquivo&rcub;
+      </code>
+    </p-message>
+
+    <div class="flex items-center gap-2 mb-4">
+      <p-toggleSwitch [(ngModel)]="form.enabled" inputId="storageEnabled" />
+      <label for="storageEnabled" class="text-sm">
+        Usar storage <strong>próprio</strong> desta empresa
+        @if (!form.enabled && config.defaultAvailable) {
+          <span class="text-gray-500">(desligado = usa o padrão da plataforma)</span>
+        }
+      </label>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" [class.opacity-50]="!form.enabled">
+      <div>
+        <label class="block text-sm mb-1">Bucket *</label>
+        <input pInputText class="w-full font-mono" [(ngModel)]="form.bucket"
+          [disabled]="!form.enabled" placeholder="nome-do-bucket" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Region *</label>
+        <input pInputText class="w-full font-mono" [(ngModel)]="form.region"
+          [disabled]="!form.enabled" placeholder="sa-east-1" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Access Key ID *</label>
+        <input pInputText class="w-full font-mono" [(ngModel)]="form.accessKeyId"
+          [disabled]="!form.enabled" placeholder="AKIA…" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">
+          Secret Access Key
+          @if (config.configured && !hasNewSecret) {
+            <span class="text-xs text-gray-500 ml-1">(deixe em branco para manter o atual)</span>
+          } @else {
+            <span class="text-red-500">*</span>
+          }
+        </label>
+        <p-password [(ngModel)]="form.secretAccessKey" [feedback]="false"
+          [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full font-mono"
+          [disabled]="!form.enabled" placeholder="••••••••"
+          (ngModelChange)="onSecretChange()" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">
+          Prefixo
+          <i class="pi pi-info-circle text-gray-400"
+            pTooltip="Aplicado antes da estrutura companies/&lcub;id&rcub;/. Deixe vazio se não quiser."></i>
+        </label>
+        <input pInputText class="w-full font-mono" [(ngModel)]="form.prefix"
+          [disabled]="!form.enabled" placeholder="(opcional) wticket/" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">
+          URL pública / CloudFront
+          <i class="pi pi-info-circle text-gray-400"
+            pTooltip="Se você usa CloudFront ou domínio customizado para servir os arquivos públicos."></i>
+        </label>
+        <input pInputText class="w-full" [(ngModel)]="form.publicBaseUrl"
+          [disabled]="!form.enabled" placeholder="(opcional) https://cdn.exemplo.com" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">
+          Endpoint customizado
+          <i class="pi pi-info-circle text-gray-400"
+            pTooltip="Para S3-compatible (Cloudflare R2, MinIO, DigitalOcean Spaces). Deixe vazio para AWS."></i>
+        </label>
+        <input pInputText class="w-full" [(ngModel)]="form.endpoint"
+          [disabled]="!form.enabled" placeholder="(opcional) https://...r2.cloudflarestorage.com" />
+      </div>
+      <div class="flex items-center gap-2 pt-6">
+        <p-toggleSwitch [(ngModel)]="form.forcePathStyle" inputId="forcePathStyle"
+          [disabled]="!form.enabled" />
+        <label for="forcePathStyle" class="text-sm">
+          Usar path-style URLs
+          <i class="pi pi-info-circle text-gray-400"
+            pTooltip="Necessário para alguns serviços S3-compatible como MinIO."></i>
+        </label>
+      </div>
+    </div>
+
+    @if (config.testedAt) {
+      <p-divider />
+      <div class="text-xs text-gray-500">
+        Última validação: {{ config.testedAt | date:'dd/MM/yyyy HH:mm:ss' }}
+        — {{ config.testOk ? '✓ OK' : '✗ Falhou' }}
+      </div>
+    }
+
+    <div class="mt-6 flex flex-wrap gap-2 justify-end">
+      <p-button label="Testar credenciais (sem salvar)" icon="pi pi-bolt"
+        severity="secondary" [outlined]="true"
+        [loading]="testing" [disabled]="!form.enabled || !form.bucket"
+        (onClick)="testConnection(true)"
+        pTooltip="Testa as credenciais digitadas no formulário antes de salvar" />
+      @if (config.configured && form.enabled) {
+        <p-button label="Testar config salva" icon="pi pi-check-circle"
+          severity="secondary" [outlined]="true"
+          [loading]="testing"
+          (onClick)="testConnection(false)" />
+      }
+      @if (config.source === 'company') {
+        <p-button label="Voltar para padrão" icon="pi pi-trash"
+          severity="danger" [outlined]="true"
+          [loading]="removing"
+          (onClick)="confirmReset($event)" />
+      }
+      <p-button label="Salvar" icon="pi pi-save"
+        [loading]="saving" (onClick)="save()" />
+    </div>
+  }
+</p-card>
+
+<p-toast />
+<p-confirmDialog />

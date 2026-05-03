@@ -64,5 +64,9 @@
         }
       </div>
     </p-card>
+
+    @if (canManageStorage) {
+      <app-storage-config [companyId]="company._id" />
+    }
   }
 </div>

@@ -12,6 +12,7 @@ import { SidebarComponent } from '../../../layout/sidebar/sidebar.component';
 import { CompanyService, Company, SubscriptionStatus } from '../../../services/company.service';
 import { ModuleService, ModuleDef } from '../../../services/module.service';
 import { ModuleCode } from '../../../services/auth.service';
+import { StorageConfigComponent } from '../../../components/storage-config/storage-config.component';
 
 @Component({
   selector: 'app-admin-company-detail',
@@ -27,7 +28,8 @@ import { ModuleCode } from '../../../services/auth.service';
     InputTextModule,
     TagModule,
     ToastModule,
-    SidebarComponent
+    SidebarComponent,
+    StorageConfigComponent
   ]
 })
 export class CompanyDetailComponent implements OnInit {

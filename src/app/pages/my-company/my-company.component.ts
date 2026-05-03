@@ -12,6 +12,7 @@ import { AuthService, ModuleCode } from '../../services/auth.service';
 import { CompanyService, Company } from '../../services/company.service';
 import { ModuleService, ModuleDef } from '../../services/module.service';
 import { StatusPipe } from 'src/app/shared/status-pipe';
+import { StorageConfigComponent } from '../../components/storage-config/storage-config.component';
 
 @Component({
   selector: 'app-my-company',
@@ -27,7 +28,8 @@ import { StatusPipe } from 'src/app/shared/status-pipe';
     TagModule,
     ToastModule,
     SidebarComponent,
-    StatusPipe
+    StatusPipe,
+    StorageConfigComponent
   ]
 })
 export class MyCompanyComponent implements OnInit {
@@ -36,12 +38,18 @@ export class MyCompanyComponent implements OnInit {
   company: Company | null = null;
   catalog: ModuleDef[] = [];
 
+  // Só super_admin OU company_admin/administrator da própria empresa podem
+  // editar a configuração de storage (gating idêntico ao do backend).
+  canManageStorage = false;
+
   constructor(
     private auth: AuthService,
     private companyService: CompanyService,
     private moduleService: ModuleService,
     private messageService: MessageService
-  ) {}
+  ) {
+    this.canManageStorage = this.auth.hasAnyRole('company_admin', 'administrator');
+  }
 
   ngOnInit(): void {
     const companyId = this.auth.getCompanyId();

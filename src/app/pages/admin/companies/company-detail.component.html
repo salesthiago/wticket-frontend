@@ -103,5 +103,7 @@
         <p-button label="Adicionar" icon="pi pi-plus" [disabled]="!newModuleCode" (click)="addModule()"></p-button>
       </div>
     </p-card>
+
+    <app-storage-config [companyId]="company._id" />
   }
 </div>

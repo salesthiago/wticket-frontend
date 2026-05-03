@@ -65,6 +65,44 @@ export interface RegisterCompanyResponse {
   modules: ModuleCode[];
 }
 
+// ─── Storage S3 ─────────────────────────────────────────────────────────────
+
+export type StorageSource = 'company' | 'default';
+
+export interface StorageConfigDto {
+  source: StorageSource;
+  enabled: boolean;
+  configured: boolean;
+  bucket?: string;
+  region?: string;
+  accessKeyId?: string;
+  prefix?: string;
+  publicBaseUrl?: string;
+  endpoint?: string;
+  forcePathStyle?: boolean;
+  secretAccessKeyMasked?: string | null;
+  testedAt?: string | null;
+  testOk?: boolean;
+  defaultAvailable?: boolean;
+}
+
+export interface StorageConfigUpdate {
+  enabled?: boolean;
+  bucket?: string;
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;     // será cifrado no backend (nunca devolvido)
+  prefix?: string;
+  publicBaseUrl?: string;
+  endpoint?: string;
+  forcePathStyle?: boolean;
+}
+
+export interface StorageTestResult {
+  ok: boolean;
+  message: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CompanyService {
   private apiUrl = `${environment.apiUrl}/companies`;
@@ -101,5 +139,22 @@ export class CompanyService {
 
   setModuleSubscription(id: string, code: ModuleCode, payload: { subscriptionStatus?: SubscriptionStatus; activatedAt?: string; expiresAt?: string; }): Observable<Company> {
     return this.http.patch<Company>(`${this.apiUrl}/${id}/modules/${code}`, payload);
+  }
+
+  // Storage S3
+  getStorageConfig(id: string): Observable<StorageConfigDto> {
+    return this.http.get<StorageConfigDto>(`${this.apiUrl}/${id}/storage`);
+  }
+
+  updateStorageConfig(id: string, payload: StorageConfigUpdate): Observable<StorageConfigDto> {
+    return this.http.put<StorageConfigDto>(`${this.apiUrl}/${id}/storage`, payload);
+  }
+
+  deleteStorageConfig(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/storage`);
+  }
+
+  testStorageConnection(id: string, payload?: StorageConfigUpdate): Observable<StorageTestResult> {
+    return this.http.post<StorageTestResult>(`${this.apiUrl}/${id}/storage/test`, payload || {});
   }
 }
