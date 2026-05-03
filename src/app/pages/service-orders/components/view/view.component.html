@@ -537,5 +537,53 @@
   </ng-template>
 </p-dialog>
 
+<!-- Dialog Faturar OS -->
+<p-dialog header="Faturar Ordem de Serviço" [(visible)]="showInvoiceDialog"
+  [modal]="true" [style]="{ width: '600px' }" [closable]="!invoicingOrder">
+  <div class="grid grid-cols-1 gap-4 p-2">
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Descrição *</label>
+      <input pInputText [(ngModel)]="invoiceDraft.description" class="w-full" maxlength="500" />
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <div class="field">
+        <label class="block mb-1 text-sm">Valor (R$) *</label>
+        <p-inputNumber [(ngModel)]="invoiceDraft.amount"
+          mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label class="block mb-1 text-sm">Vencimento *</label>
+        <p-datePicker [(ngModel)]="invoiceDraft.dueDate"
+          dateFormat="dd/mm/yy" [showButtonBar]="true" styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label class="block mb-1 text-sm">Forma de Pagamento *</label>
+        <p-select [options]="optionPaymentMethods"
+          [(ngModel)]="invoiceDraft.paymentMethod"
+          optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Observações</label>
+      <textarea pTextarea [(ngModel)]="invoiceDraft.notes" rows="2" maxlength="500" class="w-full"></textarea>
+    </div>
+
+    <div class="text-xs text-gray-500 border-t pt-2">
+      O título será gerado vinculado ao cliente desta OS e poderá ser baixado posteriormente
+      em <a routerLink="/financial/receivables" class="underline">Financeiro › Contas a Receber</a>.
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true"
+      [disabled]="invoicingOrder" (click)="showInvoiceDialog = false" />
+    <p-button label="Gerar Título" icon="pi pi-wallet" severity="info"
+      [loading]="invoicingOrder" (click)="submitInvoice()" />
+  </ng-template>
+</p-dialog>
+
 <p-confirmDialog />
 <p-toast />
