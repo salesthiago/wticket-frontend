@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService, MenuItem, ConfirmationService } from 'primeng/api';
 import { ProductsService } from '../services/products.service';
-import { ProductModel, ProductImage } from '../../product.interface';
+import { ProductModel, ProductImage, StockMovement } from '../../product.interface';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
@@ -18,6 +18,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { CommonModule } from '@angular/common';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-form',
@@ -44,7 +46,9 @@ import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
     TabList,
     Tab,
     TabPanels,
-    TabPanel
+    TabPanel,
+    TableModule,
+    TagModule
   ]
 })
 export class FormComponent implements OnInit {
@@ -69,6 +73,24 @@ export class FormComponent implements OnInit {
   public loading = false;
   public uploadingImage = false;
 
+  // ─── Estoque ───────────────────────────────────────────────────────────────
+  public movements: StockMovement[] = [];
+  public loadingMovements = false;
+  public savingMovement = false;
+  public movementDraft: { type: 'in' | 'out'; quantity: number; notes: string } = {
+    type: 'in',
+    quantity: 1,
+    notes: ''
+  };
+  public optionMovementType = [
+    { name: 'Entrada', value: 'in' },
+    { name: 'Saída', value: 'out' }
+  ];
+
+  public get showStockTab(): boolean {
+    return !!this.id && !this.product.isVirtual && this.product.trackStock !== false;
+  }
+
   public optionStatus = [
     { name: 'Ativo', value: true },
     { name: 'Inativo', value: false }
@@ -87,6 +109,7 @@ export class FormComponent implements OnInit {
     if (this.id) {
       this.findById(this.id);
       this.loadImages(this.id);
+      this.loadStockMovements(this.id);
     }
   }
 
@@ -191,6 +214,76 @@ export class FormComponent implements OnInit {
         this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover imagem.' });
       }
     });
+  }
+
+  // ─── Estoque ───────────────────────────────────────────────────────────────
+
+  private loadStockMovements(productId: string) {
+    this.loadingMovements = true;
+    this.service.listStockMovements(productId, { limit: 50 }).subscribe({
+      next: (resp: any) => {
+        this.movements = resp?.records ?? resp ?? [];
+        this.loadingMovements = false;
+      },
+      error: () => {
+        this.loadingMovements = false;
+      }
+    });
+  }
+
+  public submitStockMovement() {
+    if (!this.id) return;
+    if (!this.movementDraft.quantity || this.movementDraft.quantity <= 0) {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Informe uma quantidade maior que zero.' });
+      return;
+    }
+
+    this.savingMovement = true;
+    this.service.createStockMovement(this.id, {
+      type: this.movementDraft.type,
+      quantity: this.movementDraft.quantity,
+      notes: this.movementDraft.notes || undefined
+    }).subscribe({
+      next: (resp: any) => {
+        this.savingMovement = false;
+        if (resp?.product) this.product.stock = resp.product.stock;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'OK',
+          detail: this.movementDraft.type === 'in' ? 'Entrada registrada!' : 'Saída registrada!'
+        });
+        this.movementDraft = { type: 'in', quantity: 1, notes: '' };
+        this.loadStockMovements(this.id!);
+      },
+      error: (err: any) => {
+        this.savingMovement = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: err?.error?.message || 'Erro ao registrar movimentação'
+        });
+      }
+    });
+  }
+
+  public movementTypeLabel(m: StockMovement): string {
+    return m.type === 'in' ? 'Entrada' : 'Saída';
+  }
+
+  public movementReasonLabel(m: StockMovement): string {
+    const labels: Record<string, string> = {
+      manual_in: 'Entrada manual',
+      manual_out: 'Saída manual',
+      service_order: 'Ordem de serviço',
+      service_order_reversal: 'Estorno de OS',
+      adjustment: 'Ajuste'
+    };
+    return labels[m.reason] ?? m.reason;
+  }
+
+  public movementUser(m: StockMovement): string {
+    if (!m.createdBy) return '—';
+    return typeof m.createdBy === 'string' ? '—' : (m.createdBy.name || '—');
   }
 
   public isMainImage(image: ProductImage): boolean {

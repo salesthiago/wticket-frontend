@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ServiceOrdersService } from '../services/service-orders.service';
+import { ProductsService } from '../../../products/components/services/products.service';
 import {
   ServiceOrderStatus,
   ServiceOrderPriority,
@@ -106,6 +107,10 @@ export class ViewComponent implements OnInit {
   public diagnosisServices: ServiceItemModel[] = [];
   public diagnosisParts: PartModel[] = [];
 
+  // Catálogo de produtos para vincular às peças (baixa de estoque)
+  public products: any[] = [];
+  public optionProducts: { label: string; value: string; price: number; stock: number; trackStock: boolean }[] = [];
+
   // ─── NFS-e ────────────────────────────────────────────────────────────────
   public hasNfseModule = false;
   public nfseIssuances: NfseIssuance[] = [];
@@ -154,6 +159,7 @@ export class ViewComponent implements OnInit {
 
   constructor(
     private service: ServiceOrdersService,
+    private productsService: ProductsService,
     private router: Router,
     private route: ActivatedRoute,
     private confirmationService: ConfirmationService,
@@ -472,12 +478,46 @@ export class ViewComponent implements OnInit {
     this.diagnosisText = this.order?.diagnosis ?? '';
     this.estimatedCost = this.order?.estimatedCost ?? 0;
     this.diagnosisServices = this.order?.services?.length
-      ? [...this.order.services]
+      ? this.order.services.map((s: any) => ({ ...s }))
       : [];
     this.diagnosisParts = this.order?.parts?.length
-      ? [...this.order.parts]
+      ? this.order.parts.map((p: any) => ({ ...p }))
       : [];
+    this.loadProducts();
     this.showDiagnosisDialog = true;
+  }
+
+  private loadProducts() {
+    if (this.optionProducts.length) return;
+    this.productsService.findAll({ isActive: true, limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        this.products = resp?.records ?? resp ?? [];
+        this.optionProducts = this.products.map((p: any) => ({
+          label: `${p.name} (${p.sku})`,
+          value: p._id,
+          price: p.price ?? 0,
+          stock: p.stock ?? 0,
+          trackStock: p.trackStock !== false && !p.isVirtual
+        }));
+      }
+    });
+  }
+
+  public onPartProductChange(index: number) {
+    const part = this.diagnosisParts[index];
+    const product = this.optionProducts.find(p => p.value === part.productId);
+    if (product) {
+      part.name = product.label.replace(/\s*\([^)]*\)\s*$/, '');
+      part.unitPrice = product.price;
+      this.onPartChange(index);
+    }
+  }
+
+  public partStockLabel(part: PartModel): string {
+    if (!part.productId) return '';
+    const product = this.optionProducts.find(p => p.value === part.productId);
+    if (!product || !product.trackStock) return '';
+    return `Estoque: ${product.stock}`;
   }
 
   public addService() {
