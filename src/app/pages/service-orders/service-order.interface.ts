@@ -26,7 +26,6 @@ export interface PartModel {
   quantity: number;
   unitPrice: number;
   total: number;
-  productId?: string;
   deductedQuantity?: number;
 }
 
