@@ -36,6 +36,7 @@
             tooltipPosition="bottom"
             (click)="openInvoiceDialog()" />
         }
+        <p-button label="Imprimir PDF" icon="pi pi-file-pdf" severity="secondary" [outlined]="true" (click)="printPdf()" />
         <p-button label="Editar" icon="pi pi-pencil" severity="secondary" (click)="edit()" />
         <p-button label="Voltar" icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="onBack()" />
       </div>
@@ -410,12 +411,20 @@
     <div>
       <div class="flex justify-between items-center mb-2">
         <label class="font-semibold">Serviços</label>
-        <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addService()" />
+        <div class="flex items-center gap-1">
+          <p-button icon="pi pi-tag" label="Novo serviço" [text]="true" size="small"
+                    (click)="openNewServiceItem()" pTooltip="Cadastrar serviço no catálogo" />
+          <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addService()" />
+        </div>
       </div>
       @for (s of diagnosisServices; track $index) {
         <div class="grid grid-cols-6 gap-2 mb-2">
           <div class="col-span-2 min-w-0">
-            <input pInputText [(ngModel)]="s.description" placeholder="Descrição" class="w-full" />
+            <p-autocomplete [(ngModel)]="s.selectedProduct" [suggestions]="serviceSuggestions"
+                            (completeMethod)="searchServices($event)" optionLabel="name"
+                            [forceSelection]="true" [dropdown]="true" placeholder="Buscar serviço..."
+                            (onSelect)="onServiceSelect($index, $event.value)" (onClear)="onServiceItemClear($index)"
+                            styleClass="w-full" inputStyleClass="w-full" appendTo="body" />
           </div>
           <div class="col-span-1 min-w-0">
             <p-inputNumber fluid [(ngModel)]="s.quantity" [min]="1" placeholder="Qtd" (onInput)="onServiceChange($index)"
@@ -438,7 +447,11 @@
     <div>
       <div class="flex justify-between items-center mb-2">
         <label class="font-semibold">Peças</label>
-        <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addPart()" />
+        <div class="flex items-center gap-1">
+          <p-button icon="pi pi-box" label="Novo produto" [text]="true" size="small"
+                    (click)="openNewProduct()" pTooltip="Cadastrar produto no catálogo" />
+          <p-button icon="pi pi-plus" label="Adicionar" [text]="true" size="small" (click)="addPart()" />
+        </div>
       </div>
       @for (p of diagnosisParts; track $index) {
         <div class="grid grid-cols-12 gap-2 mb-2 items-end">
@@ -584,6 +597,10 @@
       [loading]="invoicingOrder" (click)="submitInvoice()" />
   </ng-template>
 </p-dialog>
+
+<!-- Modal: cadastro rápido de produto/serviço -->
+<app-product-quick-form [(visible)]="quickFormVisible" [mode]="quickFormMode"
+                        (created)="onQuickCreated($event)" />
 
 <p-confirmDialog />
 <p-toast />

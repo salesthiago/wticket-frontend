@@ -55,11 +55,14 @@ export class FormComponent implements OnInit {
     name: '',
     sku: '',
     ncmCode: '',
+    brand: '',
+    model: '',
     description: '',
     price: 0,
     stock: 0,
     isActive: true,
     isVirtual: false,
+    service: false,
     trackStock: true,
     downloadUrl: ''
   };
@@ -219,11 +222,14 @@ export class FormComponent implements OnInit {
       name: this.product.name,
       sku: this.product.sku,
       ncmCode: this.product.ncmCode,
+      brand: this.product.brand,
+      model: this.product.model,
       description: this.product.description,
       price: this.product.price,
       stock: this.product.stock,
       isActive: this.product.isActive,
       isVirtual: this.product.isVirtual,
+      service: this.product.service,
       trackStock: this.product.trackStock,
       downloadUrl: this.product.isVirtual ? this.product.downloadUrl : undefined
     };
@@ -260,6 +266,18 @@ export class FormComponent implements OnInit {
           });
         }
       });
+    }
+  }
+
+  // Ao marcar como serviço: marca/modelo/estoque ficam vazios e ocultos,
+  // e o controle de estoque é desativado.
+  public onServiceChange(value: boolean): void {
+    this.product.service = value;
+    if (value) {
+      this.product.brand = '';
+      this.product.model = '';
+      this.product.stock = 0;
+      this.product.trackStock = false;
     }
   }
 

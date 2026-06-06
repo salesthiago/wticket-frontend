@@ -46,4 +46,30 @@ export class ServiceOrdersService {
   public delete(id: string): Observable<any> {
     return this.http.delete<any>(this.apiUrl + '/service-orders/' + id + '/destroy');
   }
+
+  public downloadPdf(id: string): Observable<Blob> {
+    return this.http.get(this.apiUrl + '/service-orders/' + id + '/pdf', { responseType: 'blob' });
+  }
+
+  // Retorna as fotos da OS já com uma viewUrl temporária para exibição direta.
+  public getPhotos(id: string): Observable<any> {
+    return this.http.get<any>(this.apiUrl + '/service-orders/' + id + '/photos');
+  }
+
+  // Renova sob demanda a URL temporária de uma foto (ex.: quando a viewUrl expirou).
+  public getPhotoUrl(id: string, photoId: string): Observable<{ url: string; expiresIn: number }> {
+    return this.http.get<{ url: string; expiresIn: number }>(
+      this.apiUrl + '/service-orders/' + id + '/photos/' + photoId + '/url'
+    );
+  }
+
+  public addPhoto(id: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.http.post<any>(this.apiUrl + '/service-orders/' + id + '/photos', formData);
+  }
+
+  public deletePhoto(id: string, photoId: string): Observable<any> {
+    return this.http.delete<any>(this.apiUrl + '/service-orders/' + id + '/photos/' + photoId);
+  }
 }

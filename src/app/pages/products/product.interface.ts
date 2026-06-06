@@ -13,11 +13,14 @@ export interface ProductModel {
   name: string;
   sku: string;
   ncmCode?: string;
+  brand?: string;
+  model?: string;
   description?: string;
   price: number;
   stock: number;
   isActive?: boolean;
   isVirtual?: boolean;
+  service?: boolean;
   trackStock?: boolean;
   downloadUrl?: string;
   mainImage?: ProductImage;

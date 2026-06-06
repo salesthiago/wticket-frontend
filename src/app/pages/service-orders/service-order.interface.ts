@@ -12,13 +12,17 @@ export interface EquipmentModel {
 
 export interface ServiceItemModel {
   description: string;
+  productId?: string;
   quantity: number;
   unitPrice: number;
   total: number;
+  // Transiente (apenas UI): serviço selecionado no autocomplete. Removido no envio.
+  selectedProduct?: any;
 }
 
 export interface PartModel {
   name: string;
+  productId?: string;
   quantity: number;
   unitPrice: number;
   total: number;

@@ -21,6 +21,7 @@ import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { InputTextModule } from 'primeng/inputtext';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { TableModule } from 'primeng/table';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Toast } from 'primeng/toast';
@@ -32,6 +33,8 @@ import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
+import { ProductQuickFormComponent } from '../../../products/components/quick-form/product-quick-form.component';
+import { ProductsService } from '../../../products/components/services/products.service';
 import { NfseService } from '../../../nfse/components/services/nfse.service';
 import {
   NfseIssuance,
@@ -70,6 +73,7 @@ import {
     InputNumberModule,
     TextareaModule,
     InputTextModule,
+    AutoCompleteModule,
     TableModule,
     ConfirmDialog,
     Toast,
@@ -80,7 +84,8 @@ import {
     CurrencyPipe,
     FormsModule,
     SidebarComponent,
-    BreadcrumbModule
+    BreadcrumbModule,
+    ProductQuickFormComponent
   ]
 })
 export class ViewComponent implements OnInit {
@@ -105,6 +110,13 @@ export class ViewComponent implements OnInit {
   public estimatedCost: number = 0;
   public diagnosisServices: ServiceItemModel[] = [];
   public diagnosisParts: PartModel[] = [];
+
+  // Modal de cadastro rápido de produto/serviço
+  public quickFormVisible = false;
+  public quickFormMode: 'part' | 'service' = 'part';
+
+  // Busca de serviços cadastrados (catálogo) para o autocomplete
+  public serviceSuggestions: any[] = [];
 
   // ─── NFS-e ────────────────────────────────────────────────────────────────
   public hasNfseModule = false;
@@ -160,7 +172,8 @@ export class ViewComponent implements OnInit {
     private messageService: MessageService,
     private auth: AuthService,
     private nfse: NfseService,
-    private financial: FinancialService
+    private financial: FinancialService,
+    private productsService: ProductsService
   ) {}
 
   ngOnInit(): void {
@@ -471,8 +484,12 @@ export class ViewComponent implements OnInit {
   public openDiagnosisDialog() {
     this.diagnosisText = this.order?.diagnosis ?? '';
     this.estimatedCost = this.order?.estimatedCost ?? 0;
+    // Reconstrói o "serviço selecionado" para exibir no autocomplete.
     this.diagnosisServices = this.order?.services?.length
-      ? [...this.order.services]
+      ? this.order.services.map((s: any) => ({
+          ...s,
+          selectedProduct: s.description ? { _id: s.productId, name: s.description, price: s.unitPrice } : null
+        }))
       : [];
     this.diagnosisParts = this.order?.parts?.length
       ? [...this.order.parts]
@@ -493,6 +510,33 @@ export class ViewComponent implements OnInit {
     const s = this.diagnosisServices[index];
     s.total = s.quantity * s.unitPrice;
     this.recalcEstimatedCost();
+  }
+
+  // Busca apenas itens marcados como serviço (service=true).
+  public searchServices(event: { query: string }) {
+    this.productsService.findAll({ page: 1, limit: 10, search: event.query, service: true }).subscribe({
+      next: (res: any) => { this.serviceSuggestions = res.records || []; },
+      error: () => { this.serviceSuggestions = []; }
+    });
+  }
+
+  // Preenche descrição/preço a partir do serviço selecionado no catálogo.
+  public onServiceSelect(index: number, product: any) {
+    const s = this.diagnosisServices[index];
+    s.selectedProduct = product;
+    s.description = product.name;
+    s.productId = product._id || product.id;
+    if (product.price !== undefined && product.price !== null) {
+      s.unitPrice = product.price;
+    }
+    this.onServiceChange(index);
+  }
+
+  public onServiceItemClear(index: number) {
+    const s = this.diagnosisServices[index];
+    s.selectedProduct = null;
+    s.description = '';
+    s.productId = undefined;
   }
 
   public addPart() {
@@ -516,6 +560,40 @@ export class ViewComponent implements OnInit {
     this.estimatedCost = servicesTotal + partsTotal;
   }
 
+  // ─── Cadastro rápido de produto/serviço (modal) ──────────
+  public openNewProduct() {
+    this.quickFormMode = 'part';
+    this.quickFormVisible = true;
+  }
+
+  public openNewServiceItem() {
+    this.quickFormMode = 'service';
+    this.quickFormVisible = true;
+  }
+
+  public onQuickCreated(product: any) {
+    const price = (product?.price !== undefined && product?.price !== null) ? product.price : 0;
+    if (this.quickFormMode === 'service') {
+      this.diagnosisServices.push({
+        description: product.name,
+        productId: product._id || product.id,
+        selectedProduct: product,
+        quantity: 1,
+        unitPrice: price,
+        total: price
+      });
+    } else {
+      this.diagnosisParts.push({
+        name: product.name,
+        productId: product._id || product.id,
+        quantity: 1,
+        unitPrice: price,
+        total: price
+      });
+    }
+    this.recalcEstimatedCost();
+  }
+
   public saveDiagnosis() {
     if (!this.diagnosisText || this.diagnosisText.trim().length < 5) {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Descreva o diagnóstico' });
@@ -526,7 +604,10 @@ export class ViewComponent implements OnInit {
       diagnosis: this.diagnosisText,
       estimatedCost: this.estimatedCost
     };
-    if (this.diagnosisServices.length) payload.services = this.diagnosisServices;
+    // Remove o campo transiente selectedProduct antes de enviar.
+    if (this.diagnosisServices.length) {
+      payload.services = this.diagnosisServices.map(({ selectedProduct, ...rest }: any) => rest);
+    }
     if (this.diagnosisParts.length) payload.parts = this.diagnosisParts;
 
     this.service.addDiagnosis(this.id, payload).subscribe({
@@ -574,6 +655,21 @@ export class ViewComponent implements OnInit {
       cancelled: 'pi pi-times-circle'
     };
     return icons[status] ?? 'pi pi-circle';
+  }
+
+  // ─── Impressão em PDF ────────────────────────────────────
+  public printPdf() {
+    if (!this.id) return;
+    this.service.downloadPdf(this.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao gerar o PDF.' });
+      }
+    });
   }
 
   public edit() {

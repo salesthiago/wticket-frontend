@@ -40,6 +40,28 @@
                 placeholder="Ex: 8471.30.19" class="w-full" />
             </div>
 
+            @if (!product.service) {
+              <div class="field">
+                <label for="brand" class="block mb-2">Marca</label>
+                <input id="brand" type="text" pInputText [(ngModel)]="product.brand"
+                  placeholder="Marca (opcional)" class="w-full" />
+              </div>
+
+              <div class="field">
+                <label for="model" class="block mb-2">Modelo</label>
+                <input id="model" type="text" pInputText [(ngModel)]="product.model"
+                  placeholder="Modelo (opcional)" class="w-full" />
+              </div>
+            }
+
+            <div class="field">
+              <label class="block mb-2">Serviço</label>
+              <div class="flex items-center gap-3 mt-1">
+                <p-toggleSwitch [ngModel]="product.service" (ngModelChange)="onServiceChange($event)" />
+                <span class="text-sm">{{ product.service ? 'Sim (mão de obra)' : 'Não' }}</span>
+              </div>
+            </div>
+
             <div class="field">
               <label class="block mb-2">Status</label>
               <p-select [options]="optionStatus" [(ngModel)]="product.isActive"
@@ -60,7 +82,7 @@
               </div>
             </div>
 
-            @if (!product.isVirtual) {
+            @if (!product.isVirtual && !product.service) {
               <div class="field">
                 <label class="block mb-2">Controlar Estoque</label>
                 <div class="flex items-center gap-3 mt-1">
