@@ -49,4 +49,15 @@ export class ProductsService {
   public deleteImage(imageId: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/products/images/${imageId}/destroy`);
   }
+
+  public listStockMovements(productId: string, params: any = {}): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/products/${productId}/stock-movements`, { params });
+  }
+
+  public createStockMovement(
+    productId: string,
+    data: { type: 'in' | 'out'; quantity: number; notes?: string }
+  ): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/products/${productId}/stock-movements`, data);
+  }
 }

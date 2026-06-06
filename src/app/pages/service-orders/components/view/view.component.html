@@ -454,21 +454,35 @@
         </div>
       </div>
       @for (p of diagnosisParts; track $index) {
-        <div class="grid grid-cols-12 gap-2 mb-2 items-end">
-          <div class="col-span-5">
-            <input pInputText [(ngModel)]="p.name" placeholder="Nome da peça" class="w-full" />
+        <div class="border border-gray-100 rounded-lg p-2 mb-2">
+          <div class="grid grid-cols-12 gap-2 items-end">
+            <div class="col-span-12 md:col-span-6">
+              <p-select [options]="optionProducts" [(ngModel)]="p.productId"
+                [filter]="true" filterBy="label" [showClear]="true"
+                optionLabel="label" optionValue="value"
+                placeholder="Vincular produto do estoque (opcional)"
+                (onChange)="onPartProductChange($index)" styleClass="w-full" />
+              @if (partStockLabel(p)) {
+                <small class="text-gray-500">{{ partStockLabel(p) }}</small>
+              }
+            </div>
+            <div class="col-span-12 md:col-span-6">
+              <input pInputText [(ngModel)]="p.name" placeholder="Nome da peça" class="w-full" />
+            </div>
           </div>
-          <div class="col-span-2">
-            <p-inputNumber fluid [(ngModel)]="p.quantity" [min]="1" placeholder="Qtd" (onInput)="onPartChange($index)" class="w-full" />
-          </div>
-          <div class="col-span-2">
-            <p-inputNumber fluid [(ngModel)]="p.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onPartChange($index)" class="w-full" />
-          </div>
-          <div class="col-span-2 font-semibold text-right pt-2">
-            {{ p.total | currency:'BRL' }}
-          </div>
-          <div class="col-span-1">
-            <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" (click)="removePart($index)" />
+          <div class="grid grid-cols-12 gap-2 items-end mt-2">
+            <div class="col-span-3">
+              <p-inputNumber fluid [(ngModel)]="p.quantity" [min]="1" placeholder="Qtd" (onInput)="onPartChange($index)" class="w-full" />
+            </div>
+            <div class="col-span-4">
+              <p-inputNumber fluid [(ngModel)]="p.unitPrice" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor" (onInput)="onPartChange($index)" class="w-full" />
+            </div>
+            <div class="col-span-4 font-semibold text-right pt-2">
+              {{ p.total | currency:'BRL' }}
+            </div>
+            <div class="col-span-1">
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" (click)="removePart($index)" />
+            </div>
           </div>
         </div>
       }

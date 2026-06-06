@@ -15,6 +15,10 @@ export class TicketService {
     return this.http.get<any[]>(`${this.apiUrl}/tickets`, { params: filters });
   }
 
+  create(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/tickets`, data);
+  }
+
   updateStatus(id: string, status: string): Observable<any> {
     return this.http.patch<any[]>(`${this.apiUrl}/tickets/${id}/${status}`, {});
   }

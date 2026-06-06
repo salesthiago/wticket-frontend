@@ -44,6 +44,7 @@ interface Ticket {
   status: 'opened' | 'in_progress' | 'finished' | 'canceled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category?: 'support' | 'sale';
+  origin?: 'manual' | 'bot' | 'gpt' | 'gemini' | 'claude' | 'whatsapp';
   saleItems?: SaleItem[];
   assignedTo?: any;
   tags: string[];
@@ -129,6 +130,20 @@ export class TicketsComponent implements OnInit, OnDestroy {
   ];
 
   sessions: any[] = [];
+
+  // Criação manual de ticket
+  newTicketDialog = false;
+  creatingTicket = false;
+  newTicket: any = this.emptyNewTicket();
+
+  // Opções de origem (somente as que fazem sentido criar manualmente)
+  originOptions = [
+    { label: 'Manual', value: 'manual' },
+    { label: 'Bot', value: 'bot' },
+    { label: 'GPT', value: 'gpt' },
+    { label: 'Gemini', value: 'gemini' },
+    { label: 'Claude', value: 'claude' }
+  ];
 
   constructor(
     private whatsappService: WhatsappService,
@@ -401,6 +416,73 @@ export class TicketsComponent implements OnInit, OnDestroy {
   onCategoryChange(category: string): void {
     this.categoryFilter = category;
     this.loadTickets();
+  }
+
+  private emptyNewTicket() {
+    return {
+      contactNumber: '',
+      contactName: '',
+      sessionName: this.sessionFilter || '',
+      subject: '',
+      priority: 'medium',
+      category: this.categoryFilter || 'support',
+      origin: 'manual'
+    };
+  }
+
+  openNewTicketDialog(): void {
+    this.newTicket = this.emptyNewTicket();
+    this.newTicketDialog = true;
+  }
+
+  createTicket(): void {
+    if (!this.newTicket.contactNumber || !this.newTicket.sessionName) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Atenção',
+        detail: 'Informe o número do contato e a sessão.'
+      });
+      return;
+    }
+
+    this.creatingTicket = true;
+    this.ticketService.create(this.newTicket).subscribe({
+      next: () => {
+        this.creatingTicket = false;
+        this.newTicketDialog = false;
+        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Ticket criado!' });
+        this.loadTickets();
+      },
+      error: (err) => {
+        this.creatingTicket = false;
+        console.error('Erro ao criar ticket:', err);
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao criar ticket.' });
+      }
+    });
+  }
+
+  getOriginLabel(origin?: string) {
+    switch (origin) {
+      case 'manual': return 'Manual';
+      case 'bot': return 'Bot';
+      case 'gpt': return 'GPT';
+      case 'gemini': return 'Gemini';
+      case 'claude': return 'Claude';
+      case 'whatsapp': return 'WhatsApp';
+      default: return '—';
+    }
+  }
+
+  getOriginSeverity(origin?: string) {
+    switch (origin) {
+      case 'manual': return 'success';
+      case 'bot': return 'warning';
+      case 'gpt':
+      case 'gemini':
+      case 'claude': return 'info';
+      case 'whatsapp': return 'secondary';
+      default: return 'secondary';
+    }
   }
 
   get filteredTickets() {

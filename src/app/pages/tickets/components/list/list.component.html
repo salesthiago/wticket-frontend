@@ -8,6 +8,8 @@
       <p-button icon="pi pi-refresh" [rounded]="true" [text]="true" severity="secondary" (onClick)="loadTickets()"
         [loading]="loading" pTooltip="Atualizar lista" tooltipPosition="top">
       </p-button>
+      <p-button icon="pi pi-plus" label="Novo Ticket" (onClick)="openNewTicketDialog()" severity="primary">
+      </p-button>
       <p-button icon="pi pi-sync" label="Sincronizar Contatos" (onClick)="syncContacts()" [loading]="syncLoading"
         severity="help">
       </p-button>
@@ -93,6 +95,7 @@
           <th>Contato</th>
           <th>Assunto</th>
           <th>Sessão</th>
+          <th>Origem</th>
           <th>Status</th>
           <th>Prioridade</th>
           @if (categoryFilter === 'sale') {
@@ -111,6 +114,9 @@
           </td>
           <td>{{ ticket.subject }}</td>
           <td>{{ ticket.sessionName }}</td>
+          <td>
+            <p-tag [value]="getOriginLabel(ticket.origin)" [severity]="getOriginSeverity(ticket.origin)"></p-tag>
+          </td>
           <td>
             <p-tag [value]="getStatusLabel(ticket.status)" [severity]="getStatusSeverity(ticket.status)"></p-tag>
           </td>
@@ -138,7 +144,7 @@
       </ng-template>
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="text-center py-8 text-gray-500">
+          <td colspan="10" class="text-center py-8 text-gray-500">
             Nenhum ticket encontrado
           </td>
         </tr>
@@ -149,6 +155,45 @@
 
 <p-confirmdialog />
 <p-toast />
+
+<!-- Dialog de criação manual de ticket -->
+<p-dialog [(visible)]="newTicketDialog" header="Novo Ticket" [modal]="true" [style]="{ width: '500px' }">
+  <div class="grid grid-cols-1 gap-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-2">Sessão *</label>
+      <p-select [options]="chatSessions" [(ngModel)]="newTicket.sessionName" optionLabel="label" optionValue="value"
+        placeholder="Selecione a sessão" appendTo="body" class="w-full"></p-select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Número do contato *</label>
+      <input type="text" pInputText [(ngModel)]="newTicket.contactNumber" placeholder="Ex: 5511999998888" class="w-full">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Nome do contato</label>
+      <input type="text" pInputText [(ngModel)]="newTicket.contactName" placeholder="Nome do cliente" class="w-full">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Assunto</label>
+      <input type="text" pInputText [(ngModel)]="newTicket.subject" placeholder="Assunto do atendimento" class="w-full">
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Origem</label>
+        <p-select [options]="originOptions" [(ngModel)]="newTicket.origin" optionLabel="label" optionValue="value"
+          appendTo="body" class="w-full"></p-select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Prioridade</label>
+        <p-select [options]="priorityOptions" [(ngModel)]="newTicket.priority" optionLabel="label" optionValue="value"
+          appendTo="body" class="w-full"></p-select>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 mt-4">
+    <p-button label="Cancelar" severity="secondary" (click)="newTicketDialog = false" />
+    <p-button label="Criar" (click)="createTicket()" [loading]="creatingTicket" />
+  </div>
+</p-dialog>
 
 <!-- Dialog de detalhes do ticket -->
 <p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{ width: '80vw', maxWidth: '1100px' }" (onHide)="closeDialog()">
@@ -187,6 +232,10 @@
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Assunto</label>
             <p>{{ selectedTicket.subject }}</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Origem</label>
+            <p-tag [value]="getOriginLabel(selectedTicket.origin)" [severity]="getOriginSeverity(selectedTicket.origin)"></p-tag>
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Última atualização</label>

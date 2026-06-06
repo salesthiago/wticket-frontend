@@ -117,6 +117,9 @@ export class ViewComponent implements OnInit {
 
   // Busca de serviços cadastrados (catálogo) para o autocomplete
   public serviceSuggestions: any[] = [];
+  // Catálogo de produtos para vincular às peças (baixa de estoque)
+  public products: any[] = [];
+  public optionProducts: { label: string; value: string; price: number; stock: number; trackStock: boolean }[] = [];
 
   // ─── NFS-e ────────────────────────────────────────────────────────────────
   public hasNfseModule = false;
@@ -166,14 +169,14 @@ export class ViewComponent implements OnInit {
 
   constructor(
     private service: ServiceOrdersService,
+    private productsService: ProductsService,
     private router: Router,
     private route: ActivatedRoute,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
     private auth: AuthService,
     private nfse: NfseService,
-    private financial: FinancialService,
-    private productsService: ProductsService
+    private financial: FinancialService
   ) {}
 
   ngOnInit(): void {
@@ -492,9 +495,43 @@ export class ViewComponent implements OnInit {
         }))
       : [];
     this.diagnosisParts = this.order?.parts?.length
-      ? [...this.order.parts]
+      ? this.order.parts.map((p: any) => ({ ...p }))
       : [];
+    this.loadProducts();
     this.showDiagnosisDialog = true;
+  }
+
+  private loadProducts() {
+    if (this.optionProducts.length) return;
+    this.productsService.findAll({ isActive: true, limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        this.products = resp?.records ?? resp ?? [];
+        this.optionProducts = this.products.map((p: any) => ({
+          label: `${p.name} (${p.sku})`,
+          value: p._id,
+          price: p.price ?? 0,
+          stock: p.stock ?? 0,
+          trackStock: p.trackStock !== false && !p.isVirtual
+        }));
+      }
+    });
+  }
+
+  public onPartProductChange(index: number) {
+    const part = this.diagnosisParts[index];
+    const product = this.optionProducts.find(p => p.value === part.productId);
+    if (product) {
+      part.name = product.label.replace(/\s*\([^)]*\)\s*$/, '');
+      part.unitPrice = product.price;
+      this.onPartChange(index);
+    }
+  }
+
+  public partStockLabel(part: PartModel): string {
+    if (!part.productId) return '';
+    const product = this.optionProducts.find(p => p.value === part.productId);
+    if (!product || !product.trackStock) return '';
+    return `Estoque: ${product.stock}`;
   }
 
   public addService() {
