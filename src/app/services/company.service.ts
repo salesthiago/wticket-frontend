@@ -56,13 +56,30 @@ export interface RegisterCompanyRequest {
     email: string;
     password: string;
   };
-  modules: ModuleCode[];
+  /** Plano escolhido (preferencial). Define módulos e preço único. */
+  planId?: string;
+  /** Lista avulsa de módulos (fallback quando não há plano). */
+  modules?: ModuleCode[];
+}
+
+export interface CheckoutResult {
+  paymentId: string;
+  url: string;
+  amount: number;
+  status: string;
+  providerBillingId: string;
+  moduleCodes: ModuleCode[];
+  planId?: string | null;
 }
 
 export interface RegisterCompanyResponse {
   company: { id: string; name: string; status: CompanyStatus };
   owner: { id: string; name: string; email: string };
   modules: ModuleCode[];
+  plan?: { id: string; name: string; price: number } | null;
+  /** Cobrança gerada no cadastro; null se a AbacatePay falhar/não configurada. */
+  checkout?: CheckoutResult | null;
+  checkoutError?: string | null;
 }
 
 // ─── Storage S3 ─────────────────────────────────────────────────────────────

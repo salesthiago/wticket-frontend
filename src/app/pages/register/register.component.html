@@ -8,13 +8,55 @@
       <p class="text-blue-200 text-sm mt-1">Em poucos passos sua empresa estará pronta para usar o WTicket.</p>
     </div>
 
+    <!-- ═══ Etapa de pagamento (pós-cadastro) ═══ -->
+    @if (registered) {
+      <p-card>
+        <div class="text-center space-y-4 py-2">
+          <i class="pi pi-check-circle text-green-500" style="font-size: 3rem;"></i>
+          <h2 class="text-xl font-semibold">Empresa cadastrada!</h2>
+
+          @if (checkout) {
+            <p class="text-gray-600">Conclua o pagamento da assinatura para liberar o acesso imediatamente.</p>
+
+            <div class="max-w-sm mx-auto border rounded-lg p-4 text-left bg-gray-50">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">{{ selectedPlan?.name || 'Assinatura' }}</span>
+                <span class="text-lg font-bold text-blue-700">R$ {{ checkout.amount | number:'1.2-2' }}</span>
+              </div>
+              @if (selectedPlan?.moduleCodes?.length) {
+                <div class="flex flex-wrap gap-1 mt-3">
+                  @for (code of selectedPlan?.moduleCodes; track code) {
+                    <p-tag [value]="moduleName(code)" severity="info"></p-tag>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="flex flex-col gap-2 max-w-sm mx-auto pt-2">
+              <p-button label="Pagar agora" icon="pi pi-credit-card" styleClass="w-full"
+                [loading]="redirecting" (click)="payNow()"></p-button>
+              <p-button label="Pagar depois" severity="secondary" [text]="true" styleClass="w-full"
+                (click)="goToLogin()"></p-button>
+            </div>
+          } @else {
+            <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900 max-w-md mx-auto">
+              <i class="pi pi-info-circle mr-1"></i>
+              Não foi possível gerar a cobrança automaticamente{{ checkoutError ? ': ' + checkoutError : '' }}.
+              Sua empresa ficará <strong>aguardando pagamento</strong> — entre em contato com o suporte para concluir a assinatura.
+            </div>
+            <p-button label="Ir para o login" icon="pi pi-arrow-right" (click)="goToLogin()"></p-button>
+          }
+        </div>
+      </p-card>
+    } @else {
+
     <p-card>
       <!-- Step header -->
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-2 text-sm">
           <span [class]="step >= 1 ? 'font-semibold text-blue-700' : 'text-gray-400'">1. Empresa</span>
           <span class="text-gray-300">›</span>
-          <span [class]="step >= 2 ? 'font-semibold text-blue-700' : 'text-gray-400'">2. Módulos</span>
+          <span [class]="step >= 2 ? 'font-semibold text-blue-700' : 'text-gray-400'">2. Plano</span>
           <span class="text-gray-300">›</span>
           <span [class]="step >= 3 ? 'font-semibold text-blue-700' : 'text-gray-400'">3. Responsável</span>
           <span class="text-gray-300">›</span>
@@ -70,35 +112,40 @@
         </div>
       }
 
-      <!-- Step 2: Module selection -->
+      <!-- Step 2: Plan selection -->
       @if (step === 2) {
         <div class="space-y-3">
-          <p class="text-sm text-gray-600">Escolha quais módulos sua empresa vai usar. Você poderá ajustar depois.</p>
+          <p class="text-sm text-gray-600">Escolha o plano de assinatura da sua empresa.</p>
 
-          @if (loadingModules) {
-            <div class="text-center text-gray-400 py-8">Carregando módulos...</div>
+          @if (loadingPlans) {
+            <div class="text-center text-gray-400 py-8">Carregando planos...</div>
+          } @else if (plans.length === 0) {
+            <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
+              <i class="pi pi-info-circle mr-1"></i> Nenhum plano disponível no momento. Contate o suporte.
+            </div>
           }
 
-          @for (mod of modules; track mod.code) {
-            <div class="border rounded-lg p-4"
-              [class.border-blue-500]="isSelected(mod.code)"
-              [class.bg-blue-50]="isSelected(mod.code)"
-              [class.border-gray-200]="!isSelected(mod.code)">
+          @for (plan of plans; track plan._id) {
+            <div class="border rounded-lg p-4 cursor-pointer"
+              [class.border-blue-500]="isPlanSelected(plan)"
+              [class.bg-blue-50]="isPlanSelected(plan)"
+              [class.border-gray-200]="!isPlanSelected(plan)"
+              (click)="selectPlan(plan)">
               <div class="flex items-start gap-3">
-                <p-checkbox [binary]="true" [ngModel]="isSelected(mod.code)" (ngModelChange)="toggleModule(mod)"></p-checkbox>
+                <p-checkbox [binary]="true" [ngModel]="isPlanSelected(plan)" [ngModelOptions]="{ standalone: true }"></p-checkbox>
                 <div class="flex-1">
                   <div class="flex items-center justify-between">
-                    <h4 class="font-semibold">{{ mod.name }}</h4>
-                    @if ((mod.price ?? 0) > 0) {
-                      <span class="text-sm text-blue-700 font-medium">R$ {{ mod.price | number:'1.2-2' }}/mês</span>
+                    <h4 class="font-semibold">{{ plan.name }}</h4>
+                    <span class="text-blue-700 font-bold">R$ {{ plan.price | number:'1.2-2' }}<span class="text-xs font-normal text-gray-500">/{{ cycleLabel(plan.cycle) }}</span></span>
+                  </div>
+                  @if (plan.description) {
+                    <p class="text-sm text-gray-600 mt-1">{{ plan.description }}</p>
+                  }
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (code of plan.moduleCodes; track code) {
+                      <p-tag [value]="moduleName(code)" severity="info"></p-tag>
                     }
                   </div>
-                  <p class="text-sm text-gray-600 mt-1">{{ mod.description }}</p>
-                  @if (getRequiresLabel(mod); as req) {
-                    <p class="text-xs text-amber-700 mt-2">
-                      <i class="pi pi-info-circle mr-1"></i>{{ req }}
-                    </p>
-                  }
                 </div>
               </div>
             </div>
@@ -158,12 +205,20 @@
           </div>
 
           <div>
-            <h4 class="font-semibold text-gray-700 mb-2">Módulos selecionados</h4>
-            <div class="flex flex-wrap gap-2">
-              @for (m of selectedModuleSummary(); track m.code) {
-                <p-tag severity="info" [value]="m.name"></p-tag>
-              }
-            </div>
+            <h4 class="font-semibold text-gray-700 mb-2">Plano selecionado</h4>
+            @if (selectedPlan; as plan) {
+              <div class="border rounded-lg p-3 bg-gray-50">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium">{{ plan.name }}</span>
+                  <span class="text-blue-700 font-bold">R$ {{ plan.price | number:'1.2-2' }}</span>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                  @for (code of plan.moduleCodes; track code) {
+                    <p-tag [value]="moduleName(code)" severity="info"></p-tag>
+                  }
+                </div>
+              </div>
+            }
           </div>
 
           <div>
@@ -174,10 +229,10 @@
             </div>
           </div>
 
-          <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
+          <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900">
             <i class="pi pi-info-circle mr-1"></i>
-            Após o cadastro, sua empresa entrará em <strong>aguardando pagamento</strong>.
-            O acesso será liberado assim que a assinatura for confirmada.
+            Após confirmar, você será direcionado ao <strong>pagamento</strong>. O acesso é liberado
+            automaticamente assim que a assinatura for confirmada.
           </div>
         </div>
       }
@@ -194,7 +249,7 @@
           @if (step < 4) {
             <p-button label="Avançar" icon="pi pi-arrow-right" iconPos="right" (click)="nextStep()"></p-button>
           } @else {
-            <p-button label="Confirmar cadastro" icon="pi pi-check" [loading]="submitting" (click)="submit()"></p-button>
+            <p-button label="Confirmar e pagar" icon="pi pi-check" [loading]="submitting" (click)="submit()"></p-button>
           }
         </div>
       </div>
@@ -203,5 +258,6 @@
     <p class="text-center text-blue-200 text-xs mt-4">
       Já possui cadastro? <a routerLink="/login" class="text-white underline">Faça login</a>
     </p>
+    }
   </div>
 </div>

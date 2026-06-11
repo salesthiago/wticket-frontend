@@ -53,7 +53,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
           icon: 'pi pi-shield',
           items: [
             { label: 'Empresas', routerLink: '/admin/companies' },
-            { label: 'Módulos', routerLink: '/admin/modules' }
+            { label: 'Módulos', routerLink: '/admin/modules' },
+            { label: 'Assinaturas', routerLink: '/admin/plans' }
           ]
         }
       ]

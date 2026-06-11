@@ -41,6 +41,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/modules/modules-list.component').then(m => m.ModulesListComponent),
     canActivate: [authGuard, superAdminGuard]
   },
+  {
+    path: 'admin/plans',
+    loadComponent: () => import('./pages/admin/plans/plans-list.component').then(m => m.PlansListComponent),
+    canActivate: [authGuard, superAdminGuard]
+  },
   // Tenant + module-gated routes
   {
     path: 'users',
