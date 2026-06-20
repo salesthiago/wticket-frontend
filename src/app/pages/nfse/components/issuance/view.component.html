@@ -1,0 +1,301 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (item) {
+  <!-- ─── Cabeçalho ─────────────────────────────────────────────────────── -->
+  <p-card class="mb-4">
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+      <div>
+        <div class="text-sm text-gray-500">DPS</div>
+        <h2 class="text-2xl font-semibold">{{ item.serie }}/{{ item.nDPS }}</h2>
+        @if (item.numeroNfse) {
+          <div class="text-sm mt-1">
+            <span class="text-gray-500">NFS-e nº:</span>
+            <span class="font-mono ml-1">{{ item.numeroNfse }}</span>
+          </div>
+        }
+      </div>
+      <div class="flex gap-2 flex-wrap items-center">
+        <p-tag [value]="statusLabel(item.status)" [severity]="statusColor(item.status)" />
+        @if (item.tpAmb === 2) {
+          <p-tag value="Homologação" severity="warn" />
+        } @else {
+          <p-tag value="Produção" severity="danger" />
+        }
+        @if (item.urlConsulta) {
+          <p-button label="Consultar na prefeitura" icon="pi pi-external-link"
+            severity="secondary" [outlined]="true" (onClick)="openConsultaUrl()" />
+        }
+        <p-button label="DANFSE PDF" icon="pi pi-file-pdf"
+          severity="success" [loading]="downloadingPdf"
+          (onClick)="downloadPdf(true)"
+          pTooltip="Abre o DANFSE em nova aba" />
+        <p-button icon="pi pi-download" severity="success" [outlined]="true"
+          [loading]="downloadingPdf" (onClick)="downloadPdf(false)"
+          pTooltip="Baixar DANFSE como PDF" />
+        <p-button label="XML DPS" icon="pi pi-download"
+          severity="secondary" [loading]="downloading"
+          (onClick)="downloadXml('dps')"
+          [disabled]="!item.dpsId" />
+        <p-button label="XML Retorno" icon="pi pi-download"
+          severity="secondary" [loading]="downloading"
+          (onClick)="downloadXml('nfse')"
+          [disabled]="item.status !== 'authorized'" />
+        <p-button label="Voltar" icon="pi pi-arrow-left" [text]="true" (onClick)="back()" />
+      </div>
+    </div>
+
+    @if (item.chaveAcesso) {
+      <div class="bg-gray-50 dark:bg-gray-800 border rounded p-3 flex flex-wrap items-center gap-2">
+        <span class="text-sm text-gray-500">Chave de acesso:</span>
+        <span class="font-mono text-sm break-all flex-1">{{ formatChave(item.chaveAcesso) }}</span>
+        <p-button icon="pi pi-copy" [text]="true" [rounded]="true"
+          (onClick)="copyChave()" pTooltip="Copiar" />
+      </div>
+    }
+  </p-card>
+
+  <!-- ─── Mensagens de retorno ─────────────────────────────────────────── -->
+  @if (item.mensagensRetorno && item.mensagensRetorno.length > 0) {
+    <p-card class="mb-4">
+      <h3 class="font-medium mb-2">Mensagens de Retorno</h3>
+      <div class="space-y-2">
+        @for (m of item.mensagensRetorno; track m.codigo) {
+          <p-message
+            [severity]="item.status === 'authorized' ? 'success' : 'error'"
+            styleClass="w-full">
+            <div>
+              <strong>[{{ m.codigo || '—' }}]</strong> {{ m.mensagem }}
+              @if (m.correcao) {
+                <div class="text-xs mt-1 opacity-75">
+                  <strong>Correção:</strong> {{ m.correcao }}
+                </div>
+              }
+            </div>
+          </p-message>
+        }
+      </div>
+    </p-card>
+  }
+
+  <!-- ─── Tabs com snapshot ────────────────────────────────────────────── -->
+  <p-card>
+    <p-tabs [value]="activeTab" (valueChange)="activeTab = $any($event)">
+      <p-tablist>
+        <p-tab value="snapshot">Detalhes</p-tab>
+        <p-tab value="parties">Prestador & Tomador</p-tab>
+        <p-tab value="valores">Valores & Tributação</p-tab>
+        <p-tab value="historico">Histórico</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="snapshot">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-gray-500 block">Identificador DPS</span>
+              <span class="font-mono break-all">{{ item.dpsId || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Localidade emissora</span>
+              <span class="font-mono">{{ item.cLocEmi }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Tipo de emitente</span>
+              <span>{{ item.tpEmit === 1 ? 'Prestador' : (item.tpEmit === 2 ? 'Tomador' : 'Intermediário') }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Data de competência</span>
+              <span>{{ item.dCompet | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Data de emissão</span>
+              <span>{{ item.dhEmi | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            @if (item.dhProc) {
+              <div>
+                <span class="text-gray-500 block">Data do processamento</span>
+                <span>{{ item.dhProc | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            }
+            @if (item.protocolo) {
+              <div>
+                <span class="text-gray-500 block">Protocolo</span>
+                <span class="font-mono">{{ item.protocolo }}</span>
+              </div>
+            }
+            <div class="md:col-span-2">
+              <span class="text-gray-500 block">Descrição do serviço</span>
+              <span>{{ item.servico?.xDescServ || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">cTribNac</span>
+              <span class="font-mono">{{ item.servico?.cTribNac || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">cTribMun</span>
+              <span class="font-mono">{{ item.servico?.cTribMun || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Local da prestação</span>
+              <span class="font-mono">{{ item.servico?.cLocPrestacao || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">cNBS</span>
+              <span class="font-mono">{{ item.servico?.cNBS || '—' }}</span>
+            </div>
+          </div>
+        </p-tabpanel>
+
+        <p-tabpanel value="parties">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-medium mb-2">Prestador</h4>
+              <div class="space-y-2 text-sm">
+                <div>
+                  <span class="text-gray-500 block">{{ item.prestador?.documentType?.toUpperCase() }}</span>
+                  <span class="font-mono">{{ formatDoc(item.prestador?.document) }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-500 block">Nome</span>
+                  <span>{{ item.prestador?.nome || '—' }}</span>
+                </div>
+                @if (item.prestador?.inscricaoMunicipal) {
+                  <div>
+                    <span class="text-gray-500 block">Inscrição Municipal</span>
+                    <span class="font-mono">{{ item.prestador?.inscricaoMunicipal }}</span>
+                  </div>
+                }
+                <div>
+                  <span class="text-gray-500 block">Endereço</span>
+                  <span>{{ fullAddress(item.prestador) }}</span>
+                </div>
+                @if (item.prestador?.email) {
+                  <div>
+                    <span class="text-gray-500 block">E-mail</span>
+                    <span>{{ item.prestador?.email }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div>
+              <h4 class="font-medium mb-2">Tomador</h4>
+              @if (item.tomador) {
+                <div class="space-y-2 text-sm">
+                  <div>
+                    <span class="text-gray-500 block">{{ item.tomador.documentType?.toUpperCase() }}</span>
+                    <span class="font-mono">{{ formatDoc(item.tomador.document) }}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 block">Nome</span>
+                    <span>{{ item.tomador.nome || '—' }}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 block">Endereço</span>
+                    <span>{{ fullAddress(item.tomador) }}</span>
+                  </div>
+                  @if (item.tomador.email) {
+                    <div>
+                      <span class="text-gray-500 block">E-mail</span>
+                      <span>{{ item.tomador.email }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="text-gray-400 text-sm">Tomador não informado.</p>
+              }
+            </div>
+          </div>
+        </p-tabpanel>
+
+        <p-tabpanel value="valores">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span class="text-gray-500 block">Valor do serviço</span>
+              <span class="font-mono text-lg">R$ {{ (item.valores?.vServ ?? 0) | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Desc. incond.</span>
+              <span class="font-mono">R$ {{ (item.valores?.descIncond ?? 0) | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Desc. cond.</span>
+              <span class="font-mono">R$ {{ (item.valores?.descCond ?? 0) | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Base de cálculo</span>
+              <span class="font-mono">R$ {{ (item.valores?.vBC ?? 0) | number:'1.2-2' }}</span>
+            </div>
+
+            <div>
+              <span class="text-gray-500 block">Alíquota ISSQN</span>
+              <span class="font-mono">{{ (item.valores?.issqn?.pAliq ?? 0) | number:'1.2-2' }}%</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Valor ISSQN</span>
+              <span class="font-mono">R$ {{ (item.valores?.vISSQN ?? 0) | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Total retido</span>
+              <span class="font-mono">R$ {{ (item.valores?.vTotalRet ?? 0) | number:'1.2-2' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Valor líquido</span>
+              <span class="font-mono text-lg font-semibold">R$ {{ (item.valores?.vLiq ?? 0) | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          @if (retencoesList().length > 0) {
+            <p-divider align="left"><span class="text-sm font-medium">Retenções federais</span></p-divider>
+            <p-table [value]="retencoesList()" [tableStyle]="{ 'min-width': '30rem' }">
+              <ng-template #header>
+                <tr>
+                  <th>Tributo</th>
+                  <th class="text-right">Alíquota</th>
+                  <th class="text-right">Valor estimado</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-r>
+                <tr>
+                  <td>{{ r.name }}</td>
+                  <td class="text-right font-mono">{{ r.aliq | number:'1.2-2' }}%</td>
+                  <td class="text-right font-mono">
+                    R$ {{ ((item.valores?.vBC || 0) * (r.aliq || 0) / 100) | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
+        </p-tabpanel>
+
+        <p-tabpanel value="historico">
+          @if (item.statusHistory && item.statusHistory.length > 0) {
+            <p-timeline [value]="item.statusHistory" align="left">
+              <ng-template #content let-event>
+                <div class="text-sm">
+                  <div class="flex items-center gap-2">
+                    <p-tag [value]="statusLabel(event.status)" [severity]="statusColor(event.status)" />
+                    <span class="text-gray-500">{{ event.at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                  </div>
+                  @if (event.message) {
+                    <div class="mt-1">{{ event.message }}</div>
+                  }
+                </div>
+              </ng-template>
+            </p-timeline>
+          } @else {
+            <p class="text-gray-400 text-sm">Sem histórico registrado.</p>
+          }
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </p-card>
+  }
+</div>
+
+<p-toast />

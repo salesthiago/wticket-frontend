@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { AuthService, LoginRequest } from '../../services/auth.service';
 import { ButtonModule } from 'primeng/button';
@@ -9,24 +9,26 @@ import { InputTextModule } from 'primeng/inputtext';
 import { IconFieldModule } from 'primeng/iconfield';
 import { CommonModule } from '@angular/common';
 import { InputIconModule } from 'primeng/inputicon';
-
-//import { InputComponent } from '../../components/input/input.component'
+import { ToastModule } from 'primeng/toast';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
+  providers: [MessageService],
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     ButtonModule,
     IconFieldModule,
     InputIconModule,
-    InputTextModule
+    InputTextModule,
+    ToastModule
   ]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   credentials: LoginRequest = {
     email: '',
     password: ''
@@ -38,8 +40,20 @@ export class LoginComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private messageService: MessageService
   ) { }
+
+  ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('registered') === '1') {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Cadastro recebido',
+        detail: 'Sua empresa foi cadastrada. O acesso será liberado após a confirmação do pagamento.',
+        life: 6000
+      });
+    }
+  }
 
   onSubmit(): void {
     this.loading = true;
@@ -55,11 +69,30 @@ export class LoginComponent {
       },
       error: (error) => {
         this.loading = false;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: error.error?.message || 'Erro ao fazer login'
-        });
+        const status = error?.status;
+        const detail = error?.error?.message || 'Erro ao fazer login';
+
+        if (status === 403 && error?.error?.companyStatus === 'pending_payment') {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Aguardando pagamento',
+            detail: 'Seu cadastro está aguardando confirmação do pagamento.',
+            life: 6000
+          });
+        } else if (status === 403) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Acesso bloqueado',
+            detail: detail,
+            life: 6000
+          });
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail
+          });
+        }
       },
       complete: () => {
         this.loading = false;

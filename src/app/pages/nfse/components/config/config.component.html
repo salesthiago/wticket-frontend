@@ -1,0 +1,295 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (!loading) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- ─── Configuração ─────────────────────────────────────────────────── -->
+    <div class="lg:col-span-2 space-y-4">
+      <p-card>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Configuração NFS-e</h2>
+          <p-tag
+            [value]="configExists ? 'Configurada' : 'Não configurada'"
+            [severity]="configExists ? 'success' : 'secondary'" />
+        </div>
+
+        @if (!configExists) {
+          <p-message severity="info" styleClass="mb-4 w-full"
+            text="Defina o município emissor e os parâmetros tributários antes de enviar o certificado." />
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-1">Município emissor *</label>
+            <p-select
+              [options]="optionMunicipalities"
+              [(ngModel)]="config.cMun"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o município"
+              (onChange)="onMunicipalityChange()"
+              styleClass="w-full" />
+            <small class="text-gray-500">Os endpoints SOAP são derivados automaticamente do município.</small>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">UF</label>
+            <input pInputText class="w-full" [(ngModel)]="config.uf" maxlength="2" disabled />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Inscrição Municipal</label>
+            <input pInputText class="w-full" [(ngModel)]="config.inscricaoMunicipal" placeholder="Número de IM" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Ambiente *</label>
+            <p-select
+              [options]="optionAmbiente"
+              [(ngModel)]="config.ambiente"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Versão do aplicativo gerador</label>
+            <input pInputText class="w-full" [(ngModel)]="config.verAplic" />
+          </div>
+        </div>
+
+        <p-divider align="left" type="solid">
+          <span class="text-sm font-medium">Regime Tributário</span>
+        </p-divider>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm mb-1">Simples Nacional *</label>
+            <p-select
+              [options]="optionOpSimpNac"
+              [(ngModel)]="config.opSimpNac"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </div>
+
+          @if (config.opSimpNac === 3) {
+            <div>
+              <label class="block text-sm mb-1">Regime de Apuração SN</label>
+              <p-select
+                [options]="optionRegApTribSN"
+                [(ngModel)]="config.regApTribSN"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecione"
+                styleClass="w-full" />
+            </div>
+          }
+
+          <div [class.md:col-span-2]="config.opSimpNac !== 3">
+            <label class="block text-sm mb-1">Regime Especial de Tributação</label>
+            <p-select
+              [options]="optionRegEspTrib"
+              [(ngModel)]="config.regEspTrib"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </div>
+        </div>
+
+        <p-divider align="left" type="solid">
+          <span class="text-sm font-medium">Numeração da DPS</span>
+        </p-divider>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm mb-1">Série *</label>
+            <p-inputNumber [(ngModel)]="config.serie" [min]="1" [max]="99999" [showButtons]="true" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">
+              Próximo nº da DPS
+              <i class="pi pi-info-circle text-gray-400" pTooltip="Próximo número de DPS a ser usado. Inicia em 1 e é incrementado automaticamente a cada emissão."></i>
+            </label>
+            <p-inputNumber [(ngModel)]="config.proximoNumeroDps" [min]="1" [showButtons]="true" styleClass="w-full" />
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-2">
+          <p-button label="Salvar configuração" icon="pi pi-save" [loading]="saving" (onClick)="save()" />
+        </div>
+      </p-card>
+
+      <!-- Endpoint resolver -->
+      @if (configExists && endpointResolution) {
+        <p-card>
+          <h3 class="font-medium mb-2">Endpoint SOAP em uso</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+            <div>
+              <span class="text-gray-500">Município:</span>
+              <span class="font-mono ml-1">{{ endpointResolution.cMun }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">Ambiente:</span>
+              <p-tag [value]="endpointResolution.ambiente === 1 ? 'Produção' : 'Homologação'"
+                [severity]="endpointResolution.ambiente === 1 ? 'danger' : 'warn'" class="ml-1" />
+            </div>
+            <div>
+              <span class="text-gray-500">Origem:</span>
+              <span class="ml-1">{{ endpointResolution.source === 'override' ? 'Override' : 'Padrão' }}</span>
+            </div>
+            <div class="md:col-span-3 break-all">
+              <span class="text-gray-500">URL:</span>
+              <span class="font-mono ml-1">{{ endpointResolution.endpoint || '— não configurado —' }}</span>
+            </div>
+          </div>
+        </p-card>
+      }
+    </div>
+
+    <!-- ─── Certificado ──────────────────────────────────────────────────── -->
+    <div class="lg:col-span-1 space-y-4">
+      <p-card>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Certificado Digital</h2>
+          <p-tag [value]="certBadgeLabel()" [severity]="certBadgeSeverity()" />
+        </div>
+
+        @if (certIsConfigured()) {
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="text-gray-500 block">Razão Social</span>
+              <span class="font-medium">{{ certInfo()?.subjectCN || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">CNPJ</span>
+              <span class="font-mono">{{ formatCnpjCpf(certInfo()?.subjectCNPJ) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Emissor</span>
+              <span>{{ certInfo()?.issuer || '—' }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-gray-500 block">Válido a partir</span>
+                <span>{{ certInfo()?.notBefore | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500 block">Válido até</span>
+                <span [class.text-red-500]="certInfo()?.expired">
+                  {{ certInfo()?.notAfter | date:'dd/MM/yyyy' }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Arquivo</span>
+              <span class="font-mono text-xs break-all">{{ certInfo()?.filename || '—' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 block">Enviado em</span>
+              <span>{{ certInfo()?.uploadedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+          <p-divider />
+
+          <div class="flex flex-col gap-2">
+            <p-button
+              label="Substituir certificado"
+              icon="pi pi-upload"
+              severity="secondary"
+              styleClass="w-full"
+              (onClick)="fileInput.click()" />
+            <p-button
+              label="Remover certificado"
+              icon="pi pi-trash"
+              severity="danger"
+              [outlined]="true"
+              styleClass="w-full"
+              [loading]="removing"
+              (onClick)="confirmRemoveCertificate($event)" />
+          </div>
+        } @else {
+          @if (!configExists) {
+            <p-message severity="warn" styleClass="mb-3 w-full"
+              text="Salve a configuração antes de enviar o certificado." />
+          }
+          <p class="text-sm text-gray-500 mb-3">
+            Envie um certificado A1 (.pfx ou .p12) emitido por Autoridade Certificadora ICP-Brasil.
+          </p>
+        }
+
+        <!-- Form de upload (sempre presente — alterna entre upload inicial e substituir) -->
+        <div class="mt-3 space-y-3" [class.opacity-50]="!configExists">
+          <input
+            #fileInput
+            type="file"
+            accept=".pfx,.p12,application/x-pkcs12,application/pkcs12"
+            (change)="onCertFileSelected($event)"
+            class="hidden" />
+
+          @if (certFile) {
+            <div class="border rounded p-2 flex items-center justify-between bg-gray-50 dark:bg-gray-800">
+              <div class="flex items-center gap-2 truncate">
+                <i class="pi pi-file"></i>
+                <span class="text-sm font-mono truncate">{{ certFile.name }}</span>
+              </div>
+              <p-button icon="pi pi-times" [text]="true" [rounded]="true"
+                (onClick)="certFile = null" pTooltip="Remover seleção" />
+            </div>
+          } @else if (!certIsConfigured()) {
+            <p-button
+              label="Selecionar arquivo .pfx/.p12"
+              icon="pi pi-upload"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="w-full"
+              [disabled]="!configExists"
+              (onClick)="fileInput.click()" />
+          }
+
+          @if (certFile || !certIsConfigured()) {
+            <div>
+              <label class="block text-sm mb-1">Senha do certificado</label>
+              <p-password
+                [(ngModel)]="certPassword"
+                [feedback]="false"
+                [toggleMask]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                placeholder="••••••••" />
+            </div>
+
+            <p-button
+              label="Enviar certificado"
+              icon="pi pi-cloud-upload"
+              styleClass="w-full"
+              [loading]="uploading"
+              [disabled]="!certFile || !certPassword || !configExists"
+              (onClick)="uploadCertificate()" />
+          }
+        </div>
+      </p-card>
+
+      <p-card>
+        <h3 class="font-medium mb-2">Informações</h3>
+        <ul class="text-xs text-gray-500 list-disc pl-4 space-y-1">
+          <li>O certificado é armazenado de forma criptografada no servidor.</li>
+          <li>A senha é cifrada com AES-256-GCM antes de ser persistida.</li>
+          <li>O CNPJ extraído do certificado deve coincidir com o CNPJ da empresa.</li>
+          <li>Aceitos apenas certificados ICP-Brasil A1 (arquivo .pfx ou .p12).</li>
+        </ul>
+      </p-card>
+    </div>
+  </div>
+  }
+</div>
+
+<p-toast />
+<p-confirmDialog />

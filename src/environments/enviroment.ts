@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    apiUrl: 'http://localhost:3000/api',
-    socketUrl: 'http://localhost:3000',
+    apiUrl: 'https://api.wticket.com.br/api',
+    socketUrl: 'https://api.wticket.com.br',
     enableDebug: true
 };

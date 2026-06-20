@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -11,13 +11,15 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { DatePipe } from '@angular/common';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
-import { MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
   selector: 'app-list',
   standalone: true,
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss'],
+  providers: [ ConfirmationService, MessageService ],
   imports: [
     CardModule,
     ButtonModule,
@@ -28,13 +30,16 @@ import { MenuItem } from 'primeng/api';
     InputTextModule,
     TagModule,
     DatePipe,
-    BreadcrumbModule
+    BreadcrumbModule,
+    ConfirmDialogModule
 ]
 
 })
 export class ListComponent {
   public items: any = [];
   public loading: boolean = false
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
 
   breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
   breadcrumbItems: MenuItem[] = [{ label: 'Contatos' }];
@@ -78,5 +83,35 @@ export class ListComponent {
       return 'Ativo'
     }
     return 'Bloqueado'
+  }
+
+  public destroy(id: any) {
+    this.confirmationService.confirm({
+      message: 'Realmente deseja deletar este contato? Esta ação não poderá mais ser revertida.',
+      header: 'Danger Zone',
+      icon: 'pi pi-info-circle',
+      rejectLabel: 'Cancel',
+      rejectButtonProps: {
+          label: 'Cancelar',
+          severity: 'secondary',
+          outlined: true
+      },
+      acceptButtonProps: {
+          label: 'Deletar',
+          severity: 'danger'
+      },
+
+      accept: () => {
+        this.service.delete(id).pipe().subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'info', summary: 'Ok', detail: 'Contato Deletado' });
+            this.findContacts()
+          }
+        })
+      },
+      reject: () => {
+          this.messageService.add({ severity: 'error', summary: 'Rejected', detail: 'Erro ao Deletar contato' });
+      }
+    })
   }
 }

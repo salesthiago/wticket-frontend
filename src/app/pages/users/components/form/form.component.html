@@ -2,7 +2,7 @@
 <div class="p-4 sm:ml-64 pt-4">
 <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
 <p-card class="align-items-center mb-4" header="Cadastro de usuário">
-    <div class="field">
+    <div class="field my-2">
         <label for="name" class="block mb-2">Nome</label>
         <input
           id="name"
@@ -14,7 +14,7 @@
           class="w-full"
         />
       </div>
-      <div class="field">
+      <div class="field my-2">
         <label for="email" class="block mb-2">Email</label>
         <input
           id="email"
@@ -26,27 +26,26 @@
           class="w-full"
         />
       </div>
-      <div class="field">
-        <label class="block mb-2">Status</label>
+      <div class="grid md:grid-cols-2 sm:grid-cols-1 gap-4">
+
+        <div class="field my-2">
+          <label class="block mb-2">Status</label>
         <p-select [options]="optionStatus" [(ngModel)]="user.status" optionLabel="name" optionValue="value"
-          class="w-full md:w-56" />
-      </div>
-      <div class="field">
-        <label class="block mb-2">Perfil</label>
-        <p-select [options]="optionRole" [(ngModel)]="user.role" optionLabel="name" optionValue="value" [showClear]="true"
-          class="w-full md:w-56" />
-      </div>
-
-      <div class="field mt-4 flex">
-        <div class="flex-column">
-
-          <label for="password" class="block mb-2">Senha</label>
-          <p-password [(ngModel)]="password" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
-
+          class="w-full" />
         </div>
-        <div class="flex-column mx-4">
+        <div class="field my-2">
+          <label class="block mb-2">Perfil</label>
+          <p-select [options]="optionRole" [(ngModel)]="user.role" optionLabel="name" optionValue="value" [showClear]="true"
+          class="w-full" />
+        </div>
+
+        <div class="field my-2">
+          <label for="password" class="block mb-2">Senha</label>
+          <p-password fluid [showClear]="true" [(ngModel)]="password" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
+        </div>
+        <div class="field my-2">
           <label for="confirmPassword" class="block mb-2">Confirmar Senha</label>
-          <p-password [(ngModel)]="confirmPassword" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
+          <p-password fluid  [(ngModel)]="confirmPassword" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
         </div>
       </div>
       <div class="flex mt-4">

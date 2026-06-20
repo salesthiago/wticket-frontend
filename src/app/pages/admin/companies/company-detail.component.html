@@ -1,0 +1,109 @@
+<p-toast></p-toast>
+<app-sidebar></app-sidebar>
+
+<div class="sm:ml-64 p-6 space-y-6">
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (company) {
+    <p-card>
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <p-button icon="pi pi-arrow-left" severity="secondary" size="small" label="Voltar" (click)="back()"></p-button>
+          <h2 class="text-xl font-semibold mt-2">{{ company.name }}</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-tag [value]="company.status"></p-tag>
+          @if (company.status !== 'active') {
+            <p-button label="Ativar" icon="pi pi-check" size="small" (click)="setCompanyStatus('active')"></p-button>
+          }
+          @if (company.status === 'active') {
+            <p-button label="Suspender" icon="pi pi-ban" severity="warn" size="small" (click)="setCompanyStatus('suspended')"></p-button>
+          }
+        </div>
+      </div>
+
+      <h3 class="font-medium mb-2">Dados da empresa</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Nome</label>
+          <input pInputText class="w-full" [(ngModel)]="company.name" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">E-mail</label>
+          <input pInputText class="w-full" [(ngModel)]="company.email" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Telefone</label>
+          <input pInputText class="w-full" [(ngModel)]="company.phone" />
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-sm mb-1">Tipo</label>
+            <select [(ngModel)]="company.documentType"
+              class="w-full border border-gray-300 rounded-md p-2 text-sm">
+              <option value="cnpj">CNPJ</option>
+              <option value="cpf">CPF</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm mb-1">Documento</label>
+            <input pInputText class="w-full" [(ngModel)]="company.document" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-right">
+        <p-button label="Salvar dados" icon="pi pi-save" [loading]="saving" (click)="save()"></p-button>
+      </div>
+    </p-card>
+
+    <p-card>
+      <h3 class="font-medium mb-3">Módulos contratados</h3>
+
+      @if (company.modules.length === 0) {
+        <p class="text-gray-400 text-sm">Nenhum módulo vinculado</p>
+      }
+
+      <div class="space-y-2">
+        @for (m of company.modules; track m.code) {
+          <div class="flex items-center justify-between border rounded p-3">
+            <div>
+              <div class="font-medium">{{ moduleName(m.code) }}</div>
+              <div class="text-xs text-gray-500">
+                Status: {{ m.subscriptionStatus }}
+                @if (m.activatedAt) { · Ativado em {{ m.activatedAt | date:'dd/MM/yyyy' }} }
+                @if (m.expiresAt) { · Expira em {{ m.expiresAt | date:'dd/MM/yyyy' }} }
+              </div>
+            </div>
+            <div class="flex gap-2">
+              @if (m.subscriptionStatus !== 'active') {
+                <p-button label="Ativar assinatura" size="small" (click)="setSubscription(m.code, 'active')"></p-button>
+              }
+              @if (m.subscriptionStatus === 'active') {
+                <p-button label="Cancelar assinatura" severity="warn" size="small" (click)="setSubscription(m.code, 'cancelled')"></p-button>
+              }
+              <p-button icon="pi pi-trash" severity="danger" size="small" (click)="removeModule(m.code)"></p-button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="mt-4 flex items-end gap-3">
+        <div class="flex-1">
+          <label class="block text-sm mb-1">Adicionar módulo</label>
+          <select [(ngModel)]="newModuleCode" class="w-full border border-gray-300 rounded-md p-2 text-sm">
+            <option value="">Selecione...</option>
+            @for (m of availableToAdd(); track m.code) {
+              <option [value]="m.code">{{ m.name }}</option>
+            }
+          </select>
+        </div>
+        <p-button label="Adicionar" icon="pi pi-plus" [disabled]="!newModuleCode" (click)="addModule()"></p-button>
+      </div>
+    </p-card>
+
+    <app-storage-config [companyId]="company._id" />
+  }
+</div>

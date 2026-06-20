@@ -58,12 +58,13 @@ export class AiProvidersComponent implements OnInit {
       borderColor: 'border-blue-200 dark:border-blue-800',
       docsUrl: 'https://aistudio.google.com/app/apikey',
       models: [
-        { label: 'Gemini 2.0 Flash (recomendado)', value: 'gemini-2.0-flash-exp' },
+        { label: 'Gemini 2.5 Flash (recomendado)', value: 'gemini-2.5-flash' },
+        { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' },
         { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' },
         { label: 'Gemini 1.5 Flash', value: 'gemini-1.5-flash' }
       ],
       tokenPlaceholder: 'Cole sua API Key do Google AI Studio',
-      config: { token: '', model: 'gemini-2.0-flash-exp', status: 'enabled' },
+      config: { token: '', model: 'gemini-2.5-flash', status: 'enabled' },
       configured: false, showToken: false, saving: false, testing: false, testResult: null, loading: true
     },
     {

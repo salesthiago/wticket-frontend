@@ -14,6 +14,9 @@
             <span class="ml-2 bg-green-500 text-white text-xs rounded-full px-2 py-0.5">{{ images.length }}</span>
           }
         </p-tab>
+        <p-tab value="estoque" [disabled]="!showStockTab">
+          <i class="pi pi-warehouse mr-2"></i>Estoque
+        </p-tab>
       </p-tablist>
 
       <p-tabpanels>
@@ -40,6 +43,28 @@
                 placeholder="Ex: 8471.30.19" class="w-full" />
             </div>
 
+            @if (!product.service) {
+              <div class="field">
+                <label for="brand" class="block mb-2">Marca</label>
+                <input id="brand" type="text" pInputText [(ngModel)]="product.brand"
+                  placeholder="Marca (opcional)" class="w-full" />
+              </div>
+
+              <div class="field">
+                <label for="model" class="block mb-2">Modelo</label>
+                <input id="model" type="text" pInputText [(ngModel)]="product.model"
+                  placeholder="Modelo (opcional)" class="w-full" />
+              </div>
+            }
+
+            <div class="field">
+              <label class="block mb-2">Serviço</label>
+              <div class="flex items-center gap-3 mt-1">
+                <p-toggleSwitch [ngModel]="product.service" (ngModelChange)="onServiceChange($event)" />
+                <span class="text-sm">{{ product.service ? 'Sim (mão de obra)' : 'Não' }}</span>
+              </div>
+            </div>
+
             <div class="field">
               <label class="block mb-2">Status</label>
               <p-select [options]="optionStatus" [(ngModel)]="product.isActive"
@@ -60,7 +85,7 @@
               </div>
             </div>
 
-            @if (!product.isVirtual) {
+            @if (!product.isVirtual && !product.service) {
               <div class="field">
                 <label class="block mb-2">Controlar Estoque</label>
                 <div class="flex items-center gap-3 mt-1">
@@ -178,6 +203,99 @@
                   <p class="text-sm">Clique em "Adicionar Imagem" para enviar a primeira.</p>
                 </div>
               }
+
+            </div>
+          }
+        </p-tabpanel>
+
+        <!-- TAB: ESTOQUE -->
+        <p-tabpanel value="estoque">
+          @if (showStockTab) {
+            <div class="pt-2 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- Saldo + nova movimentação -->
+              <div class="lg:col-span-1">
+                <div class="rounded-xl border border-gray-200 p-4 mb-4 text-center">
+                  <span class="block text-sm text-gray-500 mb-1">Saldo atual</span>
+                  <span class="text-4xl font-bold"
+                    [class.text-red-500]="(product.stock ?? 0) <= 0">{{ product.stock ?? 0 }}</span>
+                  <span class="block text-xs text-gray-400 mt-1">unidade(s)</span>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 p-4">
+                  <h3 class="font-semibold mb-3">Nova movimentação</h3>
+
+                  <div class="field mb-3">
+                    <label class="block mb-2 text-sm">Tipo</label>
+                    <p-select [options]="optionMovementType" [(ngModel)]="movementDraft.type"
+                      optionLabel="name" optionValue="value" class="w-full" />
+                  </div>
+
+                  <div class="field mb-3">
+                    <label class="block mb-2 text-sm">Quantidade</label>
+                    <p-inputnumber [(ngModel)]="movementDraft.quantity" [min]="1" fluid class="w-full" />
+                  </div>
+
+                  <div class="field mb-3">
+                    <label class="block mb-2 text-sm">Observação</label>
+                    <textarea pTextarea [(ngModel)]="movementDraft.notes" rows="2" class="w-full"
+                      placeholder="Motivo da movimentação (opcional)"></textarea>
+                  </div>
+
+                  <p-button label="Registrar" icon="pi pi-check" [loading]="savingMovement"
+                    styleClass="w-full justify-center" (click)="submitStockMovement()" />
+                </div>
+              </div>
+
+              <!-- Histórico -->
+              <div class="lg:col-span-2">
+                <h3 class="font-semibold mb-3">Histórico de movimentações</h3>
+                <p-table [value]="movements" [loading]="loadingMovements"
+                  [paginator]="movements.length > 10" [rows]="10"
+                  [tableStyle]="{ 'min-width': '100%' }">
+                  <ng-template #header>
+                    <tr>
+                      <th>Data</th>
+                      <th>Tipo</th>
+                      <th class="text-right">Qtd</th>
+                      <th class="text-right">Saldo</th>
+                      <th>Motivo</th>
+                      <th>Usuário</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template #body let-m>
+                    <tr>
+                      <td>{{ m.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>
+                        <p-tag [value]="movementTypeLabel(m)"
+                          [severity]="m.type === 'in' ? 'success' : 'danger'" />
+                      </td>
+                      <td class="text-right" [class.text-green-600]="m.type === 'in'"
+                        [class.text-red-600]="m.type === 'out'">
+                        {{ m.type === 'in' ? '+' : '−' }}{{ m.quantity }}
+                      </td>
+                      <td class="text-right font-semibold">{{ m.balanceAfter }}</td>
+                      <td>
+                        {{ movementReasonLabel(m) }}
+                        @if (m.referenceLabel) {
+                          <span class="block text-xs text-gray-400">{{ m.referenceLabel }}</span>
+                        }
+                        @if (m.notes) {
+                          <span class="block text-xs text-gray-400">{{ m.notes }}</span>
+                        }
+                      </td>
+                      <td>{{ movementUser(m) }}</td>
+                    </tr>
+                  </ng-template>
+                  <ng-template #emptymessage>
+                    <tr>
+                      <td colspan="6" class="text-center text-gray-400 py-6">
+                        Nenhuma movimentação registrada.
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              </div>
 
             </div>
           }

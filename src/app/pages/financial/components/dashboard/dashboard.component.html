@@ -1,0 +1,215 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  <!-- ─── Filtro de período ──────────────────────────────────────────── -->
+  <p-card class="mb-4 block">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-sm text-gray-500">Período de vencimento:</span>
+      <p-datePicker
+        [(ngModel)]="periodRange"
+        selectionMode="range" [readonlyInput]="true"
+        dateFormat="dd/mm/yy"
+        placeholder="Período"
+        (onSelect)="load()"
+        [showButtonBar]="true"
+        styleClass="w-72" />
+      <p-button label="Mês corrente" icon="pi pi-calendar"
+        severity="secondary" [outlined]="true" (onClick)="resetPeriod()" />
+      <p-button label="Atualizar" icon="pi pi-refresh"
+        [text]="true" (onClick)="load()" />
+    </div>
+  </p-card>
+
+  <!-- ─── Cards de resumo ─────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+      <p-skeleton height="8rem" />
+      <p-skeleton height="8rem" />
+      <p-skeleton height="8rem" />
+      <p-skeleton height="8rem" />
+    </div>
+  }
+
+  @if (!loading && summary) {
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+    <!-- Aguardando -->
+    <p-card class="cursor-pointer transition hover:shadow-md"
+      (click)="goToReceivablesByStatus('pending')">
+      <div class="flex items-start justify-between">
+        <div>
+          <small class="text-gray-500">Aguardando Pagamento</small>
+          <div class="text-3xl font-bold mt-1 text-yellow-600">
+            R$ {{ summary.pending.total | number:'1.2-2' }}
+          </div>
+          <small class="text-gray-500">{{ summary.pending.count }} título(s)</small>
+        </div>
+        <div class="rounded-full bg-yellow-100 dark:bg-yellow-900 p-3">
+          <i class="pi pi-clock text-2xl text-yellow-600"></i>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Em Atraso -->
+    <p-card class="cursor-pointer transition hover:shadow-md border-red-300"
+      [ngClass]="{ 'border-2': summary.overdue.count > 0 }"
+      (click)="goToReceivablesByStatus('overdue')">
+      <div class="flex items-start justify-between">
+        <div>
+          <small class="text-gray-500">Em Atraso</small>
+          <div class="text-3xl font-bold mt-1 text-red-600">
+            R$ {{ summary.overdue.total | number:'1.2-2' }}
+          </div>
+          <small class="text-gray-500">{{ summary.overdue.count }} título(s)</small>
+        </div>
+        <div class="rounded-full bg-red-100 dark:bg-red-900 p-3">
+          <i class="pi pi-exclamation-triangle text-2xl text-red-600"></i>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Pago no período -->
+    <p-card class="cursor-pointer transition hover:shadow-md"
+      (click)="goToReceivablesByStatus('paid')">
+      <div class="flex items-start justify-between">
+        <div>
+          <small class="text-gray-500">Pago no Período</small>
+          <div class="text-3xl font-bold mt-1 text-green-600">
+            R$ {{ summary.paid.total | number:'1.2-2' }}
+          </div>
+          <small class="text-gray-500">{{ summary.paid.count }} título(s)</small>
+        </div>
+        <div class="rounded-full bg-green-100 dark:bg-green-900 p-3">
+          <i class="pi pi-check-circle text-2xl text-green-600"></i>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Cancelado -->
+    <p-card class="cursor-pointer transition hover:shadow-md"
+      (click)="goToReceivablesByStatus('cancelled')">
+      <div class="flex items-start justify-between">
+        <div>
+          <small class="text-gray-500">Cancelados</small>
+          <div class="text-3xl font-bold mt-1 text-gray-500">
+            R$ {{ summary.cancelled.total | number:'1.2-2' }}
+          </div>
+          <small class="text-gray-500">{{ summary.cancelled.count }} título(s)</small>
+        </div>
+        <div class="rounded-full bg-gray-100 dark:bg-gray-800 p-3">
+          <i class="pi pi-times-circle text-2xl text-gray-500"></i>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- ─── Total geral + Gráfico ──────────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <p-card class="lg:col-span-1">
+      <div class="text-center">
+        <small class="text-gray-500 block">Movimento total no período</small>
+        <div class="text-4xl font-bold text-primary mt-2">
+          R$ {{ summary.totalAmount | number:'1.2-2' }}
+        </div>
+        <small class="text-gray-500">{{ summary.totalCount }} título(s) no total</small>
+      </div>
+      <p-divider />
+      <div class="text-xs text-gray-500">
+        <p>* Os valores acima refletem títulos com vencimento dentro do período selecionado.</p>
+        <p>* "Em Atraso" e "Próximos Vencimentos" abaixo são listas globais e independem do filtro.</p>
+      </div>
+    </p-card>
+
+    <p-card header="Distribuição por Status" class="lg:col-span-2">
+      <div style="height: 280px">
+        @if (statusChart) {
+          <p-chart type="doughnut" [data]="statusChart.data" [options]="statusChart.options" />
+        }
+      </div>
+    </p-card>
+  </div>
+
+  <!-- ─── Listas ─────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Em atraso -->
+    <p-card>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+          <i class="pi pi-exclamation-triangle text-red-600"></i>
+          Em Atraso
+        </h3>
+        <p-button label="Ver todos" icon="pi pi-arrow-right" [text]="true" size="small"
+          (onClick)="goToReceivablesByStatus('overdue')" />
+      </div>
+      @if (loadingLists) {
+        <p-skeleton height="8rem" />
+      } @else if (overdueList.length === 0) {
+        <p class="text-gray-400 text-sm">Nenhum título em atraso. </p>
+      } @else {
+        <p-table [value]="overdueList" [tableStyle]="{ 'min-width': '100%' }">
+          <ng-template #header>
+            <tr>
+              <th>Número</th>
+              <th>Cliente</th>
+              <th class="text-right">Valor</th>
+              <th>Vencimento</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-r>
+            <tr class="cursor-pointer" (click)="view(r._id)">
+              <td class="font-mono">{{ r.number }}</td>
+              <td class="truncate max-w-[10rem]" [pTooltip]="customerName(r)">{{ customerName(r) }}</td>
+              <td class="text-right font-mono">R$ {{ r.amount | number:'1.2-2' }}</td>
+              <td>
+                <span class="text-red-600">{{ r.dueDate | date:'dd/MM/yy' }}</span>
+                <small class="block text-gray-500">{{ -1 * (daysToDue(r) ?? 0) }} dia(s)</small>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+
+    <!-- Próximos vencimentos -->
+    <p-card>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+          <i class="pi pi-calendar text-yellow-600"></i>
+          Próximos Vencimentos (30 dias)
+        </h3>
+        <p-button label="Ver todos" icon="pi pi-arrow-right" [text]="true" size="small"
+          (onClick)="goToReceivablesByStatus('pending')" />
+      </div>
+      @if (loadingLists) {
+        <p-skeleton height="8rem" />
+      } @else if (upcomingDue.length === 0) {
+        <p class="text-gray-400 text-sm">Nenhum título a vencer nos próximos 30 dias.</p>
+      } @else {
+        <p-table [value]="upcomingDue" [tableStyle]="{ 'min-width': '100%' }">
+          <ng-template #header>
+            <tr>
+              <th>Número</th>
+              <th>Cliente</th>
+              <th class="text-right">Valor</th>
+              <th>Vencimento</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-r>
+            <tr class="cursor-pointer" (click)="view(r._id)">
+              <td class="font-mono">{{ r.number }}</td>
+              <td class="truncate max-w-[10rem]" [pTooltip]="customerName(r)">{{ customerName(r) }}</td>
+              <td class="text-right font-mono">R$ {{ r.amount | number:'1.2-2' }}</td>
+              <td>
+                <span>{{ r.dueDate | date:'dd/MM/yy' }}</span>
+                <small class="block text-gray-500">em {{ daysToDue(r) }} dia(s)</small>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+  </div>
+  }
+</div>
+
+<p-toast />

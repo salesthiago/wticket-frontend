@@ -2,7 +2,7 @@
 <div class="p-4 sm:ml-64 pt-4">
 <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
 <p-card class="align-items-center mb-4" header="Cadastro de Contato">
-    <div class="field">
+    <div class="field my-2">
         <label for="name" class="block mb-2">Nome</label>
         <input
           id="name"
@@ -14,7 +14,7 @@
           class="w-full"
         />
       </div>
-      <div class="field">
+      <div class="field my-2">
         <label for="email" class="block mb-2">Email</label>
         <input
           id="email"
@@ -26,14 +26,17 @@
           class="w-full"
         />
       </div>
-      <div class="field">
-        <label class="block mb-2">Status</label>
-        <p-select [options]="optionStatus" [(ngModel)]="contact.status" optionLabel="name" optionValue="value"
-          class="w-full md:w-56" />
-      </div>
-      <div class="field">
-        <label class="block mb-2">Telefone</label>
-        <p-inputMask [(ngModel)]="contact.phone" mask="+99 (99) 9 9999-9999" />
+      <div class="grid md:grid-cols-2 sm:grid-cols-1">
+
+        <div class="my-2">
+          <label class="block mb-2">Status</label>
+          <p-select [options]="optionStatus" [(ngModel)]="contact.status" optionLabel="name" optionValue="value"
+          class="w-full" />
+        </div>
+        <div class="my-2 mx-2">
+          <label class="block mb-2">Telefone</label>
+          <p-inputMask fluid class="w-full" [(ngModel)]="contact.phone" mask="+99 (99) 9 9999-9999" />
+        </div>
       </div>
 
       <div class="flex mt-4">
