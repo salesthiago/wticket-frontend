@@ -22,6 +22,7 @@ import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
 import { TicketStatusService } from '../services/ticket-status.service';
+import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-ticket-settings',
@@ -45,7 +46,8 @@ import { TicketStatusService } from '../services/ticket-status.service';
     InputNumberModule,
     TagModule,
     ConfirmDialogModule,
-    TooltipModule
+    TooltipModule,
+    SidebarComponent
   ],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
@@ -56,6 +58,8 @@ export class TicketSettingsComponent implements OnInit {
     { label: 'Tickets', routerLink: '/tickets/list' },
     { label: 'Configurações' }
   ];
+
+  activeTab = 'categories';
 
   // Categorias
   categories: any[] = [];

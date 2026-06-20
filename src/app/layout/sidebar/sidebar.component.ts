@@ -133,24 +133,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
       icon: 'pi pi-wrench',
       modules: ['service_order']
     },
-    {
-      id: 9,
-      name: 'Atendimento Automático',
-      link: '',
-      icon: 'pi pi-sparkles',
-      modules: ['auto_attendance'],
-      panelModel: [
-        {
-          label: 'Atendimento Automático',
-          icon: 'pi pi-sparkles',
-          items: [
-            { label: 'Bots', routerLink: '/bot-config' },
-            { label: 'Agentes IA', routerLink: '/ai-agents' },
-            { label: 'Provedores IA', routerLink: '/ai-providers' }
-          ]
-        }
-      ]
-    },
+    // Atendimento Automático desabilitado — será serviço separado
+    // {
+    //   id: 9,
+    //   name: 'Atendimento Automático',
+    //   link: '',
+    //   icon: 'pi pi-sparkles',
+    //   modules: ['auto_attendance'],
+    //   panelModel: [
+    //     {
+    //       label: 'Atendimento Automático',
+    //       icon: 'pi pi-sparkles',
+    //       items: [
+    //         { label: 'Bots', routerLink: '/bot-config' },
+    //         { label: 'Agentes IA', routerLink: '/ai-agents' },
+    //         { label: 'Provedores IA', routerLink: '/ai-providers' }
+    //       ]
+    //     }
+    //   ]
+    // },
     {
       id: 11,
       name: 'NFS-e',

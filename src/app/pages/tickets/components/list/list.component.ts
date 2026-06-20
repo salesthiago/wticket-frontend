@@ -11,6 +11,7 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
+import { TextareaModule } from 'primeng/textarea';
 import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -19,6 +20,7 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { TicketService } from '../services/ticket.service';
 import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketStatusService } from '../services/ticket-status.service';
+import { TicketSubjectService } from '../services/ticket-subject.service';
 
 // WhatsApp e Socket.io desabilitados temporariamente (serão serviços separados no futuro)
 // import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
@@ -55,6 +57,7 @@ interface Ticket {
     FormsModule,
     ProgressSpinnerModule,
     TooltipModule,
+    TextareaModule,
     ConfirmDialogModule,
     ToastModule,
     BreadcrumbModule,
@@ -89,10 +92,18 @@ export class TicketsComponent implements OnInit {
     { label: 'Urgente', value: 'urgent' }
   ];
 
+  // Criar ticket
+  createDialog = false;
+  createLoading = false;
+  createForm: any = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+  createSubjectOptions: any[] = [];
+  private allSubjects: any[] = [];
+
   constructor(
     private ticketService: TicketService,
     private categoryService: TicketCategoryService,
     private statusService: TicketStatusService,
+    private subjectService: TicketSubjectService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
@@ -147,6 +158,51 @@ export class TicketsComponent implements OnInit {
 
   openSettings(): void {
     this.router.navigate(['/tickets/settings']);
+  }
+
+  openCreateDialog(): void {
+    this.createForm = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+    this.createSubjectOptions = [];
+    if (!this.allSubjects.length) {
+      this.subjectService.findAll().subscribe({ next: (data) => { this.allSubjects = data; } });
+    }
+    this.createDialog = true;
+  }
+
+  onCreateCategoryChange(): void {
+    this.createForm.subjectId = '';
+    this.createSubjectOptions = this.allSubjects
+      .filter(s => s.isActive && (s.categoryId?._id ?? s.categoryId) === this.createForm.categoryId)
+      .map(s => ({ label: s.name, value: s._id }));
+  }
+
+  saveTicket(): void {
+    if (!this.createForm.contactNumber.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'Número do contato é obrigatório' });
+      return;
+    }
+    this.createLoading = true;
+    const payload: any = {
+      contactNumber: this.createForm.contactNumber,
+      contactName: this.createForm.contactName,
+      priority: this.createForm.priority,
+      notes: this.createForm.notes
+    };
+    if (this.createForm.categoryId) payload['categoryId'] = this.createForm.categoryId;
+    if (this.createForm.subjectId) payload['subjectId'] = this.createForm.subjectId;
+
+    this.ticketService.create(payload).subscribe({
+      next: () => {
+        this.createDialog = false;
+        this.createLoading = false;
+        this.messageService.add({ severity: 'success', summary: 'Ticket criado com sucesso' });
+        this.loadTickets();
+      },
+      error: () => {
+        this.createLoading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro ao criar ticket' });
+      }
+    });
   }
 
   get filteredTickets(): Ticket[] {

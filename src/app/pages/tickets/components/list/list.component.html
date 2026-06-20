@@ -6,6 +6,11 @@
     <h1 class="text-2xl font-bold">Tickets</h1>
     <div class="flex gap-2">
       <p-button
+        icon="pi pi-plus"
+        label="Novo Ticket"
+        (onClick)="openCreateDialog()">
+      </p-button>
+      <p-button
         icon="pi pi-cog"
         label="Configurações"
         severity="secondary"
@@ -189,3 +194,72 @@
 
 <p-confirmdialog />
 <p-toast />
+
+<!-- Dialog: Novo Ticket -->
+<p-dialog
+  header="Novo Ticket"
+  [(visible)]="createDialog"
+  [modal]="true"
+  [style]="{ width: '480px' }">
+  <div class="flex flex-col gap-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium mb-1">Número do Contato</label>
+      <input pInputText [(ngModel)]="createForm.contactNumber" class="w-full" placeholder="Ex: 11999999999" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Nome do Contato</label>
+      <input pInputText [(ngModel)]="createForm.contactName" class="w-full" placeholder="Nome do cliente" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Categoria</label>
+      <p-select
+        [options]="categoryOptions"
+        [(ngModel)]="createForm.categoryId"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecionar categoria"
+        class="w-full"
+        [showClear]="true"
+        (onChange)="onCreateCategoryChange()">
+      </p-select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Assunto</label>
+      <p-select
+        [options]="createSubjectOptions"
+        [(ngModel)]="createForm.subjectId"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecionar assunto"
+        class="w-full"
+        [showClear]="true"
+        [disabled]="!createForm.categoryId">
+      </p-select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Prioridade</label>
+      <p-select
+        [options]="priorityOptions"
+        [(ngModel)]="createForm.priority"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecionar prioridade"
+        class="w-full">
+      </p-select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Observações</label>
+      <textarea
+        pTextarea
+        [(ngModel)]="createForm.notes"
+        rows="3"
+        class="w-full"
+        placeholder="Observações adicionais...">
+      </textarea>
+    </div>
+  </div>
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="createDialog = false" />
+    <p-button label="Criar Ticket" icon="pi pi-check" [loading]="createLoading" (onClick)="saveTicket()" />
+  </ng-template>
+</p-dialog>

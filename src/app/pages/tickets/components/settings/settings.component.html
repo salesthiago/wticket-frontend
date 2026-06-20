@@ -1,12 +1,11 @@
 <p-toast />
 <p-confirmDialog />
 
-<div class="settings-container">
-  <div class="settings-header">
-    <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
-  </div>
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" class="mb-4 block" />
 
-  <p-tabs>
+  <p-tabs [(value)]="activeTab">
 
     <!-- Aba: Categorias -->
     <p-tablist>
@@ -153,7 +152,7 @@
       </p-tabpanel>
     </p-tabpanels>
   </p-tabs>
-</div>
+</div><!-- /sm:ml-64 -->
 
 <!-- Dialog: Categoria -->
 <p-dialog
