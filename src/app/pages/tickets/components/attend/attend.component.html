@@ -1,0 +1,308 @@
+<p-toast />
+
+<div class="attend-container">
+  <div class="attend-header">
+    <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
+    <button pButton icon="pi pi-arrow-left" label="Voltar" class="p-button-text" (click)="goBack()"></button>
+  </div>
+
+  @if (loading) {
+    <div class="loading-center">
+      <p-progressSpinner />
+    </div>
+  } @else if (ticket) {
+    <div class="attend-grid">
+
+      <!-- Coluna principal: detalhes + respostas -->
+      <div class="attend-main">
+
+        <!-- Cabeçalho do ticket -->
+        <p-card>
+          <div class="ticket-header-info">
+            <div class="ticket-title-row">
+              <h2>Ticket #{{ ticket._id?.slice(-6)?.toUpperCase() }}</h2>
+              <span class="status-badge" [style.background]="getStatusColor()">
+                {{ ticket.statusId?.label || 'Sem status' }}
+              </span>
+            </div>
+
+            <div class="ticket-meta">
+              <div class="meta-item">
+                <i class="pi pi-tag"></i>
+                <span>{{ ticket.categoryId?.name || 'Sem categoria' }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="pi pi-file"></i>
+                <span>{{ ticket.subjectId?.name || 'Sem assunto' }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="pi pi-user"></i>
+                <span>{{ ticket.contactName || ticket.contactNumber || 'Contato não informado' }}</span>
+              </div>
+              <div class="meta-item">
+                <i class="pi pi-calendar"></i>
+                <span>{{ ticket.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            </div>
+
+            <div class="priority-row">
+              <p-tag
+                [value]="getPriorityLabel(ticket.priority)"
+                [severity]="getPrioritySeverity(ticket.priority)" />
+              @if (ticket.assignedTo) {
+                <span class="assigned-to">
+                  <i class="pi pi-user-edit"></i> {{ ticket.assignedTo?.name }}
+                </span>
+              }
+            </div>
+
+            @if (ticket.notes) {
+              <p-divider />
+              <div class="notes-section">
+                <strong>Observações:</strong>
+                <p>{{ ticket.notes }}</p>
+              </div>
+            }
+          </div>
+        </p-card>
+
+        <!-- Alterar status -->
+        <p-card header="Alterar Status">
+          <div class="status-change-row">
+            <p-select
+              [options]="statuses"
+              [(ngModel)]="selectedStatusId"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecione o status"
+              styleClass="w-full" />
+            <button
+              pButton
+              label="Salvar Status"
+              icon="pi pi-check"
+              (click)="changeStatus()"
+              [disabled]="!selectedStatusId">
+            </button>
+          </div>
+        </p-card>
+
+        <!-- Registrar resposta -->
+        <p-card header="Registrar Resposta">
+          <div class="response-form">
+            <textarea
+              pTextarea
+              [(ngModel)]="newResponse"
+              rows="4"
+              placeholder="Digite a resposta ou tratativa para este ticket..."
+              class="w-full">
+            </textarea>
+            <button
+              pButton
+              label="Registrar Resposta"
+              icon="pi pi-send"
+              (click)="saveResponse()"
+              [loading]="responseLoading"
+              [disabled]="!newResponse.trim()">
+            </button>
+          </div>
+        </p-card>
+
+        <!-- Histórico de respostas -->
+        @if (ticket.responses?.length > 0) {
+          <p-card header="Histórico de Respostas">
+            <p-timeline [value]="ticket.responses">
+              <ng-template #content let-response>
+                <div class="response-item">
+                  <div class="response-header">
+                    <p-avatar
+                      [label]="response.respondedBy?.name?.charAt(0) || 'A'"
+                      shape="circle" />
+                    <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
+                    <span class="response-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                  <p class="response-content">{{ response.content }}</p>
+                </div>
+              </ng-template>
+            </p-timeline>
+          </p-card>
+        }
+      </div>
+
+      <!-- Coluna lateral: ações e vínculos -->
+      <div class="attend-sidebar">
+
+        <!-- Ações opcionais por módulo -->
+        <p-card header="Ações">
+          <div class="actions-list">
+
+            @if (hasServiceOrderModule) {
+              @if (ticket.serviceOrderId) {
+                <div class="linked-item">
+                  <i class="pi pi-wrench"></i>
+                  <div>
+                    <small>Ordem de Serviço vinculada</small>
+                    <strong>{{ ticket.serviceOrderId?.orderNumber }}</strong>
+                    <span class="status-badge-sm">{{ ticket.serviceOrderId?.status }}</span>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  pButton
+                  label="Gerar Ordem de Serviço"
+                  icon="pi pi-wrench"
+                  class="p-button-outlined w-full"
+                  (click)="openServiceOrderDialog()">
+                </button>
+              }
+            }
+
+            @if (hasAppointmentModule) {
+              @if (ticket.appointmentId) {
+                <div class="linked-item">
+                  <i class="pi pi-calendar-plus"></i>
+                  <div>
+                    <small>Visita agendada</small>
+                    <strong>{{ ticket.appointmentId?.scheduledDate | date:'dd/MM/yyyy' }} às {{ ticket.appointmentId?.scheduledTime }}</strong>
+                  </div>
+                </div>
+              } @else {
+                <button
+                  pButton
+                  label="Agendar Visita"
+                  icon="pi pi-calendar-plus"
+                  class="p-button-outlined p-button-success w-full"
+                  (click)="openAppointmentDialog()">
+                </button>
+              }
+            }
+
+            @if (!hasServiceOrderModule && !hasAppointmentModule) {
+              <p class="no-modules-msg">
+                <i class="pi pi-info-circle"></i>
+                Nenhum módulo adicional ativo no plano.
+              </p>
+            }
+          </div>
+        </p-card>
+
+        <!-- Informações do ticket -->
+        <p-card header="Informações">
+          <ul class="info-list">
+            <li><span>Criado em</span><strong>{{ ticket.createdAt | date:'dd/MM/yyyy' }}</strong></li>
+            <li><span>Atualizado</span><strong>{{ ticket.updatedAt | date:'dd/MM/yyyy HH:mm' }}</strong></li>
+            @if (ticket.resolvedAt) {
+              <li><span>Resolvido</span><strong>{{ ticket.resolvedAt | date:'dd/MM/yyyy' }}</strong></li>
+            }
+            @if (ticket.closedAt) {
+              <li><span>Fechado</span><strong>{{ ticket.closedAt | date:'dd/MM/yyyy' }}</strong></li>
+            }
+            <li><span>Respostas</span><strong>{{ ticket.responses?.length || 0 }}</strong></li>
+          </ul>
+        </p-card>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Dialog: Gerar Ordem de Serviço -->
+<p-dialog
+  header="Gerar Ordem de Serviço"
+  [(visible)]="showServiceOrderDialog"
+  [modal]="true"
+  [style]="{ width: '560px' }">
+  <div class="dialog-form">
+    <div class="field">
+      <label>Problema Relatado *</label>
+      <textarea
+        pTextarea
+        [(ngModel)]="serviceOrderForm.reportedIssue"
+        rows="3"
+        class="w-full"
+        placeholder="Descreva o problema relatado pelo cliente">
+      </textarea>
+    </div>
+    <div class="field">
+      <label>Prioridade</label>
+      <p-select
+        [options]="priorityOptions"
+        [(ngModel)]="serviceOrderForm.priority"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full" />
+    </div>
+    <div class="field-group">
+      <div class="field">
+        <label>Tipo de Equipamento</label>
+        <input pInputText [(ngModel)]="serviceOrderForm.equipment.type" class="w-full" placeholder="Ex: Notebook, Impressora" />
+      </div>
+      <div class="field">
+        <label>Marca</label>
+        <input pInputText [(ngModel)]="serviceOrderForm.equipment.brand" class="w-full" placeholder="Ex: Dell, HP" />
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field">
+        <label>Modelo</label>
+        <input pInputText [(ngModel)]="serviceOrderForm.equipment.model" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Número de Série</label>
+        <input pInputText [(ngModel)]="serviceOrderForm.equipment.serialNumber" class="w-full" />
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="showServiceOrderDialog = false"></button>
+    <button
+      pButton
+      label="Gerar OS"
+      icon="pi pi-wrench"
+      [loading]="serviceOrderLoading"
+      (click)="createServiceOrder()">
+    </button>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: Agendar Visita -->
+<p-dialog
+  header="Agendar Visita"
+  [(visible)]="showAppointmentDialog"
+  [modal]="true"
+  [style]="{ width: '480px' }">
+  <div class="dialog-form">
+    <div class="field-group">
+      <div class="field">
+        <label>Data *</label>
+        <input pInputText type="date" [(ngModel)]="appointmentForm.scheduledDate" class="w-full" />
+      </div>
+      <div class="field">
+        <label>Horário *</label>
+        <input pInputText type="time" [(ngModel)]="appointmentForm.scheduledTime" class="w-full" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Serviço</label>
+      <input pInputText [(ngModel)]="appointmentForm.service" class="w-full" placeholder="Ex: Instalação, Manutenção" />
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <textarea
+        pTextarea
+        [(ngModel)]="appointmentForm.description"
+        rows="3"
+        class="w-full"
+        placeholder="Detalhes sobre a visita">
+      </textarea>
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="showAppointmentDialog = false"></button>
+    <button
+      pButton
+      label="Agendar"
+      icon="pi pi-calendar-plus"
+      [loading]="appointmentLoading"
+      (click)="createAppointment()">
+    </button>
+  </ng-template>
+</p-dialog>

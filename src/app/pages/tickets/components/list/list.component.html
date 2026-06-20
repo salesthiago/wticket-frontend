@@ -5,132 +5,172 @@
   <div class="flex justify-between items-center mb-4">
     <h1 class="text-2xl font-bold">Tickets</h1>
     <div class="flex gap-2">
-      <p-button icon="pi pi-refresh" [rounded]="true" [text]="true" severity="secondary" (onClick)="loadTickets()"
-        [loading]="loading" pTooltip="Atualizar lista" tooltipPosition="top">
+      <p-button
+        icon="pi pi-cog"
+        label="Configurações"
+        severity="secondary"
+        [text]="true"
+        (onClick)="openSettings()"
+        pTooltip="Categorias, Assuntos e Status"
+        tooltipPosition="top">
       </p-button>
-      <p-button icon="pi pi-sync" label="Sincronizar Contatos" (onClick)="syncContacts()" [loading]="syncLoading"
-        severity="help">
+      <p-button
+        icon="pi pi-refresh"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        (onClick)="loadTickets()"
+        [loading]="loading"
+        pTooltip="Atualizar lista"
+        tooltipPosition="top">
       </p-button>
     </div>
   </div>
-
-  @if(syncMessage) {
-  <div class="mb-4">
-    <p-message [severity]="syncMessage.includes('Erro') ? 'error' : 'success'" [text]="syncMessage"></p-message>
-  </div>
-  }
-
-  <!-- Tabs de categoria -->
-  <p-tabs [(value)]="categoryFilter" (valueChange)="onCategoryChange($event + '')" class="mb-4">
-    <p-tablist>
-      <p-tab value="support">Atendimentos</p-tab>
-      <p-tab value="sale">Vendas</p-tab>
-    </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel value="support"></p-tabpanel>
-      <p-tabpanel value="sale"></p-tabpanel>
-    </p-tabpanels>
-  </p-tabs>
 
   <!-- Filtros -->
   <p-card header="Filtros" class="mb-4">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div>
-        <label class="block text-sm font-medium mb-2">Sessão</label>
-        <p-select [options]="sessions" [(ngModel)]="sessionFilter" optionLabel="label" optionValue="value"
-          placeholder="Selecione a sessão" class="w-full">
+        <label class="block text-sm font-medium mb-2">Categoria</label>
+        <p-select
+          [options]="categoryOptions"
+          [(ngModel)]="categoryFilter"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas as categorias"
+          class="w-full"
+          (onChange)="loadTickets()">
         </p-select>
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Status</label>
-        <p-select [options]="statusOptions" [(ngModel)]="statusFilter" optionLabel="label" optionValue="value"
-          placeholder="Selecione o status" class="w-full">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="statusFilter"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos os status"
+          class="w-full"
+          (onChange)="loadTickets()">
         </p-select>
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Prioridade</label>
-        <p-select [options]="priorityOptions" [(ngModel)]="priorityFilter" optionLabel="label" optionValue="value"
-          placeholder="Selecione a prioridade" class="w-full">
+        <p-select
+          [options]="priorityOptions"
+          [(ngModel)]="priorityFilter"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas as prioridades"
+          class="w-full">
         </p-select>
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Buscar</label>
-        <input type="text" pInputText [(ngModel)]="searchText" placeholder="Número, nome ou assunto..." class="w-full">
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="searchText"
+          placeholder="Número, nome ou assunto..."
+          class="w-full">
       </div>
     </div>
   </p-card>
 
   <!-- Estatísticas -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <p-card class="text-center">
       <div class="text-2xl font-bold text-blue-600">{{ totalTickets }}</div>
-      <div class="text-sm text-gray-600">Total</div>
+      <div class="text-sm text-gray-600">Total (filtrado)</div>
     </p-card>
     <p-card class="text-center">
-      <div class="text-2xl font-bold text-yellow-600">{{ openedTickets }}</div>
-      <div class="text-sm text-gray-600">Abertos</div>
+      <div class="text-2xl font-bold text-gray-600">{{ tickets.length }}</div>
+      <div class="text-sm text-gray-600">Total geral</div>
     </p-card>
     <p-card class="text-center">
-      <div class="text-2xl font-bold text-blue-600">{{ inProgressTickets }}</div>
-      <div class="text-sm text-gray-600">Em Andamento</div>
+      <div class="text-2xl font-bold text-orange-600">{{ highPriorityCount }}</div>
+      <div class="text-sm text-gray-600">Alta/Urgente</div>
     </p-card>
     <p-card class="text-center">
-      <div class="text-2xl font-bold text-green-600">{{ finishedTickets }}</div>
-      <div class="text-sm text-gray-600">Finalizados</div>
-    </p-card>
-    <p-card class="text-center">
-      <div class="text-2xl font-bold text-red-600">{{ canceledTickets }}</div>
-      <div class="text-sm text-gray-600">Cancelados</div>
+      <div class="text-2xl font-bold text-green-600">{{ withResponsesCount }}</div>
+      <div class="text-sm text-gray-600">Com respostas</div>
     </p-card>
   </div>
 
   <!-- Tabela -->
   <p-card>
-    <p-table [value]="filteredTickets" [loading]="loading" [paginator]="true" [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]" styleClass="p-datatable-sm">
+    <p-table
+      [value]="filteredTickets"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="15"
+      [rowsPerPageOptions]="[15, 30, 50]"
+      styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
           <th>Contato</th>
+          <th>Categoria</th>
           <th>Assunto</th>
-          <th>Sessão</th>
           <th>Status</th>
           <th>Prioridade</th>
-          @if (categoryFilter === 'sale') {
-            <th>Itens</th>
-          }
-          <th>Última Mensagem</th>
+          <th>Respostas</th>
           <th>Criado em</th>
-          <th>Ações</th>
+          <th style="width: 100px">Ações</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-ticket>
         <tr>
           <td>
-            <div class="font-semibold">{{ ticket.contactName }}</div>
-            <div class="text-sm text-gray-500">{{ ticket.contactNumber }}</div>
-          </td>
-          <td>{{ ticket.subject }}</td>
-          <td>{{ ticket.sessionName }}</td>
-          <td>
-            <p-tag [value]="getStatusLabel(ticket.status)" [severity]="getStatusSeverity(ticket.status)"></p-tag>
+            <div class="font-semibold">{{ ticket.contactName || '—' }}</div>
+            <div class="text-sm text-gray-500">{{ ticket.contactNumber || '—' }}</div>
           </td>
           <td>
-            <p-tag [value]="getPriorityLabel(ticket.priority)" [severity]="getPrioritySeverity(ticket.priority)"></p-tag>
+            @if (ticket.categoryId) {
+              <span class="category-dot" [style.background]="ticket.categoryId?.color"></span>
+              {{ ticket.categoryId?.name }}
+            } @else {
+              <span class="text-gray-400">—</span>
+            }
           </td>
-          @if (categoryFilter === 'sale') {
-            <td>
-              <span class="text-sm">{{ ticket.saleItems?.length || 0 }} produto(s)</span>
-            </td>
-          }
-          <td>{{ ticket.lastMessage ? (ticket.lastMessage | date:'dd/MM/yyyy HH:mm') : 'Nenhuma' }}</td>
+          <td>{{ ticket.subjectId?.name || '—' }}</td>
+          <td>
+            @if (ticket.statusId) {
+              <span class="status-badge" [style.background]="ticket.statusId?.color">
+                {{ ticket.statusId?.label }}
+              </span>
+            } @else {
+              <span class="text-gray-400">—</span>
+            }
+          </td>
+          <td>
+            <p-tag
+              [value]="getPriorityLabel(ticket.priority)"
+              [severity]="getPrioritySeverity(ticket.priority)">
+            </p-tag>
+          </td>
+          <td>
+            <span class="text-sm">{{ ticket.responses?.length || 0 }}</span>
+          </td>
           <td>{{ ticket.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>
             <div class="flex gap-1">
-              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info" (onClick)="openTicket(ticket)"
-                pTooltip="Ver detalhes" tooltipPosition="top">
+              <p-button
+                icon="pi pi-headphones"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                (onClick)="openAttend(ticket)"
+                pTooltip="Atender"
+                tooltipPosition="top">
               </p-button>
-              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
-                (onClick)="destroyTicket(ticket._id, $event)" pTooltip="Deletar" tooltipPosition="top">
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                (onClick)="destroyTicket(ticket._id, $event)"
+                pTooltip="Deletar"
+                tooltipPosition="top">
               </p-button>
             </div>
           </td>
@@ -138,7 +178,7 @@
       </ng-template>
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="text-center py-8 text-gray-500">
+          <td colspan="8" class="text-center py-8 text-gray-500">
             Nenhum ticket encontrado
           </td>
         </tr>
@@ -149,158 +189,3 @@
 
 <p-confirmdialog />
 <p-toast />
-
-<!-- Dialog de detalhes do ticket -->
-<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{ width: '80vw', maxWidth: '1100px' }" (onHide)="closeDialog()">
-  @if (selectedTicket) {
-    <ng-template #header>
-      <div class="flex items-center gap-3">
-        <span class="font-bold text-lg">{{ selectedTicket.contactName }}</span>
-        <span class="text-gray-500">{{ selectedTicket.contactNumber }}</span>
-        <p-tag [value]="selectedTicket.category === 'sale' ? 'Venda' : 'Atendimento'"
-          [severity]="selectedTicket.category === 'sale' ? 'success' : 'info'">
-        </p-tag>
-      </div>
-    </ng-template>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <!-- Coluna esquerda: Chat -->
-      <div>
-        <app-chat [messages]="selectedTicket.messages ?? []"
-          (onMessageSent)="sendMessage($event)" [session]="selectedTicket.sessionName"
-          [sessions]="chatSessions" (onSessionChange)="onChatSessionChange($event)"
-          [name]="selectedTicket.contactName" [number]="selectedTicket.contactNumber" />
-      </div>
-
-      <!-- Coluna direita: Info + Ações -->
-      <div class="space-y-4">
-        <!-- Info básica -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Sessão</label>
-            <p class="font-medium">{{ selectedTicket.sessionName }}</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Criado em</label>
-            <p>{{ selectedTicket.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Assunto</label>
-            <p>{{ selectedTicket.subject }}</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Última atualização</label>
-            <p>{{ selectedTicket.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
-            <div class="flex items-center gap-2">
-              <p-tag [value]="getStatusLabel(selectedTicket.status)" [severity]="getStatusSeverity(selectedTicket.status)"></p-tag>
-              <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" (click)="changeStatus()" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Prioridade</label>
-            <div class="flex items-center gap-2">
-              <p-tag [value]="getPriorityLabel(selectedTicket.priority)" [severity]="getPrioritySeverity(selectedTicket.priority)"></p-tag>
-              <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" (click)="changeTicket()" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Itens de venda (apenas para tickets de venda) -->
-        @if (selectedTicket.category === 'sale') {
-          <div class="border rounded-lg p-3">
-            <div class="flex justify-between items-center mb-3">
-              <h3 class="font-semibold text-gray-700">Itens de Venda</h3>
-              <p-button icon="pi pi-plus" label="Adicionar" size="small" severity="secondary"
-                (onClick)="addSaleItem()">
-              </p-button>
-            </div>
-
-            @if (!selectedTicket.saleItems || selectedTicket.saleItems.length === 0) {
-              <p class="text-sm text-gray-500 text-center py-3">Nenhum item adicionado</p>
-            } @else {
-              <div class="space-y-3">
-                @for (item of selectedTicket.saleItems; track $index) {
-                  <div class="border rounded p-2 bg-gray-50">
-                    <div class="grid grid-cols-1 gap-2">
-                      <div>
-                        <label class="block text-xs text-gray-500 mb-1">Produto</label>
-                        <p-select
-                          [(ngModel)]="item.product"
-                          [options]="sessionProductOptions"
-                          optionLabel="name"
-                          optionValue="_id"
-                          placeholder="Selecionar produto..."
-                          class="w-full"
-                          (onChange)="onSaleItemProductChange(item)">
-                        </p-select>
-                      </div>
-                      <div class="grid grid-cols-3 gap-2">
-                        <div>
-                          <label class="block text-xs text-gray-500 mb-1">Qtd</label>
-                          <p-inputnumber [(ngModel)]="item.quantity" [min]="1" class="w-full" inputStyleClass="w-full" />
-                        </div>
-                        <div>
-                          <label class="block text-xs text-gray-500 mb-1">Preço unit.</label>
-                          <p-inputnumber [(ngModel)]="item.unitPrice" [min]="0" mode="currency" currency="BRL" locale="pt-BR" class="w-full" inputStyleClass="w-full" />
-                        </div>
-                        <div>
-                          <label class="block text-xs text-gray-500 mb-1">Total</label>
-                          <p class="font-medium pt-2">{{ (item.quantity * item.unitPrice) | currency:'BRL':'symbol':'1.2-2':'pt' }}</p>
-                        </div>
-                      </div>
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                          <p-toggleswitch [(ngModel)]="item.sold" />
-                          <label class="text-sm text-gray-600">Vendido</label>
-                        </div>
-                        <p-button icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" size="small"
-                          (onClick)="removeSaleItem($index)">
-                        </p-button>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-
-              <div class="flex justify-between items-center mt-3 pt-3 border-t">
-                <span class="font-semibold">Total: {{ saleTotal | currency:'BRL':'symbol':'1.2-2':'pt' }}</span>
-                <p-button label="Salvar Itens" severity="primary" size="small" [loading]="saleItemsLoading"
-                  (onClick)="saveSaleItems()">
-                </p-button>
-              </div>
-            }
-
-            @if (selectedTicket.saleItems && selectedTicket.saleItems.length > 0) {
-              <div class="flex justify-end mt-2">
-                <p-button label="Salvar Itens" severity="primary" size="small" [loading]="saleItemsLoading"
-                  (onClick)="saveSaleItems()">
-                </p-button>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- Sub-dialogs -->
-    <p-dialog [(visible)]="dialogStatus" header="Alterar Status" [modal]="true" [style]="{ width: '350px' }">
-      <p-select class="w-full" appendTo="body" [ngModel]="getSelectedStatus()" [checkmark]="true" [showClear]="true"
-        [options]="statusOptions" optionLabel="label" optionValue="value" (onChange)="onStatusChange($event)" />
-      <div class="flex justify-end gap-2 mt-4">
-        <p-button label="Cancelar" severity="secondary" (click)="dialogStatus = false" />
-        <p-button label="Salvar" (click)="updateStatusTicket()" />
-      </div>
-    </p-dialog>
-
-    <p-dialog [(visible)]="dialogPriority" header="Alterar Prioridade" [modal]="true" [style]="{ width: '350px' }">
-      <p-select [(ngModel)]="selectedTicket.priority" [options]="priorityOptions" optionLabel="label" optionValue="value" class="w-full" />
-      <div class="flex justify-end gap-2 mt-4">
-        <p-button label="Cancelar" severity="secondary" (click)="dialogPriority = false" />
-        <p-button label="Salvar" (click)="updateTicket()" />
-      </div>
-    </p-dialog>
-  }
-</p-dialog>

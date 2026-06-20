@@ -11,35 +11,35 @@ export class TicketService {
 
   constructor(private http: HttpClient) { }
 
-  getTickets(filters: any = {}): Observable<any> {
+  getTickets(filters: any = {}): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/tickets`, { params: filters });
-  }
-
-  updateStatus(id: string, status: string): Observable<any> {
-    return this.http.patch<any[]>(`${this.apiUrl}/tickets/${id}/${status}`, {});
-  }
-
-  update(id: string, data: any): Observable<any> {
-    return this.http.put<any[]>(`${this.apiUrl}/tickets/${id}`, { ...data });
-  }
-
-  syncContacts(sessionName: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/sync/contacts`, { sessionName });
-  }
-
-  getSyncStatus(sessionName: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/sync/status/${sessionName}`);
-  }
-
-  destroy(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/tickets/${id}/destroy`);
   }
 
   findById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/tickets/${id}`);
   }
 
-  updateSaleItems(id: string, data: { saleItems?: any[]; category?: string }): Observable<any> {
+  create(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/tickets`, data);
+  }
+
+  update(id: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/tickets/${id}`, data);
+  }
+
+  updateStatus(id: string, statusId: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/status`, { statusId });
+  }
+
+  addResponse(id: string, content: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content });
+  }
+
+  updateSaleItems(id: string, data: { saleItems?: any[]; categoryId?: string }): Observable<any> {
     return this.http.patch(`${this.apiUrl}/tickets/${id}/sale-items`, data);
+  }
+
+  destroy(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/tickets/${id}/destroy`);
   }
 }

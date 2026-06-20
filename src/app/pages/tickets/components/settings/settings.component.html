@@ -1,0 +1,268 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="settings-container">
+  <div class="settings-header">
+    <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
+  </div>
+
+  <p-tabs>
+
+    <!-- Aba: Categorias -->
+    <p-tablist>
+      <p-tab value="categories">Categorias</p-tab>
+      <p-tab value="subjects">Assuntos</p-tab>
+      <p-tab value="statuses">Status</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+
+      <!-- Categorias -->
+      <p-tabpanel value="categories">
+        <p-card>
+          <div class="card-toolbar">
+            <h3>Categorias de Tickets</h3>
+            <button pButton label="Nova Categoria" icon="pi pi-plus" (click)="openCategoryDialog()"></button>
+          </div>
+          <p-table [value]="categories" [rowHover]="true" responsiveLayout="scroll">
+            <ng-template #header>
+              <tr>
+                <th>Cor</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th style="width: 120px">Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-cat>
+              <tr>
+                <td>
+                  <span class="color-dot" [style.background]="cat.color"></span>
+                </td>
+                <td><strong>{{ cat.name }}</strong></td>
+                <td>{{ cat.description || '—' }}</td>
+                <td>
+                  <i [class]="cat.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"></i>
+                </td>
+                <td>
+                  <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openCategoryDialog(cat)"></button>
+                  <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" (click)="deleteCategory(cat._id, $event)"></button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr><td colspan="5" class="text-center">Nenhuma categoria cadastrada.</td></tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </p-tabpanel>
+
+      <!-- Assuntos -->
+      <p-tabpanel value="subjects">
+        <p-card>
+          <div class="card-toolbar">
+            <h3>Assuntos de Tickets</h3>
+            <button pButton label="Novo Assunto" icon="pi pi-plus" (click)="openSubjectDialog()"></button>
+          </div>
+          <p-table [value]="subjects" [rowHover]="true" responsiveLayout="scroll">
+            <ng-template #header>
+              <tr>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Descrição</th>
+                <th>Ativo</th>
+                <th style="width: 120px">Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-sub>
+              <tr>
+                <td><strong>{{ sub.name }}</strong></td>
+                <td>
+                  @if (sub.categoryId) {
+                    <span class="color-dot" [style.background]="sub.categoryId?.color"></span>
+                    {{ sub.categoryId?.name }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>{{ sub.description || '—' }}</td>
+                <td>
+                  <i [class]="sub.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"></i>
+                </td>
+                <td>
+                  <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openSubjectDialog(sub)"></button>
+                  <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" (click)="deleteSubject(sub._id, $event)"></button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr><td colspan="5" class="text-center">Nenhum assunto cadastrado.</td></tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </p-tabpanel>
+
+      <!-- Status -->
+      <p-tabpanel value="statuses">
+        <p-card>
+          <div class="card-toolbar">
+            <h3>Status de Tickets</h3>
+            <button pButton label="Novo Status" icon="pi pi-plus" (click)="openStatusDialog()"></button>
+          </div>
+          <p-table [value]="statuses" [rowHover]="true" responsiveLayout="scroll">
+            <ng-template #header>
+              <tr>
+                <th>Ordem</th>
+                <th>Cor</th>
+                <th>Nome</th>
+                <th>Label</th>
+                <th>Padrão</th>
+                <th>Ativo</th>
+                <th style="width: 160px">Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-st>
+              <tr>
+                <td>{{ st.order }}</td>
+                <td><span class="color-dot" [style.background]="st.color"></span></td>
+                <td><strong>{{ st.name }}</strong></td>
+                <td>
+                  <span class="status-preview" [style.background]="st.color">{{ st.label }}</span>
+                </td>
+                <td>
+                  @if (st.isDefault) {
+                    <i class="pi pi-star-fill text-yellow-500"></i>
+                  } @else {
+                    <button pButton icon="pi pi-star" class="p-button-text p-button-sm p-button-warning" pTooltip="Definir como padrão" (click)="setDefaultStatus(st._id)"></button>
+                  }
+                </td>
+                <td>
+                  <i [class]="st.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"></i>
+                </td>
+                <td>
+                  <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openStatusDialog(st)"></button>
+                  <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" [disabled]="st.isDefault" (click)="deleteStatus(st._id, $event)"></button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr><td colspan="7" class="text-center">Nenhum status cadastrado.</td></tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<!-- Dialog: Categoria -->
+<p-dialog
+  [header]="editingCategoryId ? 'Editar Categoria' : 'Nova Categoria'"
+  [(visible)]="categoryDialog"
+  [modal]="true"
+  [style]="{ width: '420px' }">
+  <div class="dialog-form">
+    <div class="field">
+      <label>Nome *</label>
+      <input pInputText [(ngModel)]="categoryForm.name" class="w-full" placeholder="Ex: Suporte, Vendas" />
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <input pInputText [(ngModel)]="categoryForm.description" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Cor</label>
+      <div class="color-field">
+        <p-colorPicker [(ngModel)]="categoryForm.color" format="hex" />
+        <input pInputText [(ngModel)]="categoryForm.color" class="color-input" placeholder="#6c757d" />
+      </div>
+    </div>
+    <div class="field-inline">
+      <label>Ativo</label>
+      <p-toggleSwitch [(ngModel)]="categoryForm.isActive" />
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="categoryDialog = false"></button>
+    <button pButton label="Salvar" icon="pi pi-check" [loading]="categoryLoading" (click)="saveCategory()"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: Assunto -->
+<p-dialog
+  [header]="editingSubjectId ? 'Editar Assunto' : 'Novo Assunto'"
+  [(visible)]="subjectDialog"
+  [modal]="true"
+  [style]="{ width: '420px' }">
+  <div class="dialog-form">
+    <div class="field">
+      <label>Nome *</label>
+      <input pInputText [(ngModel)]="subjectForm.name" class="w-full" placeholder="Ex: Problema técnico, Dúvida" />
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <input pInputText [(ngModel)]="subjectForm.description" class="w-full" />
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <p-select
+        [options]="categoryOptions"
+        [(ngModel)]="subjectForm.categoryId"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecionar categoria"
+        styleClass="w-full"
+        [showClear]="true" />
+    </div>
+    <div class="field-inline">
+      <label>Ativo</label>
+      <p-toggleSwitch [(ngModel)]="subjectForm.isActive" />
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="subjectDialog = false"></button>
+    <button pButton label="Salvar" icon="pi pi-check" [loading]="subjectLoading" (click)="saveSubject()"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: Status -->
+<p-dialog
+  [header]="editingStatusId ? 'Editar Status' : 'Novo Status'"
+  [(visible)]="statusDialog"
+  [modal]="true"
+  [style]="{ width: '440px' }">
+  <div class="dialog-form">
+    <div class="field">
+      <label>Nome interno *</label>
+      <input pInputText [(ngModel)]="statusForm.name" class="w-full" placeholder="Ex: in_progress" />
+    </div>
+    <div class="field">
+      <label>Label (exibição) *</label>
+      <input pInputText [(ngModel)]="statusForm.label" class="w-full" placeholder="Ex: Em Andamento" />
+    </div>
+    <div class="field">
+      <label>Cor</label>
+      <div class="color-field">
+        <p-colorPicker [(ngModel)]="statusForm.color" format="hex" />
+        <input pInputText [(ngModel)]="statusForm.color" class="color-input" placeholder="#6c757d" />
+        <span class="status-preview" [style.background]="statusForm.color">{{ statusForm.label || 'Preview' }}</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ordem</label>
+      <p-inputNumber [(ngModel)]="statusForm.order" [min]="0" styleClass="w-full" />
+    </div>
+    <div class="field-inline">
+      <label>Status padrão</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isDefault" />
+    </div>
+    <div class="field-inline">
+      <label>Ativo</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isActive" />
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="statusDialog = false"></button>
+    <button pButton label="Salvar" icon="pi pi-check" [loading]="statusLoading" (click)="saveStatus()"></button>
+  </ng-template>
+</p-dialog>
