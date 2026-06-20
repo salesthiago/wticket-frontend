@@ -75,10 +75,10 @@
                   pTooltip="Digite o nome da cidade. Filtra por UF se informada."></i>
               </label>
               <p-autoComplete
-                [(ngModel)]="cMunSelected"
+                [ngModel]="cMunSelected"
+                (ngModelChange)="onCMunModelChange($event)"
                 [suggestions]="cMunSuggestions"
                 (completeMethod)="onSearchCMun($event)"
-                (onSelect)="onCMunSelect($event)"
                 field="name"
                 placeholder="Ex.: Goiânia, Aparecida de Goiânia…"
                 [forceSelection]="true"
@@ -102,8 +102,18 @@
             </div>
             <div>
               <label class="block text-sm mb-1">CEP</label>
-              <input pInputText class="w-full font-mono"
-                [(ngModel)]="tomadorOverride.endereco.cep" />
+              <div class="relative">
+                <input pInputText class="w-full font-mono"
+                  [(ngModel)]="tomadorOverride.endereco.cep"
+                  (blur)="onCepBlur()"
+                  placeholder="00000000"
+                  maxlength="9" />
+                @if (cepLoading) {
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2">
+                    <i class="pi pi-spin pi-spinner text-gray-400"></i>
+                  </span>
+                }
+              </div>
             </div>
             <div>
               <label class="block text-sm mb-1">Bairro</label>

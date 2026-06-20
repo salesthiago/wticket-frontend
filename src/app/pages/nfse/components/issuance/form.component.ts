@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -133,11 +134,14 @@ export class IssuanceFormComponent implements OnInit {
     { label: 'CPF', value: 'cpf' }
   ];
 
+  cepLoading = false;
+
   constructor(
     private nfse: NfseService,
     private customersService: CustomersService,
     private router: Router,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -197,11 +201,47 @@ export class IssuanceFormComponent implements OnInit {
     });
   }
 
-  onCMunSelect(event: { value: IbgeMunicipality }) {
-    const m = event?.value;
-    if (!m) return;
-    this.tomadorOverride.endereco.cMun = m.cMun;
-    this.tomadorOverride.endereco.uf = m.uf;
+  // Separar [ngModel] de (ngModelChange) evita que PrimeNG re-renderize
+  // o objeto bruto no input quando o field="name" não é resolvido a tempo.
+  onCMunModelChange(value: IbgeMunicipality | null) {
+    if (value && typeof value === 'object' && value.cMun) {
+      this.cMunSelected = value;
+      this.tomadorOverride.endereco.cMun = value.cMun;
+      this.tomadorOverride.endereco.uf = value.uf;
+    } else if (!value) {
+      this.cMunSelected = null;
+      this.tomadorOverride.endereco.cMun = '';
+    }
+  }
+
+  onCepBlur(): void {
+    const cep = (this.tomadorOverride.endereco.cep || '').replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    this.cepLoading = true;
+    this.http.get<any>(`https://viacep.com.br/ws/${cep}/json/`).subscribe({
+      next: (data) => {
+        this.cepLoading = false;
+        if (data?.erro) {
+          this.messageService.add({ severity: 'warn', summary: 'CEP não encontrado' });
+          return;
+        }
+        if (data.logradouro) this.tomadorOverride.endereco.xLgr = data.logradouro;
+        if (data.bairro) this.tomadorOverride.endereco.xBairro = data.bairro;
+        if (data.uf) this.tomadorOverride.endereco.uf = data.uf;
+        if (data.ibge) {
+          this.tomadorOverride.endereco.cMun = data.ibge;
+          this.cMunSelected = {
+            cMun: data.ibge,
+            name: data.localidade || '',
+            uf: data.uf || ''
+          };
+        }
+      },
+      error: () => {
+        this.cepLoading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro ao consultar CEP' });
+      }
+    });
   }
 
   onCustomerChange() {
