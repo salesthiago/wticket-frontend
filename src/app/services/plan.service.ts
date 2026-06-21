@@ -23,6 +23,8 @@ export interface Plan {
   price: number;
   /** Ciclo de cobrança recorrente. */
   cycle?: PlanCycle;
+  /** Dias de período trial gratuito para novos cadastros. 0 = sem trial. */
+  trialDays?: number;
   /** Produto recorrente vinculado no AbacatePay (somente leitura). */
   abacateProductId?: string;
   isActive?: boolean;

@@ -38,6 +38,7 @@ export interface Company {
   ownerId?: string;
   modules: CompanyModule[];
   trialEndsAt?: string;
+  subscriptionExempt?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -144,6 +145,10 @@ export class CompanyService {
 
   setStatus(id: string, status: CompanyStatus): Observable<Company> {
     return this.http.patch<Company>(`${this.apiUrl}/${id}/status`, { status });
+  }
+
+  setExempt(id: string, exempt: boolean): Observable<Company> {
+    return this.http.patch<Company>(`${this.apiUrl}/${id}/exempt`, { exempt });
   }
 
   addModule(id: string, payload: { code: ModuleCode; subscriptionStatus?: SubscriptionStatus; activatedAt?: string; expiresAt?: string; }): Observable<Company> {

@@ -23,11 +23,12 @@ interface PlanDraft {
   moduleCodes: ModuleCode[];
   price: number;
   cycle: PlanCycle;
+  trialDays: number;
   isActive: boolean;
 }
 
 function emptyDraft(): PlanDraft {
-  return { name: '', description: '', moduleCodes: [], price: 0, cycle: 'MONTHLY', isActive: true };
+  return { name: '', description: '', moduleCodes: [], price: 0, cycle: 'MONTHLY', trialDays: 0, isActive: true };
 }
 
 @Component({
@@ -101,6 +102,7 @@ export class PlansListComponent implements OnInit {
       moduleCodes: [...plan.moduleCodes],
       price: plan.price ?? 0,
       cycle: plan.cycle ?? 'MONTHLY',
+      trialDays: plan.trialDays ?? 0,
       isActive: plan.isActive ?? true
     };
     this.dialogVisible = true;
@@ -144,6 +146,7 @@ export class PlansListComponent implements OnInit {
       moduleCodes: this.draft.moduleCodes,
       price: this.draft.price,
       cycle: this.draft.cycle,
+      trialDays: this.draft.trialDays ?? 0,
       isActive: this.draft.isActive
     };
 

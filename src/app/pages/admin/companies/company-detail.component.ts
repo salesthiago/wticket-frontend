@@ -7,6 +7,7 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { SidebarComponent } from '../../../layout/sidebar/sidebar.component';
 import { CompanyService, Company, SubscriptionStatus } from '../../../services/company.service';
@@ -28,6 +29,7 @@ import { StorageConfigComponent } from '../../../components/storage-config/stora
     InputTextModule,
     TagModule,
     ToastModule,
+    TooltipModule,
     SidebarComponent,
     StorageConfigComponent
   ]
@@ -118,6 +120,18 @@ export class CompanyDetailComponent implements OnInit {
     if (!this.company) return;
     this.companyService.setStatus(this.company._id, status).subscribe({
       next: (c) => { this.company = { ...this.company!, status: c.status }; this.toastOk(`Empresa: ${status}`); },
+      error: (err) => this.toastErr(err?.error?.message || 'Falha')
+    });
+  }
+
+  toggleExempt(): void {
+    if (!this.company) return;
+    const newExempt = !this.company.subscriptionExempt;
+    this.companyService.setExempt(this.company._id, newExempt).subscribe({
+      next: (c) => {
+        this.company = { ...this.company!, subscriptionExempt: c.subscriptionExempt, status: c.status };
+        this.toastOk(newExempt ? 'Empresa isenta de assinatura' : 'Isenção removida');
+      },
       error: (err) => this.toastErr(err?.error?.message || 'Falha')
     });
   }
