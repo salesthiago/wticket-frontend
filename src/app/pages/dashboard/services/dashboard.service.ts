@@ -3,16 +3,21 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/enviroment';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class DashboardService {
   private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  public findDashboardTickets(params: any): Observable<any> {
-    return this.http.get<any>(this.apiUrl + '/home/dashboard-tickets', { params })
+  getAttendanceDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/attendance`);
   }
 
+  getServiceOrderDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/service-order`);
+  }
+
+  getPlatformDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/platform`);
+  }
 }

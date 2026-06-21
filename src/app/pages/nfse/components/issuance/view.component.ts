@@ -13,13 +13,15 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { MessageModule } from 'primeng/message';
 import { TimelineModule } from 'primeng/timeline';
+import { SkeletonModule } from 'primeng/skeleton';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { NfseService } from '../services/nfse.service';
 import {
   NfseIssuance,
   NfseStatus,
   NfseStatusLabels,
-  NfseStatusColors
+  NfseStatusColors,
+  NfseWsLog
 } from '../../nfse.interface';
 
 @Component({
@@ -41,6 +43,7 @@ import {
     TabsModule,
     MessageModule,
     TimelineModule,
+    SkeletonModule,
     SidebarComponent
   ]
 })
@@ -48,7 +51,12 @@ export class IssuanceViewComponent implements OnInit {
   loading = false;
   downloading = false;
   downloadingPdf = false;
+  retransmitting = false;
+  logsLoading = false;
+
   item: NfseIssuance | null = null;
+  logs: NfseWsLog[] = [];
+  expandedLogId: string | null = null;
 
   breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
   breadcrumbItems: MenuItem[] = [
@@ -83,6 +91,60 @@ export class IssuanceViewComponent implements OnInit {
     });
   }
 
+  onTabChange(tab: string) {
+    this.activeTab = tab;
+    if (tab === 'transmissoes' && this.item?._id && this.logs.length === 0) {
+      this.loadLogs();
+    }
+  }
+
+  loadLogs() {
+    if (!this.item?._id) return;
+    this.logsLoading = true;
+    this.nfse.listLogs({ issuanceId: this.item._id, limit: 50 }).subscribe({
+      next: (res) => { this.logs = res.records; this.logsLoading = false; },
+      error: () => { this.logsLoading = false; }
+    });
+  }
+
+  toggleLogDetail(logId: string) {
+    this.expandedLogId = this.expandedLogId === logId ? null : logId;
+  }
+
+  retransmit() {
+    if (!this.item?._id || this.retransmitting) return;
+    this.retransmitting = true;
+    this.nfse.retransmit(this.item._id).subscribe({
+      next: (data) => {
+        this.item = data;
+        this.logs = [];
+        this.retransmitting = false;
+        if (data.status === 'authorized') {
+          this.messageService.add({ severity: 'success', summary: 'Autorizada', detail: `NFS-e ${data.numeroNfse || ''} autorizada com sucesso` });
+        } else {
+          const msg = data.mensagensRetorno?.[0];
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Retransmissão concluída',
+            detail: msg ? `[${msg.codigo}] ${msg.mensagem}` : `Status: ${data.status}`
+          });
+        }
+      },
+      error: (err) => {
+        this.retransmitting = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro na retransmissão',
+          detail: err?.error?.message || 'Falha ao retransmitir'
+        });
+      }
+    });
+  }
+
+  canRetransmit(): boolean {
+    return this.item?.status === 'error' || this.item?.status === 'rejected';
+  }
+
   back() { this.router.navigate(['/nfse/issuances']); }
 
   downloadPdf(openInline = false) {
@@ -93,7 +155,6 @@ export class IssuanceViewComponent implements OnInit {
         const url = URL.createObjectURL(blob);
         if (openInline) {
           window.open(url, '_blank', 'noopener');
-          // Revoga após 1 min para garantir que o navegador já carregou
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         } else {
           const a = document.createElement('a');
@@ -188,6 +249,13 @@ export class IssuanceViewComponent implements OnInit {
       e.cep
     ].filter(Boolean);
     return parts.join(' • ') || '—';
+  }
+
+  wsStatusSeverity(httpStatus?: number): 'success' | 'danger' | 'warn' | 'secondary' {
+    if (!httpStatus) return 'secondary';
+    if (httpStatus >= 200 && httpStatus < 300) return 'success';
+    if (httpStatus >= 500) return 'danger';
+    return 'warn';
   }
 
   statusLabel(s?: NfseStatus): string { return s ? (NfseStatusLabels[s] || s) : ''; }
