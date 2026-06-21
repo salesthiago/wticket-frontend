@@ -29,6 +29,13 @@
         }
         @if (canRetransmit()) {
           <p-button
+            label="Editar dados"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="openEdit()"
+            pTooltip="Corrigir dados e regenerar XML antes de retransmitir" />
+          <p-button
             label="Retransmitir"
             icon="pi pi-send"
             severity="warn"
@@ -419,5 +426,149 @@
   </p-card>
   }
 </div>
+
+<!-- ─── Dialog de edição de dados ──────────────────────────────────────────── -->
+<p-dialog
+  header="Corrigir dados da emissão"
+  [(visible)]="editVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  [draggable]="false">
+
+  <div class="space-y-6">
+    <!-- Competência -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Data de competência</label>
+      <input pInputText type="date" [(ngModel)]="editDraft.dCompet" class="w-full max-w-xs" />
+      <p class="text-xs text-gray-500 mt-1">Mês/ano em que o serviço foi prestado.</p>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Tomador do serviço</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Tipo de documento</label>
+        <select [(ngModel)]="editDraft.tomador.documentType"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-800">
+          <option value="cnpj">CNPJ</option>
+          <option value="cpf">CPF</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Documento (somente números)</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.document" class="w-full" placeholder="00.000.000/0001-00" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Razão social / Nome</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.nome" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Inscrição Municipal (opcional)</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.inscricaoMunicipal" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">E-mail</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.email" class="w-full" type="email" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Telefone</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.fone" class="w-full" />
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">CEP</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.cep" class="w-full" maxlength="8" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Logradouro</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xLgr" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Número</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.nro" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Complemento</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xCpl" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Bairro</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xBairro" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cód. IBGE Município</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.cMun" class="w-full" maxlength="7" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">UF</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.uf" class="w-full" maxlength="2" style="text-transform:uppercase" />
+      </div>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Serviço</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Descrição do serviço</label>
+        <textarea pInputText [(ngModel)]="editDraft.servico.xDescServ" rows="3"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-800 resize-y"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cTribNac</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cTribNac" class="w-full font-mono" maxlength="6" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cTribMun</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cTribMun" class="w-full font-mono" maxlength="6" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cNBS</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cNBS" class="w-full font-mono" maxlength="9" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cód. IBGE local de prestação</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cLocPrestacao" class="w-full font-mono" maxlength="7" />
+      </div>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Valores</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Valor do serviço (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.vServ"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Desconto incondicional (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.descIncond"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Desconto condicional (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.descCond"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Alíquota ISSQN (%)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.pAliq"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="4"
+          [min]="0" [max]="100" class="w-full" />
+      </div>
+    </div>
+
+    <div class="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded p-3 text-sm text-amber-800 dark:text-amber-200">
+      <i class="pi pi-info-circle mr-1"></i>
+      Ao salvar, o XML será regenerado e assinado digitalmente com os novos dados. Em seguida utilize o botão <strong>Retransmitir</strong>.
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="editVisible = false" />
+    <p-button label="Salvar e regenerar XML" icon="pi pi-refresh" [loading]="saving" (onClick)="saveEdit()" />
+  </ng-template>
+</p-dialog>
 
 <p-toast />

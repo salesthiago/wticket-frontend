@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MenuItem, MessageService } from 'primeng/api';
 import { CardModule } from 'primeng/card';
@@ -14,6 +15,9 @@ import { TabsModule } from 'primeng/tabs';
 import { MessageModule } from 'primeng/message';
 import { TimelineModule } from 'primeng/timeline';
 import { SkeletonModule } from 'primeng/skeleton';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { NfseService } from '../services/nfse.service';
 import {
@@ -32,6 +36,7 @@ import {
   providers: [MessageService],
   imports: [
     CommonModule,
+    FormsModule,
     CardModule,
     ButtonModule,
     TagModule,
@@ -44,6 +49,9 @@ import {
     MessageModule,
     TimelineModule,
     SkeletonModule,
+    DialogModule,
+    InputTextModule,
+    InputNumberModule,
     SidebarComponent
   ]
 })
@@ -53,10 +61,15 @@ export class IssuanceViewComponent implements OnInit {
   downloadingPdf = false;
   retransmitting = false;
   logsLoading = false;
+  saving = false;
 
   item: NfseIssuance | null = null;
   logs: NfseWsLog[] = [];
   expandedLogId: string | null = null;
+
+  // ─── Edição ─────────────────────────────────────────────────────────────────
+  editVisible = false;
+  editDraft: any = {};
 
   breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
   breadcrumbItems: MenuItem[] = [
@@ -83,22 +96,103 @@ export class IssuanceViewComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
+          severity: 'error', summary: 'Erro',
           detail: err?.error?.message || 'Falha ao carregar emissão'
         });
       }
     });
   }
 
-  onTabChange(tab: string) {
+  // ─── Edição ─────────────────────────────────────────────────────────────────
+
+  openEdit(): void {
+    if (!this.item) return;
+    const t = this.item.tomador;
+    const s = this.item.servico;
+    const v = this.item.valores;
+    this.editDraft = {
+      dCompet: this.item.dCompet ? new Date(this.item.dCompet).toISOString().substring(0, 10) : '',
+      tomador: {
+        documentType: t?.documentType || 'cnpj',
+        document: t?.document || '',
+        inscricaoMunicipal: t?.inscricaoMunicipal || '',
+        nome: t?.nome || '',
+        email: t?.email || '',
+        fone: t?.fone || '',
+        endereco: {
+          cMun:    t?.endereco?.cMun    || '',
+          uf:      t?.endereco?.uf      || '',
+          cep:     t?.endereco?.cep     || '',
+          xLgr:    t?.endereco?.xLgr    || '',
+          nro:     t?.endereco?.nro     || '',
+          xCpl:    t?.endereco?.xCpl    || '',
+          xBairro: t?.endereco?.xBairro || ''
+        }
+      },
+      servico: {
+        cTribNac:      s?.cTribNac      || '',
+        cTribMun:      s?.cTribMun      || '',
+        cNBS:          s?.cNBS          || '',
+        xDescServ:     s?.xDescServ     || '',
+        cLocPrestacao: s?.cLocPrestacao || ''
+      },
+      valoresInput: {
+        vServ:      v?.vServ      ?? 0,
+        descIncond: v?.descIncond ?? 0,
+        descCond:   v?.descCond   ?? 0,
+        pAliq:      v?.issqn?.pAliq ?? 0
+      }
+    };
+    this.editVisible = true;
+  }
+
+  saveEdit(): void {
+    if (!this.item?._id || this.saving) return;
+    this.saving = true;
+
+    // Monta o patch — tomador null se não preencheu documento
+    const d = this.editDraft;
+    const tomadorDoc = (d.tomador?.document || '').replace(/\D/g, '');
+    const patch: any = {
+      dCompet: d.dCompet || undefined,
+      servico: d.servico,
+      valoresInput: d.valoresInput
+    };
+    if (tomadorDoc) {
+      patch.tomador = { ...d.tomador };
+    }
+
+    this.nfse.editIssuance(this.item._id, patch).subscribe({
+      next: (data) => {
+        this.item = data;
+        this.saving = false;
+        this.editVisible = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Dados corrigidos',
+          detail: 'XML regenerado. Use Retransmitir para enviar ao webservice.'
+        });
+      },
+      error: (err) => {
+        this.saving = false;
+        this.messageService.add({
+          severity: 'error', summary: 'Erro ao salvar',
+          detail: err?.error?.message || 'Falha ao editar emissão'
+        });
+      }
+    });
+  }
+
+  // ─── Tabs ────────────────────────────────────────────────────────────────────
+
+  onTabChange(tab: string): void {
     this.activeTab = tab;
     if (tab === 'transmissoes' && this.item?._id && this.logs.length === 0) {
       this.loadLogs();
     }
   }
 
-  loadLogs() {
+  loadLogs(): void {
     if (!this.item?._id) return;
     this.logsLoading = true;
     this.nfse.listLogs({ issuanceId: this.item._id, limit: 50 }).subscribe({
@@ -107,11 +201,13 @@ export class IssuanceViewComponent implements OnInit {
     });
   }
 
-  toggleLogDetail(logId: string) {
+  toggleLogDetail(logId: string): void {
     this.expandedLogId = this.expandedLogId === logId ? null : logId;
   }
 
-  retransmit() {
+  // ─── Retransmissão ───────────────────────────────────────────────────────────
+
+  retransmit(): void {
     if (!this.item?._id || this.retransmitting) return;
     this.retransmitting = true;
     this.nfse.retransmit(this.item._id).subscribe({
@@ -124,8 +220,7 @@ export class IssuanceViewComponent implements OnInit {
         } else {
           const msg = data.mensagensRetorno?.[0];
           this.messageService.add({
-            severity: 'warn',
-            summary: 'Retransmissão concluída',
+            severity: 'warn', summary: 'Retransmissão concluída',
             detail: msg ? `[${msg.codigo}] ${msg.mensagem}` : `Status: ${data.status}`
           });
         }
@@ -133,8 +228,7 @@ export class IssuanceViewComponent implements OnInit {
       error: (err) => {
         this.retransmitting = false;
         this.messageService.add({
-          severity: 'error',
-          summary: 'Erro na retransmissão',
+          severity: 'error', summary: 'Erro na retransmissão',
           detail: err?.error?.message || 'Falha ao retransmitir'
         });
       }
@@ -144,6 +238,8 @@ export class IssuanceViewComponent implements OnInit {
   canRetransmit(): boolean {
     return this.item?.status === 'error' || this.item?.status === 'rejected';
   }
+
+  // ─── Download ────────────────────────────────────────────────────────────────
 
   back() { this.router.navigate(['/nfse/issuances']); }
 
@@ -161,20 +257,14 @@ export class IssuanceViewComponent implements OnInit {
           const fname = this.item!.numeroNfse
             ? `nfse-${this.item!.numeroNfse}.pdf`
             : `dps-${this.item!.serie}-${this.item!.nDPS}.pdf`;
-          a.href = url;
-          a.download = fname;
-          a.click();
+          a.href = url; a.download = fname; a.click();
           URL.revokeObjectURL(url);
         }
         this.downloadingPdf = false;
       },
       error: (err) => {
         this.downloadingPdf = false;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: err?.error?.message || 'Falha ao gerar PDF'
-        });
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha ao gerar PDF' });
       }
     });
   }
@@ -189,27 +279,19 @@ export class IssuanceViewComponent implements OnInit {
         const fname = type === 'dps'
           ? `dps-${this.item!.serie}-${this.item!.nDPS}.xml`
           : `nfse-${this.item!.numeroNfse || this.item!._id}.xml`;
-        a.href = url;
-        a.download = fname;
-        a.click();
+        a.href = url; a.download = fname; a.click();
         URL.revokeObjectURL(url);
         this.downloading = false;
       },
       error: (err) => {
         this.downloading = false;
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Erro',
-          detail: err?.error?.message || `XML ${type.toUpperCase()} indisponível`
-        });
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || `XML ${type.toUpperCase()} indisponível` });
       }
     });
   }
 
   openConsultaUrl() {
-    if (this.item?.urlConsulta) {
-      window.open(this.item.urlConsulta, '_blank', 'noopener');
-    }
+    if (this.item?.urlConsulta) window.open(this.item.urlConsulta, '_blank', 'noopener');
   }
 
   copyChave() {
@@ -218,6 +300,8 @@ export class IssuanceViewComponent implements OnInit {
       this.messageService.add({ severity: 'success', summary: 'Copiado', detail: 'Chave de acesso copiada' });
     });
   }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   customerName(): string {
     if (!this.item) return '—';
@@ -243,8 +327,7 @@ export class IssuanceViewComponent implements OnInit {
     const e = p.endereco;
     const parts = [
       [e.xLgr, e.nro].filter(Boolean).join(', '),
-      e.xCpl,
-      e.xBairro,
+      e.xCpl, e.xBairro,
       [e.xCidade || '', e.uf].filter(Boolean).join(' / '),
       e.cep
     ].filter(Boolean);
@@ -260,19 +343,18 @@ export class IssuanceViewComponent implements OnInit {
 
   statusLabel(s?: NfseStatus): string { return s ? (NfseStatusLabels[s] || s) : ''; }
   statusColor(s?: NfseStatus): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-    const c = s ? NfseStatusColors[s] : 'secondary';
-    return (c as any) || 'secondary';
+    return ((s ? NfseStatusColors[s] : 'secondary') as any) || 'secondary';
   }
 
   retencoesList() {
     if (!this.item?.valores) return [];
     const v = this.item.valores;
     return [
-      { name: 'PIS', retido: !!v.pis?.retido, aliq: v.pis?.aliq },
-      { name: 'COFINS', retido: !!v.cofins?.retido, aliq: v.cofins?.aliq },
-      { name: 'IRRF', retido: !!v.irrf?.retido, aliq: v.irrf?.aliq },
-      { name: 'CSLL', retido: !!v.csll?.retido, aliq: v.csll?.aliq },
-      { name: 'CP (INSS)', retido: !!v.cp?.retido, aliq: v.cp?.aliq }
+      { name: 'PIS',      retido: !!v.pis?.retido,    aliq: v.pis?.aliq },
+      { name: 'COFINS',   retido: !!v.cofins?.retido,  aliq: v.cofins?.aliq },
+      { name: 'IRRF',     retido: !!v.irrf?.retido,    aliq: v.irrf?.aliq },
+      { name: 'CSLL',     retido: !!v.csll?.retido,    aliq: v.csll?.aliq },
+      { name: 'CP (INSS)',retido: !!v.cp?.retido,      aliq: v.cp?.aliq }
     ].filter(r => r.retido);
   }
 }
