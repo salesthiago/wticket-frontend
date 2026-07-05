@@ -48,6 +48,14 @@ export class AuthService {
       );
   }
 
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, { token, password });
+  }
+
   private setSession(authResult: LoginResponse): void {
     localStorage.setItem(this.tokenKey, authResult.token);
     localStorage.setItem(this.userKey, JSON.stringify(authResult.user));

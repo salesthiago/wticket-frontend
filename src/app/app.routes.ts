@@ -11,6 +11,14 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
+  },
+  {
     path: 'dashboard',
     component: DashboardComponent,
     canActivate: [authGuard]
@@ -44,6 +52,11 @@ export const routes: Routes = [
   {
     path: 'admin/plans',
     loadComponent: () => import('./pages/admin/plans/plans-list.component').then(m => m.PlansListComponent),
+    canActivate: [authGuard, superAdminGuard]
+  },
+  {
+    path: 'admin/email-config',
+    loadComponent: () => import('./pages/admin/email-config/email-config.component').then(m => m.EmailConfigComponent),
     canActivate: [authGuard, superAdminGuard]
   },
   // Tenant + module-gated routes
