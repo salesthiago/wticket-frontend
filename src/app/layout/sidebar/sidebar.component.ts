@@ -75,7 +75,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         }
       ]
     },
-    {
+    /*{
       id: 2,
       name: 'Whatsapp',
       link: '',
@@ -90,7 +90,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ]
         }
       ]
-    },
+    },*/
     {
       id: 3,
       name: 'Contatos',
