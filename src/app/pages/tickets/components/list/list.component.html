@@ -113,6 +113,7 @@
       styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
+          <th style="width: 100px">Ações</th>
           <th>Contato</th>
           <th>Categoria</th>
           <th>Assunto</th>
@@ -120,11 +121,32 @@
           <th>Prioridade</th>
           <th>Respostas</th>
           <th>Criado em</th>
-          <th style="width: 100px">Ações</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-ticket>
         <tr>
+          <td>
+            <div class="flex gap-1">
+              <p-button
+                icon="pi pi-headphones"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                (onClick)="openAttend(ticket)"
+                pTooltip="Atender"
+                tooltipPosition="top">
+              </p-button>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                (onClick)="destroyTicket(ticket._id, $event)"
+                pTooltip="Deletar"
+                tooltipPosition="top">
+              </p-button>
+            </div>
+          </td>
           <td>
             <div class="font-semibold">{{ ticket.contactName || '—' }}</div>
             <div class="text-sm text-gray-500">{{ ticket.contactNumber || '—' }}</div>
@@ -157,28 +179,7 @@
             <span class="text-sm">{{ ticket.responses?.length || 0 }}</span>
           </td>
           <td>{{ ticket.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>
-            <div class="flex gap-1">
-              <p-button
-                icon="pi pi-headphones"
-                [rounded]="true"
-                [text]="true"
-                severity="info"
-                (onClick)="openAttend(ticket)"
-                pTooltip="Atender"
-                tooltipPosition="top">
-              </p-button>
-              <p-button
-                icon="pi pi-trash"
-                [rounded]="true"
-                [text]="true"
-                severity="danger"
-                (onClick)="destroyTicket(ticket._id, $event)"
-                pTooltip="Deletar"
-                tooltipPosition="top">
-              </p-button>
-            </div>
-          </td>
+          
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage">

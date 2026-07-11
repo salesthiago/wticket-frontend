@@ -41,18 +41,22 @@
 
       <ng-template #header>
         <tr>
+          <th>Ações</th>
           <th>Nome</th>
           <th>SKU</th>
           <th>NCM</th>
           <th>Preço</th>
           <th>Estoque</th>
           <th>Status</th>
-          <th>Ações</th>
         </tr>
       </ng-template>
 
       <ng-template #body let-product>
         <tr>
+          <td>
+            <p-button icon="pi pi-pencil" (onClick)="edit(product._id)" severity="primary" />
+            <p-button icon="pi pi-trash" (onClick)="confirmDelete(product._id)" severity="danger" class="px-2" />
+          </td>
           <td>{{ product.name }}</td>
           <td><span class="font-mono text-sm">{{ product.sku }}</span></td>
           <td>{{ product.ncmCode || '—' }}</td>
@@ -63,10 +67,6 @@
               [value]="product.isActive ? 'Ativo' : 'Inativo'"
               [severity]="product.isActive ? 'success' : 'danger'">
             </p-tag>
-          </td>
-          <td>
-            <p-button icon="pi pi-pencil" (onClick)="edit(product._id)" severity="primary" />
-            <p-button icon="pi pi-trash" (onClick)="confirmDelete(product._id)" severity="danger" class="px-2" />
           </td>
         </tr>
       </ng-template>

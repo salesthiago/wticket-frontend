@@ -56,6 +56,7 @@
 
       <ng-template #header>
         <tr>
+          <th>Ações</th>
           <th>N° OS</th>
           <th>Cliente</th>
           <th>Equipamento</th>
@@ -64,12 +65,18 @@
           <th>Prioridade</th>
           <th>Técnico</th>
           <th>Data</th>
-          <th>Ações</th>
         </tr>
       </ng-template>
 
       <ng-template #body let-item>
         <tr>
+          <td>
+            <div class="flex gap-1">
+              <p-button icon="pi pi-eye" (onClick)="view(item._id)" severity="info" [rounded]="true" [text]="true" pTooltip="Visualizar" />
+              <p-button icon="pi pi-pencil" (onClick)="edit(item._id)" severity="primary" [rounded]="true" [text]="true" pTooltip="Editar" />
+              <p-button icon="pi pi-trash" (onClick)="confirmDelete(item._id)" severity="danger" [rounded]="true" [text]="true" pTooltip="Excluir" />
+            </div>
+          </td>
           <td class="font-semibold">{{ item.orderNumber }}</td>
           <td>
             <div>{{ getCustomerName(item) }}</div>
@@ -96,13 +103,7 @@
           </td>
           <td>{{ getTechnicianName(item) }}</td>
           <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
-          <td>
-            <div class="flex gap-1">
-              <p-button icon="pi pi-eye" (onClick)="view(item._id)" severity="info" [rounded]="true" [text]="true" pTooltip="Visualizar" />
-              <p-button icon="pi pi-pencil" (onClick)="edit(item._id)" severity="primary" [rounded]="true" [text]="true" pTooltip="Editar" />
-              <p-button icon="pi pi-trash" (onClick)="confirmDelete(item._id)" severity="danger" [rounded]="true" [text]="true" pTooltip="Excluir" />
-            </div>
-          </td>
+          
         </tr>
       </ng-template>
     </p-table>
