@@ -1,7 +1,32 @@
+<!-- Barra de topo com botão de menu (somente mobile). Fica no fluxo normal do
+     documento (não é fixed) para empurrar o conteúdo da página para baixo,
+     já que as páginas não reservam espaço para um header próprio. Páginas que
+     já têm seu próprio header (ex.: my-account) desativam via [showMobileBar]="false". -->
+@if (showMobileBar) {
+  <div [class]="isDarkMode
+    ? 'sm:hidden sticky top-0 z-30 h-14 flex items-center px-3 bg-gray-950 border-b border-gray-800'
+    : 'sm:hidden sticky top-0 z-30 h-14 flex items-center px-3 bg-white border-b border-gray-200'">
+    <button type="button" (click)="openSidebar()" aria-label="Abrir menu"
+      [class]="isDarkMode
+        ? 'inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-200 hover:bg-gray-800 transition-colors'
+        : 'inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors'">
+      <i class="pi pi-bars text-xl"></i>
+    </button>
+    <img src="/assets/logo-navbar.png" class="h-7 ml-2" alt="WTicket" />
+  </div>
+}
+
+<!-- Backdrop (mobile) -->
+@if (isMobileOpen) {
+  <div (click)="closeSidebar()" class="fixed inset-0 z-40 bg-black/50 sm:hidden"></div>
+}
+
 <aside id="logo-sidebar"
   [class]="isDarkMode
-  ? 'fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full bg-gray-950 border-r border-gray-800 sm:translate-x-0 flex flex-col'
-  : 'fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 flex flex-col'"
+  ? 'fixed top-0 left-0 z-50 w-64 h-screen transition-transform bg-gray-950 border-r border-gray-800 sm:translate-x-0 flex flex-col'
+  : 'fixed top-0 left-0 z-50 w-64 h-screen transition-transform bg-white border-r border-gray-200 sm:translate-x-0 flex flex-col'"
+  [class.translate-x-0]="isMobileOpen"
+  [class.-translate-x-full]="!isMobileOpen"
   aria-label="Sidebar">
 
   <!-- Logo / Topo -->

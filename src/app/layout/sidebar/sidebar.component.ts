@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService, ModuleCode, UserRole } from '../../services/auth.service';
 import { SidebarService } from '../../services/sidebar.service';
@@ -33,6 +33,9 @@ interface NavItem {
   ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
+  /** Página já possui seu próprio header mobile (ex.: my-account) — evita duplicar a barra. */
+  @Input() showMobileBar = true;
+
   private readonly allItems: NavItem[] = [
     {
       id: 0,
@@ -266,6 +269,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   getAvatarLabel(): string {
     return this.user?.name ? this.user.name.charAt(0).toUpperCase() : 'U';
+  }
+
+  openSidebar(): void {
+    this.sidebarService.open();
   }
 
   closeSidebar(): void {
