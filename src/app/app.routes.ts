@@ -123,7 +123,7 @@ export const routes: Routes = [
   {
     path: 'financial',
     loadChildren: () => import('./pages/financial/financial.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('financial'), roleGuard('administrator', 'finance')]
+    canActivate: [authGuard, moduleGuard('financial'), roleGuard('administrator', 'company_admin', 'finance')]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }

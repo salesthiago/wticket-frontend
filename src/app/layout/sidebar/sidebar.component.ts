@@ -181,7 +181,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       link: '',
       icon: 'pi pi-wallet',
       modules: ['financial'],
-      roles: ['administrator', 'finance', 'super_admin'],
+      roles: ['administrator', 'company_admin', 'finance', 'super_admin'],
       panelModel: [
         {
           label: 'Financeiro',
