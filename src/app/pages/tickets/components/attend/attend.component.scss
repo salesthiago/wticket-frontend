@@ -179,6 +179,22 @@
   }
 }
 
+.project-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+  cursor: pointer;
+}
+
+.worked-hours-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+
+  p-inputnumber { flex: 1; }
+}
+
 .no-modules-msg {
   font-size: 0.85rem;
   color: var(--text-color-secondary);

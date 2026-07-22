@@ -21,6 +21,7 @@ import { TicketService } from '../services/ticket.service';
 import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
+import { CustomersService } from '../../../customers/components/services/customers.service';
 
 // WhatsApp e Socket.io desabilitados temporariamente (serão serviços separados no futuro)
 // import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
@@ -95,8 +96,9 @@ export class TicketsComponent implements OnInit {
   // Criar ticket
   createDialog = false;
   createLoading = false;
-  createForm: any = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+  createForm: any = { customerId: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
   createSubjectOptions: any[] = [];
+  customerOptions: any[] = [];
   private allSubjects: any[] = [];
 
   constructor(
@@ -104,6 +106,7 @@ export class TicketsComponent implements OnInit {
     private categoryService: TicketCategoryService,
     private statusService: TicketStatusService,
     private subjectService: TicketSubjectService,
+    private customersService: CustomersService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
@@ -111,7 +114,20 @@ export class TicketsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFiltersData();
+    this.loadCustomers();
     this.loadTickets();
+  }
+
+  loadCustomers(): void {
+    this.customersService.findAll({ limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.customerOptions = records.map((c: any) => ({
+          name: `${c.name} - ${c.phone}`,
+          value: c._id
+        }));
+      }
+    });
   }
 
   loadFiltersData(): void {
@@ -161,10 +177,13 @@ export class TicketsComponent implements OnInit {
   }
 
   openCreateDialog(): void {
-    this.createForm = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+    this.createForm = { customerId: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
     this.createSubjectOptions = [];
     if (!this.allSubjects.length) {
       this.subjectService.findAll().subscribe({ next: (data) => { this.allSubjects = data; } });
+    }
+    if (!this.customerOptions.length) {
+      this.loadCustomers();
     }
     this.createDialog = true;
   }
@@ -177,14 +196,13 @@ export class TicketsComponent implements OnInit {
   }
 
   saveTicket(): void {
-    if (!this.createForm.contactNumber.trim()) {
-      this.messageService.add({ severity: 'warn', summary: 'Número do contato é obrigatório' });
+    if (!this.createForm.customerId) {
+      this.messageService.add({ severity: 'warn', summary: 'Selecione um cliente' });
       return;
     }
     this.createLoading = true;
     const payload: any = {
-      contactNumber: this.createForm.contactNumber,
-      contactName: this.createForm.contactName,
+      customerId: this.createForm.customerId,
       priority: this.createForm.priority,
       notes: this.createForm.notes
     };

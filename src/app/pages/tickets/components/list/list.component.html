@@ -204,12 +204,17 @@
   [style]="{ width: '480px' }">
   <div class="flex flex-col gap-4 pt-2">
     <div>
-      <label class="block text-sm font-medium mb-1">Número do Contato</label>
-      <input pInputText [(ngModel)]="createForm.contactNumber" class="w-full" placeholder="Ex: 11999999999" />
-    </div>
-    <div>
-      <label class="block text-sm font-medium mb-1">Nome do Contato</label>
-      <input pInputText [(ngModel)]="createForm.contactName" class="w-full" placeholder="Nome do cliente" />
+      <label class="block text-sm font-medium mb-1">Cliente <span class="text-red-500">*</span></label>
+      <p-select
+        [options]="customerOptions"
+        [(ngModel)]="createForm.customerId"
+        optionLabel="name"
+        optionValue="value"
+        placeholder="Selecione o cliente..."
+        [filter]="true"
+        filterPlaceholder="Buscar cliente..."
+        class="w-full">
+      </p-select>
     </div>
     <div>
       <label class="block text-sm font-medium mb-1">Categoria</label>

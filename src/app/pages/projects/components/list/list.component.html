@@ -1,0 +1,81 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card class="flex align-items-center mb-4">
+    <p-table
+      [value]="filteredItems"
+      [loading]="loading"
+      class="my-4"
+      [rows]="10"
+      [paginator]="true"
+      [tableStyle]="{ 'min-width': '75rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate=" {first} de {last} "
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <p-button icon="pi pi-plus" label="Novo Projeto" (click)="add()"></p-button>
+            <p-button icon="pi pi-cog" label="Status" severity="secondary" [outlined]="true" (click)="openSettings()"></p-button>
+          </div>
+          <input pInputText type="text" placeholder="Pesquisar por título, número ou cliente..."
+            [(ngModel)]="search" class="w-72" />
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="8">Nenhum projeto encontrado.</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>Ações</th>
+          <th>N° Projeto</th>
+          <th>Título</th>
+          <th>Cliente</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Início</th>
+          <th>Prazo</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-item>
+        <tr>
+          <td>
+            <div class="flex gap-1">
+              <p-button icon="pi pi-eye" (onClick)="view(item._id)" severity="info" [rounded]="true" [text]="true" pTooltip="Visualizar" />
+              <p-button icon="pi pi-pencil" (onClick)="edit(item._id)" severity="primary" [rounded]="true" [text]="true" pTooltip="Editar" />
+              <p-button icon="pi pi-trash" (onClick)="confirmDelete(item._id)" severity="danger" [rounded]="true" [text]="true" pTooltip="Excluir" />
+            </div>
+          </td>
+          <td class="font-semibold">{{ item.projectNumber }}</td>
+          <td>{{ item.title }}</td>
+          <td>{{ getCustomerName(item) }}</td>
+          <td>
+            @if (item.statusId) {
+              <span class="status-badge" [style.background]="getStatusColor(item)">
+                {{ getStatusLabel(item) }}
+              </span>
+            }
+          </td>
+          <td>
+            <p-tag
+              [value]="getPriorityLabel(item.priority)"
+              [severity]="getPriorityColor(item.priority)">
+            </p-tag>
+          </td>
+          <td>{{ item.startDate ? (item.startDate | date:'dd/MM/yyyy') : '—' }}</td>
+          <td>{{ item.endDate ? (item.endDate | date:'dd/MM/yyyy') : '—' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-confirmDialog />
+<p-toast />

@@ -15,6 +15,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { DialogModule } from 'primeng/dialog';
 import { TimelineModule } from 'primeng/timeline';
 import { AvatarModule } from 'primeng/avatar';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { MessageService, MenuItem } from 'primeng/api';
 import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
@@ -40,7 +41,8 @@ import { AppointmentsService } from '../../../appointments/components/services/a
     BreadcrumbModule,
     DialogModule,
     TimelineModule,
-    AvatarModule
+    AvatarModule,
+    InputNumberModule
   ],
   templateUrl: './attend.component.html',
   styleUrls: ['./attend.component.scss']
@@ -51,6 +53,8 @@ export class TicketAttendComponent implements OnInit {
   responseLoading = false;
   newResponse = '';
   selectedStatusId = '';
+  workedHours = 0;
+  workedHoursLoading = false;
 
   statuses: any[] = [];
 
@@ -117,6 +121,7 @@ export class TicketAttendComponent implements OnInit {
       next: (ticket) => {
         this.ticket = ticket;
         this.selectedStatusId = ticket.statusId?._id || ticket.statusId || '';
+        this.workedHours = ticket.workedHours ?? 0;
         this.loading = false;
       },
       error: () => {
@@ -175,6 +180,21 @@ export class TicketAttendComponent implements OnInit {
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar status' });
+      }
+    });
+  }
+
+  saveWorkedHours(): void {
+    this.workedHoursLoading = true;
+    this.ticketService.update(this.ticket._id, { workedHours: this.workedHours }).subscribe({
+      next: (updated) => {
+        this.ticket.workedHours = updated.workedHours;
+        this.workedHoursLoading = false;
+        this.messageService.add({ severity: 'success', summary: 'Horas trabalhadas atualizadas' });
+      },
+      error: () => {
+        this.workedHoursLoading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar horas trabalhadas' });
       }
     });
   }

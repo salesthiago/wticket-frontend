@@ -81,6 +81,11 @@ export const routes: Routes = [
     canActivate: [authGuard, moduleGuard('attendance')]
   },
   {
+    path: 'projects',
+    loadChildren: () => import('./pages/projects/project.route').then(m => m.routes),
+    canActivate: [authGuard, moduleGuard('attendance')]
+  },
+  {
     path: 'appointments',
     loadChildren: () => import('./pages/appointments/appointments.route').then(m => m.routes),
     canActivate: [authGuard, moduleGuard('attendance')]

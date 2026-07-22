@@ -1,0 +1,191 @@
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService, MenuItem } from 'primeng/api';
+import { ProjectsService } from '../services/projects.service';
+import { ProjectStatusService } from '../services/project-status.service';
+import { CustomersService } from '../../../customers/components/services/customers.service';
+import { ProjectModel } from '../../project.interface';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { DatePickerModule } from 'primeng/datepicker';
+import { TextareaModule } from 'primeng/textarea';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { Toast } from 'primeng/toast';
+import { FormsModule } from '@angular/forms';
+import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+
+@Component({
+  selector: 'app-project-form',
+  standalone: true,
+  templateUrl: './form.component.html',
+  styleUrls: ['./form.component.scss'],
+  providers: [MessageService],
+  imports: [
+    ButtonModule,
+    CardModule,
+    InputTextModule,
+    SelectModule,
+    DatePickerModule,
+    TextareaModule,
+    InputNumberModule,
+    Toast,
+    FormsModule,
+    SidebarComponent,
+    BreadcrumbModule
+  ]
+})
+export class ProjectFormComponent implements OnInit {
+  breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
+  breadcrumbItems: MenuItem[] = [];
+
+  public project: ProjectModel = {
+    title: '',
+    description: '',
+    priority: 'medium',
+    hourlyRate: 0
+  };
+
+  public loading = false;
+  public customers: any[] = [];
+  public statuses: any[] = [];
+
+  public optionPriority = [
+    { name: 'Baixa', value: 'low' },
+    { name: 'Média', value: 'medium' },
+    { name: 'Alta', value: 'high' },
+    { name: 'Urgente', value: 'urgent' }
+  ];
+
+  protected id: string | null = null;
+
+  constructor(
+    private service: ProjectsService,
+    private statusService: ProjectStatusService,
+    private customersService: CustomersService,
+    private router: Router,
+    private messageService: MessageService,
+    private route: ActivatedRoute
+  ) {
+    this.id = this.route.snapshot.paramMap.get('id');
+  }
+
+  ngOnInit(): void {
+    this.breadcrumbItems = [
+      { label: 'Projetos', routerLink: '/projects' },
+      { label: this.id ? 'Editar Projeto' : 'Novo Projeto' }
+    ];
+
+    this.loadCustomers();
+    this.loadStatuses();
+
+    if (this.id) {
+      this.findById(this.id);
+    }
+  }
+
+  private loadCustomers() {
+    this.customersService.findAll({ limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.customers = records.map((c: any) => ({
+          name: `${c.name} - ${c.phone}`,
+          value: c._id
+        }));
+      }
+    });
+  }
+
+  private loadStatuses() {
+    this.statusService.findAll(true).subscribe({
+      next: (data) => {
+        this.statuses = data.map(s => ({ name: s.label, value: s._id }));
+      }
+    });
+  }
+
+  private findById(id: string) {
+    this.loading = true;
+    this.service.findById(id).subscribe({
+      next: (resp: any) => {
+        this.project = {
+          ...resp,
+          statusId: resp.statusId?._id ?? resp.statusId ?? '',
+          customerId: resp.customerId?._id ?? resp.customerId ?? '',
+          startDate: resp.startDate ? new Date(resp.startDate) : undefined,
+          endDate: resp.endDate ? new Date(resp.endDate) : undefined
+        };
+        this.loading = false;
+      },
+      error: (error: any) => {
+        this.loading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao buscar projeto'
+        });
+      }
+    });
+  }
+
+  public onSubmit(): void {
+    if (!this.project.title || this.project.title.trim().length < 2) {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Informe o título do projeto' });
+      return;
+    }
+
+    this.loading = true;
+
+    const payload: any = {
+      title: this.project.title,
+      description: this.project.description,
+      priority: this.project.priority,
+      startDate: this.project.startDate,
+      endDate: this.project.endDate,
+      hourlyRate: this.project.hourlyRate,
+      customerId: this.project.customerId || null
+    };
+
+    if (this.project.statusId) {
+      payload.statusId = this.project.statusId;
+    }
+
+    if (this.id) {
+      this.service.update(this.id, payload).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Projeto atualizado!' });
+          this.onBack();
+        },
+        error: (error: any) => {
+          this.loading = false;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: error?.error?.message || 'Erro ao atualizar projeto'
+          });
+        }
+      });
+    } else {
+      this.service.create(payload).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Projeto criado com sucesso!' });
+          this.onBack();
+        },
+        error: (error: any) => {
+          this.loading = false;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erro',
+            detail: error?.error?.message || 'Erro ao criar projeto'
+          });
+        }
+      });
+    }
+  }
+
+  public onBack() {
+    this.router.navigate(['/projects']);
+  }
+}

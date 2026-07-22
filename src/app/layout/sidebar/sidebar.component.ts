@@ -110,6 +110,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       modules: ['attendance']
     },
     {
+      id: 5,
+      name: 'Projetos',
+      link: '/projects',
+      icon: 'pi pi-folder-open',
+      modules: ['attendance']
+    },
+    {
       id: 6,
       name: 'Agendamentos',
       link: '/appointments',

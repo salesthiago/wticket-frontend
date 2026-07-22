@@ -185,6 +185,39 @@
           </div>
         </p-card>
 
+        <!-- Vínculo com Projeto -->
+        @if (ticket.projectId) {
+          <p-card header="Projeto">
+            <div class="linked-item">
+              <i class="pi pi-folder-open"></i>
+              <div>
+                <small>Tarefa do projeto</small>
+                <strong>{{ ticket.projectId?.title }}</strong>
+                <span class="status-badge-sm">{{ ticket.projectId?.projectNumber }}</span>
+              </div>
+            </div>
+            <a class="project-link" [routerLink]="['/projects', ticket.projectId?._id]">Ver projeto</a>
+          </p-card>
+        }
+
+        <!-- Horas trabalhadas nesta tarefa -->
+        <p-card header="Horas Trabalhadas">
+          <div class="worked-hours-row">
+            <p-inputNumber
+              [(ngModel)]="workedHours"
+              [min]="0"
+              suffix=" h"
+              styleClass="w-full" />
+            <button
+              pButton
+              label="Salvar"
+              icon="pi pi-check"
+              [loading]="workedHoursLoading"
+              (click)="saveWorkedHours()">
+            </button>
+          </div>
+        </p-card>
+
         <!-- Informações do ticket -->
         <p-card header="Informações">
           <ul class="info-list">
