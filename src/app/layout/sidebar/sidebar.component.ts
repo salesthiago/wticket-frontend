@@ -18,6 +18,8 @@ interface NavItem {
   modules?: ModuleCode[];
   /** roles allowed; if empty, all roles allowed */
   roles?: UserRole[];
+  /** true = visível para acesso de cliente (portal restrito); os demais itens ficam ocultos para esse login */
+  visibleForCustomerScope?: boolean;
   panelModel?: MenuItem[];
 }
 
@@ -107,14 +109,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
       name: 'Tickets',
       link: '/tickets',
       icon: 'pi pi-tags',
-      modules: ['attendance']
+      modules: ['attendance'],
+      visibleForCustomerScope: true
     },
     {
       id: 5,
       name: 'Projetos',
       link: '/projects',
       icon: 'pi pi-folder-open',
-      modules: ['attendance']
+      modules: ['attendance'],
+      visibleForCustomerScope: true
     },
     {
       id: 6,
@@ -248,7 +252,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private filterMenuByAccess(items: NavItem[]): NavItem[] {
     const role = this.authService.getRole();
+    const customerScoped = this.authService.isCustomerScoped();
     return items.filter(item => {
+      // Acesso de cliente (portal restrito): só vê os itens marcados explicitamente.
+      if (customerScoped) return !!item.visibleForCustomerScope;
       if (item.roles?.length) {
         if (!role || !item.roles.includes(role)) return false;
       }

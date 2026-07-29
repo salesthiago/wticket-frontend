@@ -21,6 +21,7 @@ import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { ServiceOrdersService } from '../../../service-orders/components/services/service-orders.service';
 import { AppointmentsService } from '../../../appointments/components/services/appointments.service';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-ticket-attend',
@@ -102,8 +103,14 @@ export class TicketAttendComponent implements OnInit {
     private ticketStatusService: TicketStatusService,
     private serviceOrdersService: ServiceOrdersService,
     private appointmentsService: AppointmentsService,
+    private authService: AuthService,
     private messageService: MessageService
   ) { }
+
+  // Acesso de cliente (portal restrito): não pode gerar OS/agendamento (a API bloqueia).
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -139,6 +146,12 @@ export class TicketAttendComponent implements OnInit {
   }
 
   checkModules(): void {
+    // Acesso de cliente nunca vê essas ações (a API já bloqueia).
+    if (this.isCustomerScoped) {
+      this.hasServiceOrderModule = false;
+      this.hasAppointmentModule = false;
+      return;
+    }
     // Verifica se os módulos estão ativos no plano do cliente via licença
     // A verificação real deve ser feita via endpoint de licença/perfil
     try {

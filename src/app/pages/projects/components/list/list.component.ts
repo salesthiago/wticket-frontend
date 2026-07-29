@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { TooltipModule } from 'primeng/tooltip';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-projects-list',
@@ -47,10 +48,16 @@ export class ProjectsListComponent implements OnInit {
 
   constructor(
     private service: ProjectsService,
+    private authService: AuthService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
   ) { }
+
+  // Acesso de cliente (portal restrito): só pode visualizar projetos, não gerenciá-los.
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
 
   ngOnInit() {
     this.loadData();

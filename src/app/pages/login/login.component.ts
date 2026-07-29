@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
           summary: 'Sucesso',
           detail: 'Login realizado com sucesso!'
         });
-        this.router.navigate(['/dashboard']);
+        this.router.navigate([this.authService.isCustomerScoped() ? '/projects' : '/dashboard']);
       },
       error: (error) => {
         this.loading = false;

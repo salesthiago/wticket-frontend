@@ -13,6 +13,9 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   companyId: string | null;
+  // Quando setado, este login é um "acesso de cliente" (portal restrito) e só
+  // enxerga os Projetos/Tickets vinculados a este cliente.
+  customerId?: string | null;
 }
 
 export interface LoginRequest {
@@ -120,6 +123,16 @@ export class AuthService {
 
   getCompanyId(): string | null {
     return this.getUser()?.companyId ?? null;
+  }
+
+  getCustomerId(): string | null {
+    return this.getUser()?.customerId ?? null;
+  }
+
+  // Acesso de cliente (portal restrito): só enxerga Projetos e Tickets do
+  // cliente vinculado a este login.
+  isCustomerScoped(): boolean {
+    return !!this.getCustomerId();
   }
 
   isLoggedIn(): boolean {

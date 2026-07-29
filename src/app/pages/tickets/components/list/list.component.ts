@@ -22,6 +22,7 @@ import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
+import { AuthService } from '../../../../services/auth.service';
 
 // WhatsApp e Socket.io desabilitados temporariamente (serão serviços separados no futuro)
 // import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
@@ -107,14 +108,23 @@ export class TicketsComponent implements OnInit {
     private statusService: TicketStatusService,
     private subjectService: TicketSubjectService,
     private customersService: CustomersService,
+    private authService: AuthService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
   ) { }
 
+  // Acesso de cliente (portal restrito): não pode listar clientes (a API
+  // bloqueia) e nem precisa, já que o backend já força o próprio cliente.
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
+
   ngOnInit(): void {
     this.loadFiltersData();
-    this.loadCustomers();
+    if (!this.isCustomerScoped) {
+      this.loadCustomers();
+    }
     this.loadTickets();
   }
 
@@ -182,7 +192,7 @@ export class TicketsComponent implements OnInit {
     if (!this.allSubjects.length) {
       this.subjectService.findAll().subscribe({ next: (data) => { this.allSubjects = data; } });
     }
-    if (!this.customerOptions.length) {
+    if (!this.isCustomerScoped && !this.customerOptions.length) {
       this.loadCustomers();
     }
     this.createDialog = true;
@@ -196,7 +206,7 @@ export class TicketsComponent implements OnInit {
   }
 
   saveTicket(): void {
-    if (!this.createForm.customerId) {
+    if (!this.isCustomerScoped && !this.createForm.customerId) {
       this.messageService.add({ severity: 'warn', summary: 'Selecione um cliente' });
       return;
     }

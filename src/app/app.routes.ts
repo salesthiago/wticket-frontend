@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { authGuard } from './guards/auth-guard';
-import { moduleGuard, superAdminGuard } from './guards/module-guard';
+import { moduleGuard, superAdminGuard, notCustomerScopeGuard } from './guards/module-guard';
 import { roleGuard } from './guards/role-guard';
 import { RegisterComponent } from './pages/register/register.component';
 import { MyAccountComponent } from './pages/my-account/my-account.component';
@@ -21,7 +21,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, notCustomerScopeGuard]
   },
   {
     path: 'my-account',
@@ -31,7 +31,7 @@ export const routes: Routes = [
   {
     path: 'my-company',
     loadComponent: () => import('./pages/my-company/my-company.component').then(m => m.MyCompanyComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, notCustomerScopeGuard]
   },
   // Super-admin
   {
@@ -63,17 +63,17 @@ export const routes: Routes = [
   {
     path: 'users',
     loadChildren: () => import('./pages/users/users.route').then(m => m.routes),
-    canActivate: [authGuard]
+    canActivate: [authGuard, notCustomerScopeGuard]
   },
   {
     path: 'contacts',
     loadChildren: () => import('./pages/contacts/contact.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('attendance')]
+    canActivate: [authGuard, moduleGuard('attendance'), notCustomerScopeGuard]
   },
   {
     path: 'whatsapp',
     loadChildren: () => import('./pages/whatsapp/whatsapp.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('attendance')]
+    canActivate: [authGuard, moduleGuard('attendance'), notCustomerScopeGuard]
   },
   {
     path: 'tickets',
@@ -88,47 +88,47 @@ export const routes: Routes = [
   {
     path: 'appointments',
     loadChildren: () => import('./pages/appointments/appointments.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('attendance')]
+    canActivate: [authGuard, moduleGuard('attendance'), notCustomerScopeGuard]
   },
   {
     path: 'bot-config',
     loadChildren: () => import('./pages/bot-config/bot-config.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('auto_attendance')]
+    canActivate: [authGuard, moduleGuard('auto_attendance'), notCustomerScopeGuard]
   },
   {
     path: 'ai-agents',
     loadChildren: () => import('./pages/ai-agents/ai-agents.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('auto_attendance')]
+    canActivate: [authGuard, moduleGuard('auto_attendance'), notCustomerScopeGuard]
   },
   {
     path: 'ai-providers',
     loadChildren: () => import('./pages/ai-providers/ai-providers.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('auto_attendance')]
+    canActivate: [authGuard, moduleGuard('auto_attendance'), notCustomerScopeGuard]
   },
   {
     path: 'products',
     loadChildren: () => import('./pages/products/products.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('service_order')]
+    canActivate: [authGuard, moduleGuard('service_order'), notCustomerScopeGuard]
   },
   {
     path: 'customers',
     loadChildren: () => import('./pages/customers/customers.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('service_order')]
+    canActivate: [authGuard, moduleGuard('service_order'), notCustomerScopeGuard]
   },
   {
     path: 'service-orders',
     loadChildren: () => import('./pages/service-orders/service-orders.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('service_order')]
+    canActivate: [authGuard, moduleGuard('service_order'), notCustomerScopeGuard]
   },
   {
     path: 'nfse',
     loadChildren: () => import('./pages/nfse/nfse.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('nfse')]
+    canActivate: [authGuard, moduleGuard('nfse'), notCustomerScopeGuard]
   },
   {
     path: 'financial',
     loadChildren: () => import('./pages/financial/financial.route').then(m => m.routes),
-    canActivate: [authGuard, moduleGuard('financial'), roleGuard('administrator', 'company_admin', 'finance')]
+    canActivate: [authGuard, moduleGuard('financial'), roleGuard('administrator', 'company_admin', 'finance'), notCustomerScopeGuard]
   },
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '/dashboard' }

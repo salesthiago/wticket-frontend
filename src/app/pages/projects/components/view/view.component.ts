@@ -20,6 +20,7 @@ import { ProjectsService } from '../services/projects.service';
 import { TicketService } from '../../../tickets/components/services/ticket.service';
 import { TicketStatusService } from '../../../tickets/components/services/ticket-status.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
+import { AuthService } from '../../../../services/auth.service';
 import { ProjectPriority, ProjectPriorityLabels, ProjectPrioritySeverity } from '../../project.interface';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 
@@ -84,8 +85,15 @@ export class ProjectViewComponent implements OnInit {
     private ticketService: TicketService,
     private ticketStatusService: TicketStatusService,
     private customersService: CustomersService,
+    private authService: AuthService,
     private messageService: MessageService
   ) { }
+
+  // Acesso de cliente (portal restrito): não pode listar clientes (a API
+  // bloqueia) e nem precisa, já que o backend já força o próprio cliente.
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
 
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id');
@@ -93,7 +101,9 @@ export class ProjectViewComponent implements OnInit {
       this.loadProject(this.id);
       this.loadTasks(this.id);
     }
-    this.loadCustomers();
+    if (!this.isCustomerScoped) {
+      this.loadCustomers();
+    }
     this.loadStatuses();
   }
 
@@ -157,6 +167,12 @@ export class ProjectViewComponent implements OnInit {
 
   openTaskDialog(): void {
     const projectCustomerId = this.project?.customerId?._id ?? this.project?.customerId ?? '';
+    if (this.isCustomerScoped && projectCustomerId && !this.customerOptions.length) {
+      // Login de cliente não lista clientes; usa o próprio cliente do projeto
+      // (já populado) só para exibir o nome no campo desabilitado.
+      const c = this.project.customerId;
+      this.customerOptions = [{ name: `${c?.name} - ${c?.phone}`, value: projectCustomerId }];
+    }
     this.taskForm = {
       customerId: projectCustomerId,
       priority: 'medium',

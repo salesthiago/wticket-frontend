@@ -10,15 +10,17 @@
         label="Novo Ticket"
         (onClick)="openCreateDialog()">
       </p-button>
-      <p-button
-        icon="pi pi-cog"
-        label="Configurações"
-        severity="secondary"
-        [text]="true"
-        (onClick)="openSettings()"
-        pTooltip="Categorias, Assuntos e Status"
-        tooltipPosition="top">
-      </p-button>
+      @if (!isCustomerScoped) {
+        <p-button
+          icon="pi pi-cog"
+          label="Configurações"
+          severity="secondary"
+          [text]="true"
+          (onClick)="openSettings()"
+          pTooltip="Categorias, Assuntos e Status"
+          tooltipPosition="top">
+        </p-button>
+      }
       <p-button
         icon="pi pi-refresh"
         [rounded]="true"
@@ -203,19 +205,21 @@
   [modal]="true"
   [style]="{ width: '480px' }">
   <div class="flex flex-col gap-4 pt-2">
-    <div>
-      <label class="block text-sm font-medium mb-1">Cliente <span class="text-red-500">*</span></label>
-      <p-select
-        [options]="customerOptions"
-        [(ngModel)]="createForm.customerId"
-        optionLabel="name"
-        optionValue="value"
-        placeholder="Selecione o cliente..."
-        [filter]="true"
-        filterPlaceholder="Buscar cliente..."
-        class="w-full">
-      </p-select>
-    </div>
+    @if (!isCustomerScoped) {
+      <div>
+        <label class="block text-sm font-medium mb-1">Cliente <span class="text-red-500">*</span></label>
+        <p-select
+          [options]="customerOptions"
+          [(ngModel)]="createForm.customerId"
+          optionLabel="name"
+          optionValue="value"
+          placeholder="Selecione o cliente..."
+          [filter]="true"
+          filterPlaceholder="Buscar cliente..."
+          class="w-full">
+        </p-select>
+      </div>
+    }
     <div>
       <label class="block text-sm font-medium mb-1">Categoria</label>
       <p-select
