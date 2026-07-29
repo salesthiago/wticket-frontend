@@ -187,12 +187,17 @@
   cursor: pointer;
 }
 
-.worked-hours-row {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
+.worked-hours-display {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
 
-  p-inputnumber { flex: 1; }
+.response-hours-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  label { font-size: 0.85rem; color: var(--text-color-secondary); }
 }
 
 .no-modules-msg {

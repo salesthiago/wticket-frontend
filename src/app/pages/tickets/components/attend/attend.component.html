@@ -96,6 +96,15 @@
               placeholder="Digite a resposta ou tratativa para este ticket..."
               class="w-full">
             </textarea>
+            <div class="response-hours-row">
+              <label for="responseHours">Horas gastas</label>
+              <p-inputNumber
+                inputId="responseHours"
+                [(ngModel)]="newResponseHours"
+                [min]="0"
+                suffix=" h"
+                placeholder="0" />
+            </div>
             <button
               pButton
               label="Registrar Resposta"
@@ -119,6 +128,9 @@
                       shape="circle" />
                     <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
                     <span class="response-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                    @if (response.hoursSpent) {
+                      <span class="status-badge-sm">{{ response.hoursSpent }}h</span>
+                    }
                   </div>
                   <p class="response-content">{{ response.content }}</p>
                 </div>
@@ -200,22 +212,10 @@
           </p-card>
         }
 
-        <!-- Horas trabalhadas nesta tarefa -->
+        <!-- Horas trabalhadas nesta tarefa: soma das horas lançadas em cada resposta -->
         <p-card header="Horas Trabalhadas">
-          <div class="worked-hours-row">
-            <p-inputNumber
-              [(ngModel)]="workedHours"
-              [min]="0"
-              suffix=" h"
-              styleClass="w-full" />
-            <button
-              pButton
-              label="Salvar"
-              icon="pi pi-check"
-              [loading]="workedHoursLoading"
-              (click)="saveWorkedHours()">
-            </button>
-          </div>
+          <div class="worked-hours-display">{{ ticket.workedHours ?? 0 }}h</div>
+          <small class="text-gray-500">Some automaticamente as horas lançadas em cada resposta abaixo.</small>
         </p-card>
 
         <!-- Informações do ticket -->

@@ -52,9 +52,8 @@ export class TicketAttendComponent implements OnInit {
   loading = true;
   responseLoading = false;
   newResponse = '';
+  newResponseHours: number | null = null;
   selectedStatusId = '';
-  workedHours = 0;
-  workedHoursLoading = false;
 
   statuses: any[] = [];
 
@@ -121,7 +120,6 @@ export class TicketAttendComponent implements OnInit {
       next: (ticket) => {
         this.ticket = ticket;
         this.selectedStatusId = ticket.statusId?._id || ticket.statusId || '';
-        this.workedHours = ticket.workedHours ?? 0;
         this.loading = false;
       },
       error: () => {
@@ -157,10 +155,12 @@ export class TicketAttendComponent implements OnInit {
   saveResponse(): void {
     if (!this.newResponse.trim()) return;
     this.responseLoading = true;
-    this.ticketService.addResponse(this.ticket._id, this.newResponse.trim()).subscribe({
+    const hours = this.newResponseHours ?? 0;
+    this.ticketService.addResponse(this.ticket._id, this.newResponse.trim(), hours).subscribe({
       next: (updated) => {
         this.ticket = updated;
         this.newResponse = '';
+        this.newResponseHours = null;
         this.responseLoading = false;
         this.messageService.add({ severity: 'success', summary: 'Resposta registrada' });
       },
@@ -180,21 +180,6 @@ export class TicketAttendComponent implements OnInit {
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar status' });
-      }
-    });
-  }
-
-  saveWorkedHours(): void {
-    this.workedHoursLoading = true;
-    this.ticketService.update(this.ticket._id, { workedHours: this.workedHours }).subscribe({
-      next: (updated) => {
-        this.ticket.workedHours = updated.workedHours;
-        this.workedHoursLoading = false;
-        this.messageService.add({ severity: 'success', summary: 'Horas trabalhadas atualizadas' });
-      },
-      error: () => {
-        this.workedHoursLoading = false;
-        this.messageService.add({ severity: 'error', summary: 'Erro ao atualizar horas trabalhadas' });
       }
     });
   }

@@ -40,6 +40,21 @@
         </div>
 
         <div class="field my-2">
+          <label class="block mb-2">Cliente vinculado</label>
+          <p-select
+            [options]="customerOptions"
+            [(ngModel)]="user.customerId"
+            optionLabel="name"
+            optionValue="value"
+            placeholder="Nenhum (acesso interno)"
+            [filter]="true"
+            filterPlaceholder="Buscar cliente..."
+            [showClear]="true"
+            class="w-full" />
+          <small class="text-gray-500">Quando preenchido, este login só verá os projetos e tickets deste cliente.</small>
+        </div>
+
+        <div class="field my-2">
           <label for="password" class="block mb-2">Senha</label>
           <p-password fluid [showClear]="true" [(ngModel)]="password" promptLabel="Escolha uma senha" weakLabel="Muito simples" mediumLabel="Boa!" strongLabel="Excelente!" />
         </div>
