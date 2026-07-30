@@ -16,7 +16,9 @@ import { DialogModule } from 'primeng/dialog';
 import { TimelineModule } from 'primeng/timeline';
 import { AvatarModule } from 'primeng/avatar';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { MessageService, MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { ServiceOrdersService } from '../../../service-orders/components/services/service-orders.service';
@@ -25,7 +27,7 @@ import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-ticket-attend',
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   imports: [
     CommonModule,
     RouterModule,
@@ -43,7 +45,9 @@ import { AuthService } from '../../../../services/auth.service';
     DialogModule,
     TimelineModule,
     AvatarModule,
-    InputNumberModule
+    InputNumberModule,
+    ConfirmDialogModule,
+    TooltipModule
   ],
   templateUrl: './attend.component.html',
   styleUrls: ['./attend.component.scss']
@@ -104,12 +108,36 @@ export class TicketAttendComponent implements OnInit {
     private serviceOrdersService: ServiceOrdersService,
     private appointmentsService: AppointmentsService,
     private authService: AuthService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) { }
 
   // Acesso de cliente (portal restrito): não pode gerar OS/agendamento (a API bloqueia).
   get isCustomerScoped(): boolean {
     return this.authService.isCustomerScoped();
+  }
+
+  private get currentUserId(): string | null {
+    return this.authService.getUser()?.id ?? null;
+  }
+
+  private get isAdmin(): boolean {
+    return this.authService.hasAnyRole('administrator', 'company_admin');
+  }
+
+  // Excluir a tarefa: só quem a criou ou um administrador.
+  get canDeleteTicket(): boolean {
+    if (!this.ticket) return false;
+    if (this.isAdmin) return true;
+    const ownerId = this.ticket.createdBy?._id || this.ticket.createdBy;
+    return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
+  }
+
+  // Excluir uma resposta: só quem a registrou ou um administrador.
+  canDeleteResponse(response: any): boolean {
+    if (this.isAdmin) return true;
+    const ownerId = response?.respondedBy?._id || response?.respondedBy;
+    return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
   }
 
   ngOnInit(): void {
@@ -180,6 +208,58 @@ export class TicketAttendComponent implements OnInit {
       error: () => {
         this.responseLoading = false;
         this.messageService.add({ severity: 'error', summary: 'Erro ao registrar resposta' });
+      }
+    });
+  }
+
+  deleteResponse(response: any, event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Excluir esta resposta? As horas lançadas nela serão descontadas do total da tarefa.',
+      header: 'Excluir Resposta',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Excluir', severity: 'danger' },
+      accept: () => {
+        this.ticketService.deleteResponse(this.ticket._id, response._id).subscribe({
+          next: (updated) => {
+            this.ticket = updated;
+            this.messageService.add({ severity: 'success', summary: 'Resposta excluída' });
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Erro ao excluir resposta'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  deleteTicket(event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Excluir esta tarefa? Essa ação não pode ser desfeita.',
+      header: 'Excluir Tarefa',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Excluir', severity: 'danger' },
+      accept: () => {
+        this.ticketService.destroy(this.ticket._id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Tarefa excluída' });
+            this.goBack();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Erro ao excluir tarefa'
+            });
+          }
+        });
       }
     });
   }

@@ -1,9 +1,15 @@
 <p-toast />
+<p-confirmDialog />
 
 <div class="attend-container">
   <div class="attend-header">
     <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
-    <button pButton icon="pi pi-arrow-left" label="Voltar" class="p-button-text" (click)="goBack()"></button>
+    <div class="flex gap-2">
+      @if (ticket && canDeleteTicket) {
+        <button pButton icon="pi pi-trash" label="Excluir Tarefa" class="p-button-danger p-button-text" (click)="deleteTicket($event)"></button>
+      }
+      <button pButton icon="pi pi-arrow-left" label="Voltar" class="p-button-text" (click)="goBack()"></button>
+    </div>
   </div>
 
   @if (loading) {
@@ -130,6 +136,15 @@
                     <span class="response-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
                     @if (response.hoursSpent) {
                       <span class="status-badge-sm">{{ response.hoursSpent }}h</span>
+                    }
+                    @if (canDeleteResponse(response)) {
+                      <button
+                        pButton
+                        icon="pi pi-trash"
+                        class="p-button-text p-button-danger p-button-sm response-delete-btn"
+                        pTooltip="Excluir resposta"
+                        (click)="deleteResponse(response, $event)">
+                      </button>
                     }
                   </div>
                   <p class="response-content">{{ response.content }}</p>

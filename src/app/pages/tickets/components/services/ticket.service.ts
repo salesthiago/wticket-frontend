@@ -35,6 +35,10 @@ export class TicketService {
     return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content, hoursSpent });
   }
 
+  deleteResponse(id: string, responseId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/tickets/${id}/responses/${responseId}`);
+  }
+
   updateSaleItems(id: string, data: { saleItems?: any[]; categoryId?: string }): Observable<any> {
     return this.http.patch(`${this.apiUrl}/tickets/${id}/sale-items`, data);
   }
