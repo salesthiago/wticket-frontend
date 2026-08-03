@@ -29,19 +29,21 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-      <div class="field">
-        <label for="customerId" class="block mb-2">Cliente</label>
-        <p-select
-          [options]="customers"
-          [(ngModel)]="project.customerId"
-          optionLabel="name"
-          optionValue="value"
-          placeholder="Sem cliente vinculado"
-          [filter]="true"
-          [showClear]="true"
-          filterPlaceholder="Buscar cliente..."
-          class="w-full" />
-      </div>
+      @if (!isCustomerScoped) {
+        <div class="field">
+          <label for="customerId" class="block mb-2">Cliente</label>
+          <p-select
+            [options]="customers"
+            [(ngModel)]="project.customerId"
+            optionLabel="name"
+            optionValue="value"
+            placeholder="Sem cliente vinculado"
+            [filter]="true"
+            [showClear]="true"
+            filterPlaceholder="Buscar cliente..."
+            class="w-full" />
+        </div>
+      }
 
       <div class="field">
         <label for="priority" class="block mb-2">Prioridade</label>

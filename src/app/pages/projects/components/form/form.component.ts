@@ -16,6 +16,7 @@ import { Toast } from 'primeng/toast';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
   selector: 'app-project-form',
@@ -65,11 +66,18 @@ export class ProjectFormComponent implements OnInit {
     private service: ProjectsService,
     private statusService: ProjectStatusService,
     private customersService: CustomersService,
+    private authService: AuthService,
     private router: Router,
     private messageService: MessageService,
     private route: ActivatedRoute
   ) {
     this.id = this.route.snapshot.paramMap.get('id');
+  }
+
+  // Acesso de cliente (portal restrito): cria o projeto amarrado a si mesmo
+  // (o backend força isso); não lista clientes (a API bloqueia) e nem precisa.
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
   }
 
   ngOnInit(): void {
@@ -78,7 +86,9 @@ export class ProjectFormComponent implements OnInit {
       { label: this.id ? 'Editar Projeto' : 'Novo Projeto' }
     ];
 
-    this.loadCustomers();
+    if (!this.isCustomerScoped) {
+      this.loadCustomers();
+    }
     this.loadStatuses();
 
     if (this.id) {

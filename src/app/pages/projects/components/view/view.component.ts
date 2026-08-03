@@ -15,7 +15,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService, MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { ProjectsService } from '../services/projects.service';
 import { TicketService } from '../../../tickets/components/services/ticket.service';
 import { TicketStatusService } from '../../../tickets/components/services/ticket-status.service';
@@ -27,7 +28,7 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 @Component({
   selector: 'app-project-view',
   standalone: true,
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   imports: [
     CommonModule,
     RouterModule,
@@ -45,6 +46,7 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
     ToastModule,
     BreadcrumbModule,
     TooltipModule,
+    ConfirmDialogModule,
     SidebarComponent
   ],
   templateUrl: './view.component.html',
@@ -86,13 +88,49 @@ export class ProjectViewComponent implements OnInit {
     private ticketStatusService: TicketStatusService,
     private customersService: CustomersService,
     private authService: AuthService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) { }
 
   // Acesso de cliente (portal restrito): não pode listar clientes (a API
   // bloqueia) e nem precisa, já que o backend já força o próprio cliente.
   get isCustomerScoped(): boolean {
     return this.authService.isCustomerScoped();
+  }
+
+  // Exclusão só é permitida para quem criou o projeto ou para administradores.
+  get canDelete(): boolean {
+    if (!this.project) return false;
+    if (this.authService.hasAnyRole('administrator', 'company_admin')) return true;
+    const ownerId = this.project.createdBy?._id || this.project.createdBy;
+    const userId = this.authService.getUser()?.id;
+    return !!ownerId && !!userId && ownerId === userId;
+  }
+
+  confirmDelete(event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Realmente deseja remover este projeto?',
+      header: 'Remover Projeto',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Não', severity: 'secondary', variant: 'text' },
+      acceptButtonProps: { severity: 'danger', label: 'Sim' },
+      accept: () => {
+        this.service.destroy(this.id!).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Projeto removido!' });
+            this.goBack();
+          },
+          error: (error: any) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Não foi possível remover o projeto.'
+            });
+          }
+        });
+      }
+    });
   }
 
   ngOnInit(): void {

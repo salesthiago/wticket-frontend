@@ -54,9 +54,18 @@ export class ProjectsListComponent implements OnInit {
     private messageService: MessageService
   ) { }
 
-  // Acesso de cliente (portal restrito): só pode visualizar projetos, não gerenciá-los.
+  // Acesso de cliente (portal restrito): pode criar projeto amarrado a si
+  // mesmo, mas não gerencia configurações (Status).
   get isCustomerScoped(): boolean {
     return this.authService.isCustomerScoped();
+  }
+
+  // Exclusão só é permitida para quem criou o projeto ou para administradores.
+  public canDelete(item: any): boolean {
+    if (this.authService.hasAnyRole('administrator', 'company_admin')) return true;
+    const ownerId = item.createdBy?._id || item.createdBy;
+    const userId = this.authService.getUser()?.id;
+    return !!ownerId && !!userId && ownerId === userId;
   }
 
   ngOnInit() {

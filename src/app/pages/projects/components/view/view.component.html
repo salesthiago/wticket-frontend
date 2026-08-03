@@ -28,8 +28,9 @@
         <div class="flex gap-2">
           <p-button label="Voltar" severity="secondary" (click)="goBack()"></p-button>
           <p-button icon="pi pi-file-excel" label="Exportar Excel" severity="success" [outlined]="true" [loading]="exporting" (click)="exportExcel()" pTooltip="Exportar este projeto e suas tarefas seguindo o modelo de planilha"></p-button>
-          @if (!isCustomerScoped) {
-            <p-button label="Editar" (click)="edit()"></p-button>
+          <p-button label="Editar" (click)="edit()"></p-button>
+          @if (canDelete) {
+            <p-button icon="pi pi-trash" label="Excluir" severity="danger" [outlined]="true" (click)="confirmDelete($event)"></p-button>
           }
         </div>
       </div>
@@ -192,4 +193,5 @@
   </ng-template>
 </p-dialog>
 
+<p-confirmDialog />
 <p-toast />
