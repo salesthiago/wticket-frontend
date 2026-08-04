@@ -31,6 +31,7 @@ interface Ticket {
   _id: string;
   contactNumber?: string;
   contactName?: string;
+  customerId?: { _id?: string; name?: string; phone?: string; email?: string } | string;
   categoryId?: any;
   subjectId?: any;
   statusId?: any;
@@ -233,14 +234,25 @@ export class TicketsComponent implements OnInit {
     });
   }
 
+  // Nome/telefone exibidos vêm do cliente vinculado (customerId) quando
+  // existir; tickets antigos sem vínculo caem para contactName/contactNumber.
+  getTicketCustomerName(ticket: Ticket): string {
+    return (typeof ticket.customerId === 'object' ? ticket.customerId?.name : null) || ticket.contactName || '';
+  }
+
+  getTicketCustomerPhone(ticket: Ticket): string {
+    return (typeof ticket.customerId === 'object' ? ticket.customerId?.phone : null) || ticket.contactNumber || '';
+  }
+
   get filteredTickets(): Ticket[] {
     return this.tickets.filter(ticket => {
       const matchesStatus = !this.statusFilter || ticket.statusId?._id === this.statusFilter || ticket.statusId === this.statusFilter;
       const matchesPriority = !this.priorityFilter || ticket.priority === this.priorityFilter;
+      const search = this.searchText.toLowerCase();
       const matchesSearch = !this.searchText ||
-        (ticket.contactNumber?.includes(this.searchText)) ||
-        (ticket.contactName?.toLowerCase().includes(this.searchText.toLowerCase())) ||
-        (ticket.subjectId?.name?.toLowerCase().includes(this.searchText.toLowerCase()));
+        (this.getTicketCustomerPhone(ticket).includes(this.searchText)) ||
+        (this.getTicketCustomerName(ticket).toLowerCase().includes(search)) ||
+        (ticket.subjectId?.name?.toLowerCase().includes(search));
       return matchesStatus && matchesPriority && matchesSearch;
     });
   }

@@ -78,7 +78,7 @@
           type="text"
           pInputText
           [(ngModel)]="searchText"
-          placeholder="Número, nome ou assunto..."
+          placeholder="Número, cliente ou assunto..."
           class="w-full">
       </div>
     </div>
@@ -116,7 +116,7 @@
       <ng-template pTemplate="header">
         <tr>
           <th style="width: 100px">Ações</th>
-          <th>Contato</th>
+          <th>Cliente</th>
           <th>Categoria</th>
           <th>Assunto</th>
           <th>Status</th>
@@ -150,8 +150,8 @@
             </div>
           </td>
           <td>
-            <div class="font-semibold">{{ ticket.contactName || '—' }}</div>
-            <div class="text-sm text-gray-500">{{ ticket.contactNumber || '—' }}</div>
+            <div class="font-semibold">{{ getTicketCustomerName(ticket) || '—' }}</div>
+            <div class="text-sm text-gray-500">{{ getTicketCustomerPhone(ticket) || '—' }}</div>
           </td>
           <td>
             @if (ticket.categoryId) {
