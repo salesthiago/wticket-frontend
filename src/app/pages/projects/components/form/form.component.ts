@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService, MenuItem } from 'primeng/api';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { ProjectsService } from '../services/projects.service';
 import { ProjectStatusService } from '../services/project-status.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
-import { ProjectModel } from '../../project.interface';
+import { ProjectModel, ProjectDocumentModel } from '../../project.interface';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
@@ -13,6 +13,8 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Toast } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -23,7 +25,7 @@ import { AuthService } from '../../../../services/auth.service';
   standalone: true,
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss'],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   imports: [
     ButtonModule,
     CardModule,
@@ -33,6 +35,8 @@ import { AuthService } from '../../../../services/auth.service';
     TextareaModule,
     InputNumberModule,
     Toast,
+    ConfirmDialogModule,
+    TooltipModule,
     FormsModule,
     SidebarComponent,
     BreadcrumbModule
@@ -52,6 +56,8 @@ export class ProjectFormComponent implements OnInit {
   public loading = false;
   public customers: any[] = [];
   public statuses: any[] = [];
+  public documents: ProjectDocumentModel[] = [];
+  public uploadingDocument = false;
 
   public optionPriority = [
     { name: 'Baixa', value: 'low' },
@@ -69,6 +75,7 @@ export class ProjectFormComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private messageService: MessageService,
+    private confirmationService: ConfirmationService,
     private route: ActivatedRoute
   ) {
     this.id = this.route.snapshot.paramMap.get('id');
@@ -93,7 +100,68 @@ export class ProjectFormComponent implements OnInit {
 
     if (this.id) {
       this.findById(this.id);
+      this.loadDocuments(this.id);
     }
+  }
+
+  private loadDocuments(id: string) {
+    this.service.getDocuments(id).subscribe({
+      next: (docs) => { this.documents = docs; },
+      error: () => { this.documents = []; }
+    });
+  }
+
+  public onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length || !this.id) return;
+    const file = input.files[0];
+    this.uploadingDocument = true;
+    this.service.addDocument(this.id, file).subscribe({
+      next: (docs) => {
+        this.documents = docs;
+        this.uploadingDocument = false;
+        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Documento anexado!' });
+        input.value = '';
+      },
+      error: (error: any) => {
+        this.uploadingDocument = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao enviar documento'
+        });
+        input.value = '';
+      }
+    });
+  }
+
+  public confirmDeleteDocument(event: Event, documentId: string): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Remover este documento?',
+      header: 'Remover Documento',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Remover', severity: 'danger' },
+      accept: () => {
+        this.service.deleteDocument(this.id!, documentId).subscribe({
+          next: (docs) => {
+            this.documents = docs;
+            this.messageService.add({ severity: 'success', summary: 'Documento removido' });
+          },
+          error: () => {
+            this.messageService.add({ severity: 'error', summary: 'Erro ao remover documento' });
+          }
+        });
+      }
+    });
+  }
+
+  public formatFileSize(bytes?: number): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   private loadCustomers() {
@@ -179,9 +247,10 @@ export class ProjectFormComponent implements OnInit {
       });
     } else {
       this.service.create(payload).subscribe({
-        next: () => {
+        next: (created: any) => {
           this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Projeto criado com sucesso!' });
-          this.onBack();
+          // Vai para a edição do projeto recém-criado, onde já é possível anexar documentos.
+          this.router.navigate(['/projects', created._id, 'edit']);
         },
         error: (error: any) => {
           this.loading = false;

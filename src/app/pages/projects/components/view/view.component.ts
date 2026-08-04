@@ -22,7 +22,7 @@ import { TicketService } from '../../../tickets/components/services/ticket.servi
 import { TicketStatusService } from '../../../tickets/components/services/ticket-status.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
 import { AuthService } from '../../../../services/auth.service';
-import { ProjectPriority, ProjectPriorityLabels, ProjectPrioritySeverity } from '../../project.interface';
+import { ProjectPriority, ProjectPriorityLabels, ProjectPrioritySeverity, ProjectDocumentModel } from '../../project.interface';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 
 @Component({
@@ -70,6 +70,7 @@ export class ProjectViewComponent implements OnInit {
   taskForm: any = { customerId: '', priority: 'medium', statusId: '', notes: '', startDate: undefined, endDate: undefined };
   customerOptions: any[] = [];
   statusOptions: any[] = [];
+  documents: ProjectDocumentModel[] = [];
 
   priorityOptions = [
     { label: 'Baixa', value: 'low' },
@@ -138,11 +139,26 @@ export class ProjectViewComponent implements OnInit {
     if (this.id) {
       this.loadProject(this.id);
       this.loadTasks(this.id);
+      this.loadDocuments(this.id);
     }
     if (!this.isCustomerScoped) {
       this.loadCustomers();
     }
     this.loadStatuses();
+  }
+
+  loadDocuments(id: string): void {
+    this.service.getDocuments(id).subscribe({
+      next: (docs) => { this.documents = docs; },
+      error: () => { this.documents = []; }
+    });
+  }
+
+  formatFileSize(bytes?: number): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   loadCustomers(): void {

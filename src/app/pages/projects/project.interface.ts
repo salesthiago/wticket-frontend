@@ -17,6 +17,18 @@ export interface ProjectStatsModel {
   totalValue: number;
 }
 
+export interface ProjectDocumentModel {
+  _id?: string;
+  url: string;
+  viewUrl?: string;
+  filename?: string;
+  mimetype?: string;
+  size?: number;
+  storageSource?: string;
+  uploadedBy?: { _id: string; name: string } | string;
+  createdAt?: string;
+}
+
 export interface ProjectModel {
   _id?: string;
   projectNumber?: string;

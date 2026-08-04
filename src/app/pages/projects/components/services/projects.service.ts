@@ -38,4 +38,18 @@ export class ProjectsService {
   destroy(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/projects/${id}/destroy`);
   }
+
+  getDocuments(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/projects/${id}/documents`);
+  }
+
+  addDocument(id: string, file: File): Observable<any[]> {
+    const formData = new FormData();
+    formData.append('document', file);
+    return this.http.post<any[]>(`${this.apiUrl}/projects/${id}/documents`, formData);
+  }
+
+  deleteDocument(id: string, documentId: string): Observable<any[]> {
+    return this.http.delete<any[]>(`${this.apiUrl}/projects/${id}/documents/${documentId}`);
+  }
 }

@@ -105,5 +105,44 @@
     </div>
 
   </p-card>
+
+  @if (id) {
+    <p-card header="Documentos" class="mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-sm text-gray-500">{{ documents.length }} documento(s) anexado(s)</span>
+        <label
+          class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+          [class.opacity-50]="uploadingDocument"
+          [class.cursor-not-allowed]="uploadingDocument">
+          <i class="pi" [class.pi-upload]="!uploadingDocument" [class.pi-spin]="uploadingDocument" [class.pi-spinner]="uploadingDocument"></i>
+          {{ uploadingDocument ? 'Enviando...' : 'Anexar Documento' }}
+          <input type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,image/*"
+            class="hidden" (change)="onFileSelected($event)" [disabled]="uploadingDocument" />
+        </label>
+      </div>
+      <small class="block text-gray-400 mb-4">PDF, Word, Excel, PowerPoint, imagens, TXT, CSV ou ZIP · Tamanho máximo: 20MB</small>
+
+      @if (documents.length > 0) {
+        <div class="flex flex-col gap-2">
+          @for (doc of documents; track doc._id) {
+            <div class="flex items-center justify-between gap-2 p-3 border border-gray-200 rounded">
+              <div class="flex items-center gap-2 min-w-0">
+                <i class="pi pi-file text-gray-500"></i>
+                <a [href]="doc.viewUrl" target="_blank" rel="noopener" class="truncate font-medium" pTooltip="Abrir/baixar">
+                  {{ doc.filename }}
+                </a>
+                <span class="text-xs text-gray-400 whitespace-nowrap">{{ formatFileSize(doc.size) }}</span>
+              </div>
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" pTooltip="Remover" (click)="confirmDeleteDocument($event, doc._id!)" />
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-gray-400 text-sm">Nenhum documento anexado.</p>
+      }
+    </p-card>
+  }
 </div>
+<p-confirmDialog />
 <p-toast />
