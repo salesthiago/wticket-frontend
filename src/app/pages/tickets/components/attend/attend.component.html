@@ -173,8 +173,9 @@
                 styleClass="w-full" />
               <button
                 pButton
-                label="Designar"
-                icon="pi pi-user-plus"
+                icon="pi pi-save"
+                pTooltip="Designar"
+                tooltipPosition="top"
                 (click)="assignTicket()"
                 [loading]="assignLoading"
                 [disabled]="!selectedAssignUserId">
