@@ -158,6 +158,31 @@
       <!-- Coluna lateral: ações e vínculos -->
       <div class="attend-sidebar">
 
+        <!-- Designar tarefa: somente administradores, para usuário interno -->
+        @if (isAdmin) {
+          <p-card header="Designar Tarefa">
+            <div class="status-change-row">
+              <p-select
+                [options]="assignableUsers"
+                [(ngModel)]="selectedAssignUserId"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecione um usuário"
+                [filter]="true"
+                filterPlaceholder="Buscar usuário..."
+                styleClass="w-full" />
+              <button
+                pButton
+                label="Designar"
+                icon="pi pi-user-plus"
+                (click)="assignTicket()"
+                [loading]="assignLoading"
+                [disabled]="!selectedAssignUserId">
+              </button>
+            </div>
+          </p-card>
+        }
+
         <!-- Ações opcionais por módulo -->
         <p-card header="Ações">
           <div class="actions-list">

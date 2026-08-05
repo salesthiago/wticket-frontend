@@ -23,6 +23,7 @@ import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { ServiceOrdersService } from '../../../service-orders/components/services/service-orders.service';
 import { AppointmentsService } from '../../../appointments/components/services/appointments.service';
+import { UsersService } from '../../../users/components/services/users.service';
 import { AuthService } from '../../../../services/auth.service';
 
 @Component({
@@ -100,6 +101,11 @@ export class TicketAttendComponent implements OnInit {
     { label: 'Urgente', value: 'urgent' }
   ];
 
+  // Designar tarefa para outro usuário (somente administradores)
+  assignableUsers: any[] = [];
+  selectedAssignUserId = '';
+  assignLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -107,6 +113,7 @@ export class TicketAttendComponent implements OnInit {
     private ticketStatusService: TicketStatusService,
     private serviceOrdersService: ServiceOrdersService,
     private appointmentsService: AppointmentsService,
+    private usersService: UsersService,
     private authService: AuthService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
@@ -121,7 +128,8 @@ export class TicketAttendComponent implements OnInit {
     return this.authService.getUser()?.id ?? null;
   }
 
-  private get isAdmin(): boolean {
+  // Designar a tarefa para outro usuário: ação restrita a administradores.
+  get isAdmin(): boolean {
     return this.authService.hasAnyRole('administrator', 'company_admin');
   }
 
@@ -147,6 +155,42 @@ export class TicketAttendComponent implements OnInit {
     }
     this.loadStatuses();
     this.checkModules();
+    if (this.isAdmin) {
+      this.loadAssignableUsers();
+    }
+  }
+
+  // Usuários elegíveis para designação: apenas equipe interna (sem
+  // customerId), já que um acesso de cliente não pode ser responsável por
+  // atendimento.
+  loadAssignableUsers(): void {
+    this.usersService.findAll({ internalOnly: true, limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.assignableUsers = records.map((u: any) => ({ label: u.name, value: u._id }));
+      }
+    });
+  }
+
+  assignTicket(): void {
+    if (!this.selectedAssignUserId) return;
+    this.assignLoading = true;
+    this.ticketService.assign(this.ticket._id, this.selectedAssignUserId).subscribe({
+      next: (updated) => {
+        this.ticket = updated;
+        this.selectedAssignUserId = '';
+        this.assignLoading = false;
+        this.messageService.add({ severity: 'success', summary: 'Tarefa designada com sucesso' });
+      },
+      error: (error) => {
+        this.assignLoading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao designar tarefa'
+        });
+      }
+    });
   }
 
   loadTicket(id: string): void {

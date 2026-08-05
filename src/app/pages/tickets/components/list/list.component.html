@@ -130,12 +130,12 @@
           <td>
             <div class="flex gap-1">
               <p-button
-                icon="pi pi-headphones"
+                [icon]="isCustomerScoped ? 'pi pi-eye' : 'pi pi-headphones'"
                 [rounded]="true"
                 [text]="true"
                 severity="info"
                 (onClick)="openAttend(ticket)"
-                pTooltip="Atender"
+                [pTooltip]="isCustomerScoped ? 'Visualizar' : 'Atender'"
                 tooltipPosition="top">
               </p-button>
               <p-button

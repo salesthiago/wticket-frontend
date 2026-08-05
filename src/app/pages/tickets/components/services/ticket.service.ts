@@ -31,6 +31,10 @@ export class TicketService {
     return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/status`, { statusId });
   }
 
+  assign(id: string, assignedTo: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/assign`, { assignedTo });
+  }
+
   addResponse(id: string, content: string, hoursSpent: number = 0): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content, hoursSpent });
   }
