@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, Renderer2, Inject } from '@angular/core';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService, ModuleCode, UserRole } from '../../services/auth.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { Subscription } from 'rxjs';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { PanelMenuModule } from 'primeng/panelmenu';
+import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
 
@@ -31,7 +32,8 @@ interface NavItem {
   imports: [
     CommonModule,
     RouterModule,
-    PanelMenuModule
+    PanelMenuModule,
+    TooltipModule
   ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
@@ -211,17 +213,21 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   isDarkMode = false;
   isMobileOpen = false;
+  isCollapsed = false;
   user: any;
   private themeSubscription!: Subscription;
   private routerSubscription!: Subscription;
   private sidebarSubscription!: Subscription;
+  private collapseSubscription!: Subscription;
 
   constructor(
     private themeService: ThemeService,
     private authService: AuthService,
     private sidebarService: SidebarService,
     private cdRef: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit() {
@@ -237,6 +243,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     this.sidebarSubscription = this.sidebarService.isOpen$.subscribe(isOpen => {
       this.isMobileOpen = isOpen;
+      this.cdRef.detectChanges();
+    });
+
+    // Classe global no <body>: páginas fora do sidebar (conteúdo com sm:ml-64)
+    // reagem ao recolhimento via CSS, sem precisar editar cada tela.
+    this.collapseSubscription = this.sidebarService.isCollapsed$.subscribe(isCollapsed => {
+      this.isCollapsed = isCollapsed;
+      if (isCollapsed) {
+        this.renderer.addClass(this.document.body, 'sidebar-collapsed');
+      } else {
+        this.renderer.removeClass(this.document.body, 'sidebar-collapsed');
+      }
       this.cdRef.detectChanges();
     });
 
@@ -293,6 +311,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.sidebarService.close();
   }
 
+  toggleCollapse(): void {
+    this.sidebarService.toggleCollapsed();
+  }
+
   logout(): void {
     this.authService.logout();
   }
@@ -306,6 +328,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
     if (this.sidebarSubscription) {
       this.sidebarSubscription.unsubscribe();
+    }
+    if (this.collapseSubscription) {
+      this.collapseSubscription.unsubscribe();
     }
   }
 }

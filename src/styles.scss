@@ -29,3 +29,17 @@ body {
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+// Sidebar recolhido: o próprio <app-sidebar> controla sua largura, mas o
+// espaço reservado pelas páginas (classe utilitária sm:ml-64, repetida em
+// cada tela) precisa encolher junto. Em vez de editar cada página, reagimos
+// aqui à classe global aplicada no <body> pelo SidebarComponent.
+.sm\:ml-64 {
+  transition: margin-left 0.2s ease-in-out;
+}
+
+@media (min-width: 640px) {
+  body.sidebar-collapsed .sm\:ml-64 {
+    margin-left: 5rem !important;
+  }
+}

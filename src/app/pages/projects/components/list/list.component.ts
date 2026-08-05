@@ -111,6 +111,10 @@ export class ProjectsListComponent implements OnInit {
     this.router.navigate(['/projects/settings']);
   }
 
+  public openKanban() {
+    this.router.navigate(['/projects/kanban']);
+  }
+
   public confirmDelete(id: string) {
     this.confirmationService.confirm({
       message: 'Realmente deseja remover este projeto?',

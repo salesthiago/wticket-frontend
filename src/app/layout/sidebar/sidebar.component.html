@@ -23,8 +23,9 @@
 
 <aside id="logo-sidebar"
   [class]="isDarkMode
-  ? 'fixed top-0 left-0 z-50 w-64 h-screen transition-transform bg-gray-950 border-r border-gray-800 sm:translate-x-0 flex flex-col'
-  : 'fixed top-0 left-0 z-50 w-64 h-screen transition-transform bg-white border-r border-gray-200 sm:translate-x-0 flex flex-col'"
+  ? 'fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-200 ease-in-out bg-gray-950 border-r border-gray-800 sm:translate-x-0 flex flex-col'
+  : 'fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-200 ease-in-out bg-white border-r border-gray-200 sm:translate-x-0 flex flex-col'"
+  [ngClass]="{ 'sm:w-20': isCollapsed, 'collapsed': isCollapsed }"
   [class.translate-x-0]="isMobileOpen"
   [class.-translate-x-full]="!isMobileOpen"
   aria-label="Sidebar">
@@ -33,30 +34,69 @@
   <div [class]="isDarkMode
     ? 'flex items-center gap-3 px-4 py-5 border-b border-gray-800'
     : 'flex items-center gap-3 px-4 py-5 border-b border-gray-100'">
-    <img src="/assets/logo-navbar.png" class="h-8" alt="WTicket" />
+    <img src="/assets/logo-navbar.png" class="brand-logo h-8" alt="WTicket" />
   </div>
 
   <!-- Itens de navegação -->
   <div class="flex-1 overflow-y-auto px-3 py-4">
     <ul class="space-y-1 font-medium">
       @for (menuItem of menuItems; track $index) {
-        <li>
+        <li class="nav-item">
           @if (menuItem.panelModel) {
-            <p-panelMenu [model]="menuItem.panelModel"></p-panelMenu>
+            <!-- Expandido: acordeão normal. Recolhido (sm+): só o ícone, com um
+                 flyout no hover mostrando os subitens (estilos em sidebar.component.scss). -->
+            <div class="nav-expanded-view">
+              <p-panelMenu [model]="menuItem.panelModel"></p-panelMenu>
+            </div>
+            <div class="nav-collapsed-view">
+              <div class="nav-collapsed-trigger"
+                [class]="isDarkMode
+                  ? 'flex items-center justify-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer'
+                  : 'flex items-center justify-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer'">
+                <i [class]="menuItem.icon" style="font-size: 1.1rem;"></i>
+              </div>
+              <div class="nav-flyout" [class]="isDarkMode ? 'nav-flyout-dark' : 'nav-flyout-light'">
+                <div class="nav-flyout-title">{{ menuItem.name }}</div>
+                @for (panel of menuItem.panelModel; track $index) {
+                  @for (sub of (panel.items || []); track $index) {
+                    <a [routerLink]="sub['routerLink']" routerLinkActive="active-nav-item" class="nav-flyout-link">
+                      {{ sub['label'] }}
+                    </a>
+                  }
+                }
+              </div>
+            </div>
           } @else {
             <a
               [routerLink]="menuItem.link"
               routerLinkActive="active-nav-item"
+              [pTooltip]="isCollapsed ? menuItem.name : ''"
+              tooltipPosition="right"
+              class="nav-link"
               [class]="isDarkMode
                 ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors'
                 : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors'">
               <i [class]="menuItem.icon" style="font-size: 1.1rem; width: 1.25rem; text-align: center;"></i>
-              <span class="text-sm">{{ menuItem.name }}</span>
+              <span class="text-sm nav-label">{{ menuItem.name }}</span>
             </a>
           }
         </li>
       }
     </ul>
+  </div>
+
+  <!-- Botão recolher/expandir (somente telas >= sm; no mobile o sidebar é overlay) -->
+  <div class="hidden sm:flex px-3 py-2 collapse-toggle-row"
+    [class]="isDarkMode ? 'border-t border-gray-800' : 'border-t border-gray-100'"
+    [ngClass]="isCollapsed ? 'justify-center' : 'justify-end'">
+    <button type="button" (click)="toggleCollapse()"
+      [pTooltip]="isCollapsed ? 'Expandir menu' : 'Recolher menu'" tooltipPosition="right"
+      [attr.aria-label]="isCollapsed ? 'Expandir menu' : 'Recolher menu'"
+      [class]="isDarkMode
+        ? 'inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors'
+        : 'inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors'">
+      <i class="pi" [ngClass]="isCollapsed ? 'pi-angle-right' : 'pi-angle-left'"></i>
+    </button>
   </div>
 
   <!-- Rodapé: perfil do usuário -->
@@ -66,20 +106,23 @@
     <div class="flex items-center gap-3 mb-3">
       <div [class]="isDarkMode
         ? 'w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'
-        : 'w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'">
+        : 'w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'"
+        [pTooltip]="isCollapsed ? (user?.name || 'Usuário') : ''" tooltipPosition="right">
         {{ getAvatarLabel() }}
       </div>
-      <span [class]="isDarkMode ? 'text-sm text-gray-200 truncate' : 'text-sm text-gray-700 truncate'">
+      <span class="nav-label" [class]="isDarkMode ? 'text-sm text-gray-200 truncate' : 'text-sm text-gray-700 truncate'">
         {{ user?.name || 'Usuário' }}
       </span>
     </div>
     <button
       (click)="logout()"
+      [pTooltip]="isCollapsed ? 'Sair' : ''" tooltipPosition="right"
+      class="nav-link"
       [class]="isDarkMode
         ? 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors text-sm'
         : 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-red-500 transition-colors text-sm'">
       <i class="pi pi-sign-out" style="font-size: 0.9rem;"></i>
-      <span>Sair</span>
+      <span class="nav-label">Sair</span>
     </button>
   </div>
 </aside>

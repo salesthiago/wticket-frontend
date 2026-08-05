@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/settings/settings.component').then(m => m.ProjectSettingsComponent)
   },
   {
+    path: 'kanban',
+    loadComponent: () => import('./components/kanban/kanban.component').then(m => m.ProjectsKanbanComponent)
+  },
+  {
     path: 'create',
     loadComponent: () => import('./components/form/form.component').then(m => m.ProjectFormComponent)
   },
