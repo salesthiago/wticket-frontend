@@ -77,68 +77,114 @@
     </div>
 
     <p-card>
-      <p-table
-        [value]="tasks"
-        [loading]="tasksLoading"
-        [rows]="10"
-        [paginator]="true"
-        [rowHover]="true"
-        dataKey="_id">
+      <div class="flex justify-between items-center flex-wrap gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Tarefas do Projeto</span>
+          <p-button icon="pi pi-list" label="Lista" [severity]="tasksViewMode === 'list' ? 'primary' : 'secondary'" [outlined]="tasksViewMode !== 'list'" size="small" (click)="setTasksViewMode('list')"></p-button>
+          <p-button icon="pi pi-th-large" label="Kanban" [severity]="tasksViewMode === 'kanban' ? 'primary' : 'secondary'" [outlined]="tasksViewMode !== 'kanban'" size="small" (click)="setTasksViewMode('kanban')"></p-button>
+        </div>
+        <div class="flex items-center gap-2">
+          <input pInputText type="text" placeholder="Pesquisar tarefa por número, contato, assunto ou responsável..."
+            [(ngModel)]="tasksSearch" (ngModelChange)="onTasksSearchChange()" class="w-80" />
+          <p-button icon="pi pi-plus" label="Nova Tarefa" (click)="openTaskDialog()"></p-button>
+        </div>
+      </div>
 
-        <ng-template #caption>
-          <div class="flex justify-between items-center">
-            <span class="font-semibold">Tarefas do Projeto</span>
-            <p-button icon="pi pi-plus" label="Nova Tarefa" (click)="openTaskDialog()"></p-button>
-          </div>
-        </ng-template>
+      @if (tasksViewMode === 'list') {
+        <p-table
+          [value]="filteredTasks"
+          [loading]="tasksLoading"
+          [rows]="10"
+          [paginator]="true"
+          [rowHover]="true"
+          dataKey="_id">
 
-        <ng-template #emptymessage>
-          <tr>
-            <td colspan="8">Nenhuma tarefa cadastrada neste projeto.</td>
-          </tr>
-        </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="8">Nenhuma tarefa encontrada.</td>
+            </tr>
+          </ng-template>
 
-        <ng-template #header>
-          <tr>
-            <th>Nº Tarefa</th>
-            <th>Cliente</th>
-            <th>Status</th>
-            <th>Prioridade</th>
-            <th>Responsável</th>
-            <th>Prazo</th>
-            <th>Horas Trabalhadas</th>
-            <th>Ações</th>
-          </tr>
-        </ng-template>
+          <ng-template #header>
+            <tr>
+              <th>Nº Tarefa</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Prioridade</th>
+              <th>Responsável</th>
+              <th>Prazo</th>
+              <th>Horas Trabalhadas</th>
+              <th>Ações</th>
+            </tr>
+          </ng-template>
 
-        <ng-template #body let-task>
-          <tr>
-            <td class="font-semibold">{{ task.taskNumber || '—' }}</td>
-            <td>
-              <div>{{ task.contactName || task.contactNumber }}</div>
-              @if (task.subjectId?.name) {
-                <small class="text-gray-500">{{ task.subjectId?.name }}</small>
-              }
-            </td>
-            <td>
-              @if (task.statusId) {
-                <span class="status-badge" [style.background]="task.statusId?.color">
-                  {{ task.statusId?.label }}
-                </span>
-              }
-            </td>
-            <td>
-              <p-tag [value]="getTaskPriorityLabel(task.priority)" [severity]="getTaskPrioritySeverity(task.priority)"></p-tag>
-            </td>
-            <td>{{ task.assignedTo?.name ?? '—' }}</td>
-            <td>{{ task.endDate ? (task.endDate | date:'dd/MM/yyyy') : '—' }}</td>
-            <td>{{ task.workedHours ?? 0 }}h</td>
-            <td>
-              <p-button icon="pi pi-arrow-up-right" [rounded]="true" [text]="true" (onClick)="openTask(task)" pTooltip="Abrir tarefa"></p-button>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+          <ng-template #body let-task>
+            <tr>
+              <td class="font-semibold">{{ task.taskNumber || '—' }}</td>
+              <td>
+                <div>{{ task.contactName || task.contactNumber }}</div>
+                @if (task.subjectId?.name) {
+                  <small class="text-gray-500">{{ task.subjectId?.name }}</small>
+                }
+              </td>
+              <td>
+                @if (task.statusId) {
+                  <span class="status-badge" [style.background]="task.statusId?.color">
+                    {{ task.statusId?.label }}
+                  </span>
+                }
+              </td>
+              <td>
+                <p-tag [value]="getTaskPriorityLabel(task.priority)" [severity]="getTaskPrioritySeverity(task.priority)"></p-tag>
+              </td>
+              <td>{{ task.assignedTo?.name ?? '—' }}</td>
+              <td>{{ task.endDate ? (task.endDate | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ task.workedHours ?? 0 }}h</td>
+              <td>
+                <p-button icon="pi pi-arrow-up-right" [rounded]="true" [text]="true" (onClick)="openTask(task)" pTooltip="Abrir tarefa"></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="task-kanban-board" cdkDropListGroup>
+          @for (column of taskColumns; track column.status._id) {
+            <div class="task-kanban-column">
+              <div class="task-kanban-column-header" [style.borderTopColor]="column.status.color">
+                <span class="task-kanban-column-title">{{ column.status.label }}</span>
+                <span class="task-kanban-column-count">{{ column.tasks.length }}</span>
+              </div>
+              <div
+                class="task-kanban-column-body"
+                cdkDropList
+                [id]="column.status._id"
+                [cdkDropListData]="column.tasks"
+                (cdkDropListDropped)="dropTask($event, column.status)">
+                @for (task of column.tasks; track task._id) {
+                  <div class="task-kanban-card" cdkDrag (click)="openTask(task)">
+                    <div class="task-kanban-card-header">
+                      <span class="task-kanban-card-number">{{ task.taskNumber || '—' }}</span>
+                      <p-tag [value]="getTaskPriorityLabel(task.priority)" [severity]="getTaskPrioritySeverity(task.priority)" />
+                    </div>
+                    <div class="task-kanban-card-title">{{ task.contactName || task.contactNumber }}</div>
+                    @if (task.subjectId?.name) {
+                      <div class="task-kanban-card-subject">{{ task.subjectId?.name }}</div>
+                    }
+                    <div class="task-kanban-card-meta">
+                      <span><i class="pi pi-user"></i> {{ task.assignedTo?.name ?? 'Não atribuído' }}</span>
+                      @if (task.endDate) {
+                        <span><i class="pi pi-calendar"></i> {{ task.endDate | date:'dd/MM/yyyy' }}</span>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="task-kanban-column-empty">Nenhuma tarefa</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
     </p-card>
 
     <p-card header="Documentos" class="mt-4">

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -33,6 +34,7 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
     CommonModule,
     RouterModule,
     FormsModule,
+    DragDropModule,
     ButtonModule,
     CardModule,
     TagModule,
@@ -58,6 +60,11 @@ export class ProjectViewComponent implements OnInit {
   loading = true;
   tasksLoading = false;
   exporting = false;
+
+  tasksViewMode: 'list' | 'kanban' = 'list';
+  tasksSearch = '';
+  taskStatuses: any[] = [];
+  taskColumns: { status: any; tasks: any[] }[] = [];
 
   breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
   breadcrumbItems: MenuItem[] = [
@@ -178,10 +185,69 @@ export class ProjectViewComponent implements OnInit {
     // cadastrados em Tickets > Configurações > Status.
     this.ticketStatusService.findAll().subscribe({
       next: (data) => {
+        this.taskStatuses = data;
         this.statusOptions = data.map(s => ({ label: s.label, value: s._id }));
+        this.buildTaskColumns();
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Erro ao carregar status de tickets' });
+      }
+    });
+  }
+
+  get filteredTasks(): any[] {
+    const term = this.tasksSearch.trim().toLowerCase();
+    if (!term) return this.tasks;
+    return this.tasks.filter(task =>
+      task.taskNumber?.toLowerCase().includes(term) ||
+      task.contactName?.toLowerCase().includes(term) ||
+      task.contactNumber?.toLowerCase().includes(term) ||
+      task.subjectId?.name?.toLowerCase().includes(term) ||
+      task.assignedTo?.name?.toLowerCase().includes(term)
+    );
+  }
+
+  private getTaskStatusId(task: any): string {
+    return task.statusId?._id || task.statusId;
+  }
+
+  buildTaskColumns(): void {
+    const filtered = this.filteredTasks;
+    this.taskColumns = this.taskStatuses.map(status => ({
+      status,
+      tasks: filtered.filter(task => this.getTaskStatusId(task) === status._id)
+    }));
+  }
+
+  onTasksSearchChange(): void {
+    this.buildTaskColumns();
+  }
+
+  setTasksViewMode(mode: 'list' | 'kanban'): void {
+    this.tasksViewMode = mode;
+    if (mode === 'kanban') this.buildTaskColumns();
+  }
+
+  dropTask(event: CdkDragDrop<any[]>, targetStatus: any): void {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      return;
+    }
+
+    const task = event.previousContainer.data[event.previousIndex];
+    transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
+
+    const previousStatusId = this.getTaskStatusId(task);
+    task.statusId = targetStatus;
+
+    this.ticketService.updateStatus(task._id, targetStatus._id).subscribe({
+      next: () => {
+        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: `Tarefa movida para "${targetStatus.label}"` });
+      },
+      error: () => {
+        task.statusId = previousStatusId;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível mover a tarefa.' });
+        this.buildTaskColumns();
       }
     });
   }
@@ -206,6 +272,7 @@ export class ProjectViewComponent implements OnInit {
       next: (tasks) => {
         this.tasks = tasks;
         this.tasksLoading = false;
+        this.buildTaskColumns();
       },
       error: () => {
         this.tasksLoading = false;
