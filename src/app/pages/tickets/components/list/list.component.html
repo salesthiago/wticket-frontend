@@ -259,13 +259,12 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1">Observações</label>
-      <textarea
-        pTextarea
-        [(ngModel)]="createForm.notes"
-        rows="3"
-        class="w-full"
-        placeholder="Observações adicionais...">
-      </textarea>
+      <app-rich-text-editor
+        [(value)]="createForm.notes"
+        placeholder="Observações adicionais..."
+        height="160px"
+        [uploader]="uploadImage">
+      </app-rich-text-editor>
     </div>
   </div>
   <ng-template #footer>

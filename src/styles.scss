@@ -1,5 +1,18 @@
 @use "tailwindcss";
 @import "primeicons/primeicons.css";
+// Tema visual do Quill (usado pelo p-editor/app-rich-text-editor) — sem isso,
+// listas, blocos de código e outras formatações ficam sem estilo.
+@import "quill/dist/quill.snow.css";
+
+// O tema embutido do p-editor (PrimeNG) injeta CSS de fallback com seletores
+// de lista do Quill 1.x (li::before com counter/bullet) que colidem com o
+// marcador oficial do Quill 2.x (span.ql-ui::before), duplicando o marcador
+// visualmente (ex.: "1• Item"). O Quill 2 sempre renderiza a marcação real
+// via .ql-ui — anula o fallback do PrimeNG.
+.ql-editor ol li::before,
+.ql-editor ul > li::before {
+  content: none !important;
+}
 
 
 body {
@@ -41,5 +54,37 @@ body {
 @media (min-width: 640px) {
   body.sidebar-collapsed .sm\:ml-64 {
     margin-left: 5rem !important;
+  }
+}
+
+// Conteúdo salvo pelo editor de texto rico (app-rich-text-editor) e exibido
+// via [innerHTML] — descrição de projeto/tarefa, notas e respostas de ticket.
+// white-space: pre-wrap mantém quebras de linha de registros antigos (texto
+// puro, sem tags), gravados antes da introdução do editor.
+.rich-text-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  p {
+    margin: 0 0 0.5rem;
+    &:last-child { margin-bottom: 0; }
+  }
+
+  // O reset do Tailwind zera list-style/padding de ul/ol globalmente —
+  // restaura marcadores e recuo só dentro do conteúdo do editor.
+  ul, ol {
+    margin: 0 0 0.5rem;
+    padding-left: 1.5rem;
+    &:last-child { margin-bottom: 0; }
+  }
+  ul { list-style: disc; }
+  ol { list-style: decimal; }
+  li { margin: 0.15rem 0; }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 0.25rem 0;
   }
 }

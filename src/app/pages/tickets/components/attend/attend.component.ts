@@ -13,7 +13,6 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DividerModule } from 'primeng/divider';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { DialogModule } from 'primeng/dialog';
-import { TimelineModule } from 'primeng/timeline';
 import { AvatarModule } from 'primeng/avatar';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,6 +24,7 @@ import { ServiceOrdersService } from '../../../service-orders/components/service
 import { AppointmentsService } from '../../../appointments/components/services/appointments.service';
 import { UsersService } from '../../../users/components/services/users.service';
 import { AuthService } from '../../../../services/auth.service';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-ticket-attend',
@@ -44,11 +44,11 @@ import { AuthService } from '../../../../services/auth.service';
     DividerModule,
     BreadcrumbModule,
     DialogModule,
-    TimelineModule,
     AvatarModule,
     InputNumberModule,
     ConfirmDialogModule,
-    TooltipModule
+    TooltipModule,
+    RichTextEditorComponent
   ],
   templateUrl: './attend.component.html',
   styleUrls: ['./attend.component.scss']
@@ -57,9 +57,11 @@ export class TicketAttendComponent implements OnInit {
   ticket: any = null;
   loading = true;
   responseLoading = false;
-  newResponse = '';
+  newResponse: string | null = '';
   newResponseHours: number | null = null;
   selectedStatusId = '';
+
+  uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   statuses: any[] = [];
 
@@ -146,6 +148,13 @@ export class TicketAttendComponent implements OnInit {
     if (this.isAdmin) return true;
     const ownerId = response?.respondedBy?._id || response?.respondedBy;
     return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
+  }
+
+  // Diferencia no histórico quais respostas são do usuário logado (exibidas
+  // à direita, como em um app de mensagens) das demais (à esquerda).
+  isMyResponse(response: any): boolean {
+    const responderId = response?.respondedBy?._id || response?.respondedBy;
+    return !!responderId && !!this.currentUserId && responderId === this.currentUserId;
   }
 
   ngOnInit(): void {
@@ -238,10 +247,10 @@ export class TicketAttendComponent implements OnInit {
   }
 
   saveResponse(): void {
-    if (!this.newResponse.trim()) return;
+    if (!this.newResponse) return;
     this.responseLoading = true;
     const hours = this.newResponseHours ?? 0;
-    this.ticketService.addResponse(this.ticket._id, this.newResponse.trim(), hours).subscribe({
+    this.ticketService.addResponse(this.ticket._id, this.newResponse, hours).subscribe({
       next: (updated) => {
         this.ticket = updated;
         this.newResponse = '';

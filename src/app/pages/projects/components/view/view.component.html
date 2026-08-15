@@ -22,7 +22,7 @@
             <p-tag [value]="getPriorityLabel(project.priority)" [severity]="getPrioritySeverity(project.priority)"></p-tag>
           </div>
           @if (project.description) {
-            <p class="text-gray-600 mt-2 mb-0">{{ project.description }}</p>
+            <div class="text-gray-600 mt-2 mb-0 rich-text-content" [innerHTML]="project.description"></div>
           }
         </div>
         <div class="flex gap-2">
@@ -250,7 +250,11 @@
     </div>
     <div class="field">
       <label class="block mb-2">Notas</label>
-      <textarea pTextarea [(ngModel)]="taskForm.notes" rows="3" class="w-full"></textarea>
+      <app-rich-text-editor
+        [(value)]="taskForm.notes"
+        height="160px"
+        [uploader]="uploadImage">
+      </app-rich-text-editor>
     </div>
   </div>
   <ng-template #footer>

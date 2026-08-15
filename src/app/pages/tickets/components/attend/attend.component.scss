@@ -122,34 +122,59 @@
   flex-direction: column;
   gap: 0.75rem;
 
-  textarea { resize: vertical; }
   button { align-self: flex-end; }
 }
 
-.response-item {
-  padding: 0.75rem;
-  background: var(--surface-50);
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+// Histórico de respostas em formato de conversa: minhas respostas à direita
+// (com fundo destacado), as demais à esquerda — como num app de mensagens.
+.response-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-  .response-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+.response-chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
 
-    strong { font-size: 0.9rem; }
-    .response-date {
-      margin-left: auto;
-      font-size: 0.8rem;
-      color: var(--text-color-secondary);
+  &--mine {
+    flex-direction: row-reverse;
+  }
+}
+
+.response-chat-avatar {
+  flex-shrink: 0;
+}
+
+.response-chat-bubble {
+  max-width: 75%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 12px;
+  background: var(--p-surface-100);
+
+  &--mine {
+    background: var(--p-primary-color);
+    color: var(--p-primary-contrast-color);
+
+    .response-chat-date {
+      color: var(--p-primary-contrast-color);
+      opacity: 0.8;
     }
   }
+}
 
-  .response-content {
-    margin: 0;
-    font-size: 0.9rem;
-    white-space: pre-wrap;
+.response-chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+
+  strong { font-size: 0.85rem; }
+
+  .response-chat-date {
+    color: var(--text-color-secondary);
   }
 }
 

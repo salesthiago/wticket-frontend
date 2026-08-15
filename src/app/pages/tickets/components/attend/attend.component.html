@@ -66,7 +66,7 @@
               <p-divider />
               <div class="notes-section">
                 <strong>Observações:</strong>
-                <p>{{ ticket.notes }}</p>
+                <div class="rich-text-content" [innerHTML]="ticket.notes"></div>
               </div>
             }
           </div>
@@ -95,13 +95,12 @@
         <!-- Registrar resposta -->
         <p-card header="Registrar Resposta">
           <div class="response-form">
-            <textarea
-              pTextarea
-              [(ngModel)]="newResponse"
-              rows="4"
+            <app-rich-text-editor
+              [(value)]="newResponse"
               placeholder="Digite a resposta ou tratativa para este ticket..."
-              class="w-full">
-            </textarea>
+              height="160px"
+              [uploader]="uploadImage">
+            </app-rich-text-editor>
             <div class="response-hours-row">
               <label for="responseHours">Horas gastas</label>
               <p-inputNumber
@@ -117,40 +116,44 @@
               icon="pi pi-send"
               (click)="saveResponse()"
               [loading]="responseLoading"
-              [disabled]="!newResponse.trim()">
+              [disabled]="!newResponse">
             </button>
           </div>
         </p-card>
 
-        <!-- Histórico de respostas -->
+        <!-- Histórico de respostas: estilo conversa, minhas respostas à -->
+        <!-- direita (como no WhatsApp), respostas de outros atendentes à esquerda -->
         @if (ticket.responses?.length > 0) {
           <p-card header="Histórico de Respostas">
-            <p-timeline [value]="ticket.responses">
-              <ng-template #content let-response>
-                <div class="response-item">
-                  <div class="response-header">
-                    <p-avatar
-                      [label]="response.respondedBy?.name?.charAt(0) || 'A'"
-                      shape="circle" />
-                    <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
-                    <span class="response-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
-                    @if (response.hoursSpent) {
-                      <span class="status-badge-sm">{{ response.hoursSpent }}h</span>
-                    }
-                    @if (canDeleteResponse(response)) {
-                      <button
-                        pButton
-                        icon="pi pi-trash"
-                        class="p-button-text p-button-danger p-button-sm response-delete-btn"
-                        pTooltip="Excluir resposta"
-                        (click)="deleteResponse(response, $event)">
-                      </button>
-                    }
+            <div class="response-chat">
+              @for (response of ticket.responses; track response._id) {
+                <div class="response-chat-row" [class.response-chat-row--mine]="isMyResponse(response)">
+                  <p-avatar
+                    [label]="response.respondedBy?.name?.charAt(0) || 'A'"
+                    shape="circle"
+                    styleClass="response-chat-avatar" />
+                  <div class="response-chat-bubble" [class.response-chat-bubble--mine]="isMyResponse(response)">
+                    <div class="response-chat-meta">
+                      <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
+                      <span class="response-chat-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                      @if (response.hoursSpent) {
+                        <span class="status-badge-sm">{{ response.hoursSpent }}h</span>
+                      }
+                      @if (canDeleteResponse(response)) {
+                        <button
+                          pButton
+                          icon="pi pi-trash"
+                          class="p-button-text p-button-danger p-button-sm response-delete-btn"
+                          pTooltip="Excluir resposta"
+                          (click)="deleteResponse(response, $event)">
+                        </button>
+                      }
+                    </div>
+                    <div class="rich-text-content" [innerHTML]="response.content"></div>
                   </div>
-                  <p class="response-content">{{ response.content }}</p>
                 </div>
-              </ng-template>
-            </p-timeline>
+              }
+            </div>
           </p-card>
         }
       </div>

@@ -10,13 +10,13 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
 
@@ -32,14 +32,14 @@ import { AuthService } from '../../../../services/auth.service';
     InputTextModule,
     SelectModule,
     DatePickerModule,
-    TextareaModule,
     InputNumberModule,
     Toast,
     ConfirmDialogModule,
     TooltipModule,
     FormsModule,
     SidebarComponent,
-    BreadcrumbModule
+    BreadcrumbModule,
+    RichTextEditorComponent
   ]
 })
 export class ProjectFormComponent implements OnInit {
@@ -58,6 +58,8 @@ export class ProjectFormComponent implements OnInit {
   public statuses: any[] = [];
   public documents: ProjectDocumentModel[] = [];
   public uploadingDocument = false;
+
+  public uploadImage = (file: File) => this.service.uploadImage(file);
 
   public optionPriority = [
     { name: 'Baixa', value: 'low' },

@@ -52,4 +52,10 @@ export class ProjectsService {
   deleteDocument(id: string, documentId: string): Observable<any[]> {
     return this.http.delete<any[]>(`${this.apiUrl}/projects/${id}/documents/${documentId}`);
   }
+
+  uploadImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/projects/upload-image`, formData);
+  }
 }

@@ -11,12 +11,12 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
-import { TextareaModule } from 'primeng/textarea';
 import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 import { TicketService } from '../services/ticket.service';
 import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketStatusService } from '../services/ticket-status.service';
@@ -60,11 +60,11 @@ interface Ticket {
     FormsModule,
     ProgressSpinnerModule,
     TooltipModule,
-    TextareaModule,
     ConfirmDialogModule,
     ToastModule,
     BreadcrumbModule,
-    SidebarComponent
+    SidebarComponent,
+    RichTextEditorComponent
   ],
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss']
@@ -102,6 +102,8 @@ export class TicketsComponent implements OnInit {
   createSubjectOptions: any[] = [];
   customerOptions: any[] = [];
   private allSubjects: any[] = [];
+
+  uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   constructor(
     private ticketService: TicketService,

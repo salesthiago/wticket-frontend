@@ -39,6 +39,12 @@ export class TicketService {
     return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content, hoursSpent });
   }
 
+  uploadImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/tickets/upload-image`, formData);
+  }
+
   deleteResponse(id: string, responseId: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/tickets/${id}/responses/${responseId}`);
   }

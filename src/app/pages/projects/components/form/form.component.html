@@ -18,13 +18,12 @@
 
       <div class="field">
         <label for="description" class="block mb-2">Descrição</label>
-        <textarea
-          id="description"
-          pTextarea
-          [(ngModel)]="project.description"
-          rows="4"
+        <app-rich-text-editor
+          [(value)]="project.description"
           placeholder="Descreva o escopo do projeto..."
-          class="w-full"></textarea>
+          height="200px"
+          [uploader]="uploadImage">
+        </app-rich-text-editor>
       </div>
     </div>
 

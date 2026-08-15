@@ -9,7 +9,6 @@ import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -25,6 +24,7 @@ import { CustomersService } from '../../../customers/components/services/custome
 import { AuthService } from '../../../../services/auth.service';
 import { ProjectPriority, ProjectPriorityLabels, ProjectPrioritySeverity, ProjectDocumentModel } from '../../project.interface';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-project-view',
@@ -41,7 +41,6 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
     TableModule,
     DialogModule,
     InputTextModule,
-    TextareaModule,
     SelectModule,
     DatePickerModule,
     ProgressSpinnerModule,
@@ -49,7 +48,8 @@ import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
     BreadcrumbModule,
     TooltipModule,
     ConfirmDialogModule,
-    SidebarComponent
+    SidebarComponent,
+    RichTextEditorComponent
   ],
   templateUrl: './view.component.html',
   styleUrls: ['./view.component.scss']
@@ -78,6 +78,8 @@ export class ProjectViewComponent implements OnInit {
   customerOptions: any[] = [];
   statusOptions: any[] = [];
   documents: ProjectDocumentModel[] = [];
+
+  uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   priorityOptions = [
     { label: 'Baixa', value: 'low' },
