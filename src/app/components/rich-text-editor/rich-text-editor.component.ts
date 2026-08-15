@@ -35,6 +35,13 @@ export class RichTextEditorComponent {
     const quill = event.editor;
     const toolbar = quill.getModule('toolbar');
     toolbar?.addHandler('image', () => this.pickAndUploadImage(quill));
+
+    // Imagem colada (Ctrl+V) ou arrastada para o editor não passa pelo botão
+    // da barra de ferramentas — o Quill a embute direto como base64. Sem isso,
+    // esse base64 vai para o backend dentro do HTML salvo (payload gigante,
+    // erro 413). Observa o conteúdo e substitui qualquer <img> base64 pela
+    // URL real assim que ela é inserida, por qualquer via.
+    quill.on('text-change', () => this.uploadEmbeddedImages(quill));
   }
 
   private pickAndUploadImage(quill: any): void {
@@ -54,5 +61,44 @@ export class RichTextEditorComponent {
       });
     };
     input.click();
+  }
+
+  private uploadEmbeddedImages(quill: any): void {
+    if (!this.uploader) return;
+    const images: HTMLImageElement[] = Array.from(quill.root.querySelectorAll('img[src^="data:"]'));
+    for (const img of images) {
+      if (img.dataset['uploading'] === '1') continue;
+      const file = this.dataUrlToFile(img.getAttribute('src') || '');
+      if (!file) continue;
+      img.dataset['uploading'] = '1';
+      this.uploader(file).subscribe({
+        next: (res) => {
+          const Ctor = quill.constructor;
+          const blot = Ctor.find?.(img);
+          if (blot) {
+            const index = quill.getIndex(blot);
+            quill.deleteText(index, 1, 'user');
+            quill.insertEmbed(index, 'image', res.url, 'user');
+          } else {
+            img.setAttribute('src', res.url);
+          }
+        },
+        error: (err) => {
+          delete img.dataset['uploading'];
+          this.uploadError.emit(err);
+        }
+      });
+    }
+  }
+
+  private dataUrlToFile(dataUrl: string): File | null {
+    const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) return null;
+    const mime = match[1];
+    const binary = atob(match[2]);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const ext = mime.split('/')[1]?.split('+')[0] || 'png';
+    return new File([bytes], `imagem-colada.${ext}`, { type: mime });
   }
 }
