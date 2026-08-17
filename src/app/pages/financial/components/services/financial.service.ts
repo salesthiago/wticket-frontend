@@ -8,6 +8,7 @@ import {
   ReceivableUpdateInput,
   ReceivablePaymentInput,
   ReceivableInvoiceFromOSInput,
+  ReceivableInvoiceFromProjectInput,
   ReceivableDashboard,
   FinancialPaginatedResponse
 } from '../../financial.interface';
@@ -16,6 +17,7 @@ import {
 export class FinancialService {
   private apiUrl = `${environment.apiUrl}/financial`;
   private soUrl = `${environment.apiUrl}/service-orders`;
+  private projUrl = `${environment.apiUrl}/projects`;
 
   constructor(private http: HttpClient) {}
 
@@ -90,5 +92,15 @@ export class FinancialService {
 
   public listReceivablesByServiceOrder(serviceOrderId: string): Observable<Receivable[]> {
     return this.http.get<Receivable[]>(`${this.soUrl}/${serviceOrderId}/receivables`);
+  }
+
+  // ─── Faturamento de Projetos ────────────────────────────────────────────────
+
+  public invoiceProject(projectId: string, data: ReceivableInvoiceFromProjectInput): Observable<Receivable> {
+    return this.http.post<Receivable>(`${this.projUrl}/${projectId}/invoice`, data);
+  }
+
+  public listReceivablesByProject(projectId: string): Observable<Receivable[]> {
+    return this.http.get<Receivable[]>(`${this.projUrl}/${projectId}/receivables`);
   }
 }

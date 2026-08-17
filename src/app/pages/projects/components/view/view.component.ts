@@ -11,6 +11,8 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { TextareaModule } from 'primeng/textarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -22,6 +24,16 @@ import { TicketService } from '../../../tickets/components/services/ticket.servi
 import { TicketStatusService } from '../../../tickets/components/services/ticket-status.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
 import { AuthService } from '../../../../services/auth.service';
+import { FinancialService } from '../../../financial/components/services/financial.service';
+import {
+  Receivable,
+  ReceivableStatus,
+  ReceivableStatusLabels,
+  ReceivableStatusColors,
+  PaymentMethod,
+  PaymentMethodLabels,
+  ReceivableInvoiceFromProjectInput
+} from '../../../financial/financial.interface';
 import { ProjectPriority, ProjectPriorityLabels, ProjectPrioritySeverity, ProjectDocumentModel } from '../../project.interface';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
@@ -43,6 +55,8 @@ import { RichTextEditorComponent } from '../../../../components/rich-text-editor
     InputTextModule,
     SelectModule,
     DatePickerModule,
+    InputNumberModule,
+    TextareaModule,
     ProgressSpinnerModule,
     ToastModule,
     BreadcrumbModule,
@@ -79,6 +93,27 @@ export class ProjectViewComponent implements OnInit {
   statusOptions: any[] = [];
   documents: ProjectDocumentModel[] = [];
 
+  // ─── Financeiro ────────────────────────────────────────────────────────────
+  hasFinancialAccess = false;
+  receivables: Receivable[] = [];
+  loadingReceivables = false;
+
+  showInvoiceDialog = false;
+  invoicingProject = false;
+  invoiceDraft: {
+    dueDate: Date;
+    paymentMethod: PaymentMethod;
+    notes: string;
+  } = {
+    dueDate: new Date(),
+    paymentMethod: 'pix',
+    notes: ''
+  };
+
+  optionPaymentMethods: { label: string; value: PaymentMethod }[] =
+    (Object.keys(PaymentMethodLabels) as PaymentMethod[])
+      .map(k => ({ label: PaymentMethodLabels[k], value: k }));
+
   uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   priorityOptions = [
@@ -98,6 +133,7 @@ export class ProjectViewComponent implements OnInit {
     private ticketStatusService: TicketStatusService,
     private customersService: CustomersService,
     private authService: AuthService,
+    private financial: FinancialService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
   ) { }
@@ -145,10 +181,15 @@ export class ProjectViewComponent implements OnInit {
 
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id');
+    this.hasFinancialAccess = this.authService.hasModule('financial')
+      && this.authService.hasAnyRole('administrator', 'finance');
     if (this.id) {
       this.loadProject(this.id);
       this.loadTasks(this.id);
       this.loadDocuments(this.id);
+      if (this.hasFinancialAccess) {
+        this.loadLinkedReceivables(this.id);
+      }
     }
     if (!this.isCustomerScoped) {
       this.loadCustomers();
@@ -383,5 +424,102 @@ export class ProjectViewComponent implements OnInit {
   getTaskPrioritySeverity(priority: string): string {
     const map: Record<string, string> = { low: 'success', medium: 'info', high: 'warning', urgent: 'danger' };
     return map[priority] || 'secondary';
+  }
+
+  // ─── Financeiro ────────────────────────────────────────────────────────────
+
+  loadLinkedReceivables(id: string): void {
+    this.loadingReceivables = true;
+    this.financial.listReceivablesByProject(id).subscribe({
+      next: (list) => {
+        this.receivables = list || [];
+        this.loadingReceivables = false;
+      },
+      error: () => { this.loadingReceivables = false; }
+    });
+  }
+
+  hasActiveReceivable(): boolean {
+    return this.receivables.some(r => r.status !== 'cancelled');
+  }
+
+  canInvoiceProject(): boolean {
+    if (!this.hasFinancialAccess) return false;
+    if (this.hasActiveReceivable()) return false;
+    return true;
+  }
+
+  invoiceTooltip(): string {
+    if (!this.hasFinancialAccess) {
+      return 'Você precisa do módulo Financeiro e role administrator/finance para faturar.';
+    }
+    if (this.hasActiveReceivable()) {
+      return 'Este projeto já possui título ativo. Cancele-o antes de faturar novamente.';
+    }
+    return 'Gerar título a receber a partir deste projeto';
+  }
+
+  openInvoiceDialog(): void {
+    if (!this.canInvoiceProject()) return;
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    this.invoiceDraft = {
+      dueDate: due,
+      paymentMethod: 'pix',
+      notes: `Faturamento do projeto ${this.project?.projectNumber}`
+    };
+    this.showInvoiceDialog = true;
+  }
+
+  submitInvoice(): void {
+    if (!this.invoiceDraft.dueDate) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Vencimento é obrigatório.' });
+      return;
+    }
+    if (!this.invoiceDraft.paymentMethod) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Forma de pagamento é obrigatória.' });
+      return;
+    }
+
+    const payload: ReceivableInvoiceFromProjectInput = {
+      dueDate: this.invoiceDraft.dueDate,
+      paymentMethod: this.invoiceDraft.paymentMethod,
+      notes: this.invoiceDraft.notes || undefined
+    };
+
+    this.invoicingProject = true;
+    this.financial.invoiceProject(this.id!, payload).subscribe({
+      next: (created) => {
+        this.invoicingProject = false;
+        this.showInvoiceDialog = false;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Título gerado',
+          detail: `Título ${created.number} criado com sucesso.`
+        });
+        this.loadLinkedReceivables(this.id!);
+      },
+      error: (err) => {
+        this.invoicingProject = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Falha ao faturar',
+          detail: err?.error?.message || 'Erro ao gerar título'
+        });
+      }
+    });
+  }
+
+  viewReceivable(r: Receivable): void {
+    if (r._id) this.router.navigate(['/financial/receivables/view', r._id]);
+  }
+
+  receivableStatusLabel(s?: ReceivableStatus): string { return s ? (ReceivableStatusLabels[s] || s) : ''; }
+  receivableStatusColor(s?: ReceivableStatus): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+    const c = s ? ReceivableStatusColors[s] : 'secondary';
+    return (c as any) || 'secondary';
+  }
+  paymentMethodLabel(m?: string): string {
+    return m ? (PaymentMethodLabels[m as PaymentMethod] || m) : '—';
   }
 }

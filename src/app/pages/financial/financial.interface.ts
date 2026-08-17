@@ -70,6 +70,7 @@ export interface Receivable {
 
   customerId?: { _id: string; name: string; document?: string; phone?: string; email?: string } | string | null;
   serviceOrderId?: { _id: string; orderNumber?: string; status?: string } | string | null;
+  projectId?: { _id: string; projectNumber?: string; title?: string } | string | null;
 
   notes?: string;
   cancelReason?: string;
@@ -94,6 +95,7 @@ export interface ReceivableCreateInput {
   paymentMethod: PaymentMethod;
   customerId?: string;
   serviceOrderId?: string;
+  projectId?: string;
   notes?: string;
 }
 
@@ -116,6 +118,14 @@ export interface ReceivableInvoiceFromOSInput {
   description?: string;
   amount?: number;
   dueDate?: string | Date;
+  paymentMethod: PaymentMethod;
+  customerId?: string;
+  notes?: string;
+}
+
+export interface ReceivableInvoiceFromProjectInput {
+  amount?: number;
+  dueDate: string | Date;
   paymentMethod: PaymentMethod;
   customerId?: string;
   notes?: string;
