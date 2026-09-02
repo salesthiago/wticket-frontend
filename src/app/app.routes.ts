@@ -59,6 +59,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/email-config/email-config.component').then(m => m.EmailConfigComponent),
     canActivate: [authGuard, superAdminGuard]
   },
+  {
+    path: 'admin/billing-config',
+    loadComponent: () => import('./pages/admin/billing-config/billing-config.component').then(m => m.BillingConfigComponent),
+    canActivate: [authGuard, superAdminGuard]
+  },
   // Tenant + module-gated routes
   {
     path: 'users',

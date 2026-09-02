@@ -62,7 +62,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
             { label: 'Empresas', routerLink: '/admin/companies' },
             { label: 'Módulos', routerLink: '/admin/modules' },
             { label: 'Assinaturas', routerLink: '/admin/plans' },
-            { label: 'E-mail', routerLink: '/admin/email-config' }
+            { label: 'E-mail', routerLink: '/admin/email-config' },
+            { label: 'Pagamentos', routerLink: '/admin/billing-config' }
           ]
         }
       ]

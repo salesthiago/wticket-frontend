@@ -1,0 +1,255 @@
+<p-toast />
+<app-sidebar />
+
+<div class="sm:ml-64 p-6 space-y-6">
+  <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">
+      <i class="pi pi-spinner pi-spin"></i> Carregando…
+    </div>
+  }
+
+  @if (!loading && settings) {
+    <!-- ─── Métodos de pagamento ─────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xl font-semibold">Métodos de pagamento</h2>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">
+        Habilite os métodos oferecidos na cobrança da assinatura e escolha qual
+        provedor processa cada um.
+      </p>
+
+      <div class="space-y-3">
+        @for (m of methods; track m.method) {
+          <div class="flex items-center gap-4 flex-wrap border rounded-lg p-3">
+            <div class="flex items-center gap-2 min-w-[200px]">
+              <p-toggleSwitch [(ngModel)]="m.enabled" [inputId]="'m_' + m.method" />
+              <label [for]="'m_' + m.method" class="text-sm font-medium">
+                {{ methodLabels[m.method] }}
+              </label>
+            </div>
+            <div class="flex-1 min-w-[220px]">
+              <p-select
+                [options]="providersFor(m.method)"
+                [(ngModel)]="m.providerKey"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full"
+                placeholder="Provedor" />
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <p-button label="Salvar métodos" icon="pi pi-save"
+          [loading]="savingMethods" (onClick)="saveMethods()" />
+      </div>
+    </p-card>
+
+    <!-- ─── Itaú ─────────────────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-xl font-semibold">Itaú — PIX</h2>
+        @if (settings.itau.clientSecretConfigured && settings.itau.certificate.configured && settings.itau.privateKey.configured) {
+          <p-tag severity="success" value="Configurado" />
+        } @else {
+          <p-tag severity="warn" value="Incompleto" />
+        }
+      </div>
+      <p class="text-sm text-gray-500 mb-4">
+        Credenciais do <strong>Itaú Boletos v3</strong> (Pix Cobrança). Os segredos
+        são gravados cifrados; deixe em branco para manter o valor atual.
+      </p>
+
+      <div class="flex items-center gap-2 mb-4">
+        <p-toggleSwitch [(ngModel)]="itau.enabled" inputId="itauEnabled" />
+        <label for="itauEnabled" class="text-sm">
+          Integração <strong>{{ itau.enabled ? 'ativa' : 'inativa' }}</strong>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Ambiente</label>
+          <p-select [options]="environmentOptions" [(ngModel)]="itau.environment"
+            optionLabel="label" optionValue="value" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Client ID</label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="itau.clientId"
+            placeholder="00000000-0000-0000-0000-000000000000" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Client Secret
+            <span class="text-xs text-gray-500 ml-1">
+              ({{ settings.itau.clientSecretConfigured ? 'configurado — em branco mantém' : 'não configurado' }})
+            </span>
+          </label>
+          <p-password [(ngModel)]="itau.clientSecret" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Webhook Secret
+            <span class="text-xs text-gray-500 ml-1">
+              ({{ settings.itau.webhookSecretConfigured ? 'configurado' : 'não configurado' }})
+            </span>
+          </label>
+          <p-password [(ngModel)]="itau.webhookSecret" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            ID Beneficiário
+            <span class="text-xs text-gray-500 ml-1">(Agência + 00 + Conta + DAC)</span>
+          </label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="itau.beneficiaryId"
+            placeholder="150000154711" />
+        </div>
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="itau.recurringEnabled" inputId="itauRecurring" />
+          <label for="itauRecurring" class="text-sm">
+            Pix recorrente (Pix Automático)
+            <span class="text-xs text-gray-500 ml-1">— fluxo de autorização na Fase 2</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <p-button label="Salvar Itaú" icon="pi pi-save"
+          [loading]="savingItau" (onClick)="saveItau()" />
+      </div>
+
+      <p-divider />
+
+      <!-- Certificado / chave mTLS -->
+      <h3 class="text-base font-semibold mb-3">Certificado mTLS</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border rounded-lg p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium">Certificado (.crt)</span>
+            @if (settings.itau.certificate.configured) {
+              <p-tag severity="success" value="Enviado" />
+            } @else {
+              <p-tag severity="warn" value="Pendente" />
+            }
+          </div>
+          @if (settings.itau.certificate.configured) {
+            <p class="text-xs text-gray-500 mb-2">
+              {{ settings.itau.certificate.subjectCN }} ·
+              válido até {{ settings.itau.certificate.notAfter | date:'dd/MM/yyyy' }}
+              @if (settings.itau.certificate.daysToExpire != null) {
+                ({{ settings.itau.certificate.daysToExpire }} dias)
+              }
+              @if (settings.itau.certificate.expired) {
+                <span class="text-red-500 font-semibold"> — VENCIDO</span>
+              }
+            </p>
+          }
+          <input type="file" accept=".crt,.pem,.cer" (change)="onCertSelected($event)" class="text-sm" />
+          <div class="mt-2">
+            <p-button label="Enviar .crt" icon="pi pi-upload" size="small"
+              [loading]="uploadingCert" [disabled]="!certFile" (onClick)="uploadCert()" />
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium">Chave privada (.key)</span>
+            @if (settings.itau.privateKey.configured) {
+              <p-tag severity="success" value="Enviada" />
+            } @else {
+              <p-tag severity="warn" value="Pendente" />
+            }
+          </div>
+          @if (settings.itau.privateKey.configured) {
+            <p class="text-xs text-gray-500 mb-2">
+              {{ settings.itau.privateKey.filename }} ·
+              enviada em {{ settings.itau.privateKey.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
+            </p>
+          }
+          <input type="file" accept=".key,.pem" (change)="onKeySelected($event)" class="text-sm" />
+          <div class="mt-2">
+            <p-button label="Enviar .key" icon="pi pi-upload" size="small"
+              [loading]="uploadingKey" [disabled]="!keyFile" (onClick)="uploadKey()" />
+          </div>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- ─── AbacatePay ───────────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-xl font-semibold">AbacatePay — Cartão</h2>
+        <p-tag [severity]="settings.abacatepay.configured ? 'success' : 'warn'"
+          [value]="settings.abacatepay.configured ? 'Configurado' : 'Sem chave'" />
+      </div>
+      <p class="text-sm text-gray-500">
+        Provedor atual do checkout de assinatura recorrente (cartão). As credenciais
+        (<code>ABACATEPAY_API_KEY</code>, webhook secret) continuam no <code>.env</code>
+        do servidor — não são editadas aqui.
+      </p>
+    </p-card>
+
+    <!-- ─── Stripe ───────────────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-xl font-semibold">Stripe — Cartão</h2>
+        <p-tag severity="info" value="Em breve" />
+      </div>
+      <p class="text-sm text-gray-500 mb-4">
+        Integração de cartão futura. As credenciais já podem ser cadastradas
+        (cifradas); o fluxo de checkout ainda não está ativo.
+      </p>
+
+      <div class="flex items-center gap-2 mb-4">
+        <p-toggleSwitch [(ngModel)]="stripe.enabled" inputId="stripeEnabled" />
+        <label for="stripeEnabled" class="text-sm">
+          Integração <strong>{{ stripe.enabled ? 'ativa' : 'inativa' }}</strong>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Ambiente</label>
+          <p-select [options]="stripeEnvOptions" [(ngModel)]="stripe.environment"
+            optionLabel="label" optionValue="value" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Publishable Key</label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="stripe.publishableKey"
+            placeholder="pk_live_…" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Secret Key
+            <span class="text-xs text-gray-500 ml-1">
+              ({{ settings.stripe.secretKeyConfigured ? 'configurada' : 'não configurada' }})
+            </span>
+          </label>
+          <p-password [(ngModel)]="stripe.secretKey" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Webhook Secret
+            <span class="text-xs text-gray-500 ml-1">
+              ({{ settings.stripe.webhookSecretConfigured ? 'configurado' : 'não configurado' }})
+            </span>
+          </label>
+          <p-password [(ngModel)]="stripe.webhookSecret" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <p-button label="Salvar Stripe" icon="pi pi-save"
+          [loading]="savingStripe" (onClick)="saveStripe()" />
+      </div>
+    </p-card>
+  }
+</div>
