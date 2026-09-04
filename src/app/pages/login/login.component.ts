@@ -72,14 +72,7 @@ export class LoginComponent implements OnInit {
         const status = error?.status;
         const detail = error?.error?.message || 'Erro ao fazer login';
 
-        if (status === 403 && error?.error?.companyStatus === 'pending_payment') {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Aguardando pagamento',
-            detail: 'Seu cadastro está aguardando confirmação do pagamento.',
-            life: 6000
-          });
-        } else if (status === 403) {
+        if (status === 403) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Acesso bloqueado',

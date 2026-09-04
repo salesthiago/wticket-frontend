@@ -31,8 +31,41 @@
           </p>
         </div>
 
-        <!-- Sem cobrança gerada ainda: escolha da forma de pagamento -->
+        <!-- Sem cobrança gerada ainda: escolha do plano (empresas antigas sem
+             plano vinculado) e da forma de pagamento -->
         @if (!payment) {
+          @if (needsPlanSelection) {
+            <div class="max-w-sm mx-auto mb-5">
+              <p class="text-sm font-medium text-gray-700 mb-2">Escolha um plano de assinatura</p>
+
+              @if (loadingPlans) {
+                <div class="text-center text-gray-400 py-6">Carregando planos...</div>
+              } @else if (plans.length === 0) {
+                <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">
+                  <i class="pi pi-info-circle mr-1"></i> Nenhum plano disponível no momento. Contate o suporte.
+                </div>
+              } @else {
+                <div class="space-y-2">
+                  @for (plan of plans; track plan._id) {
+                    <div class="border rounded-lg p-3 cursor-pointer"
+                      [class.border-blue-500]="isPlanSelected(plan)"
+                      [class.bg-blue-50]="isPlanSelected(plan)"
+                      [class.border-gray-200]="!isPlanSelected(plan)"
+                      (click)="selectPlan(plan)">
+                      <div class="flex items-center justify-between">
+                        <span class="font-medium text-sm">{{ plan.name }}</span>
+                        <span class="text-blue-700 font-bold text-sm">R$ {{ plan.price | number:'1.2-2' }}</span>
+                      </div>
+                      @if (plan.description) {
+                        <p class="text-xs text-gray-500 mt-1">{{ plan.description }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
           @if (methods.length) {
             <div class="flex flex-col gap-2 max-w-sm mx-auto">
               @for (m of methods; track m.method) {
@@ -40,6 +73,7 @@
                   [label]="'Pagar com ' + methodLabel(m.method)"
                   [icon]="m.method === 'pix' ? 'pi pi-qrcode' : 'pi pi-credit-card'"
                   styleClass="w-full"
+                  [disabled]="needsPlanSelection && !selectedPlanId"
                   [loading]="generating"
                   (click)="choose(m.method)">
                 </p-button>

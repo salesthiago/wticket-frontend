@@ -14,6 +14,7 @@ import {
   CheckoutResponse,
   PaymentMethodCode
 } from '../../services/billing.service';
+import { Plan, PlanService } from '../../services/plan.service';
 
 const METHOD_LABELS: Record<PaymentMethodCode, string> = {
   pix: 'Pix',
@@ -38,12 +39,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   methods: AvailablePaymentMethod[] = [];
   payment: CheckoutResponse | null = null;
 
+  // Empresas antigas (pré-planos) podem não ter plano vinculado — nesse caso
+  // o checkout precisa deixar escolher um antes de gerar a cobrança.
+  plans: Plan[] = [];
+  loadingPlans = false;
+  selectedPlanId: string | null = null;
+
   private pollSub?: Subscription;
 
   readonly methodLabels = METHOD_LABELS;
 
   constructor(
     private billingService: BillingService,
+    private planService: PlanService,
     private router: Router,
     private messageService: MessageService
   ) {}
@@ -63,6 +71,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           pix: status.payment.pix || undefined
         };
         this.startPolling(status.payment.id);
+      } else if (status?.blocked && !status?.planId) {
+        this.loadPlans();
       }
       this.loading = false;
     });
@@ -71,6 +81,33 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       next: (res) => this.methods = res.methods,
       error: () => this.methods = []
     });
+  }
+
+  get needsPlanSelection(): boolean {
+    return !!this.status?.blocked && !this.status?.planId && !this.payment;
+  }
+
+  loadPlans(): void {
+    this.loadingPlans = true;
+    this.planService.findAll(true).subscribe({
+      next: (plans) => {
+        this.plans = plans;
+        if (plans.length === 1) this.selectedPlanId = plans[0]._id;
+        this.loadingPlans = false;
+      },
+      error: () => {
+        this.loadingPlans = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível carregar os planos disponíveis' });
+      }
+    });
+  }
+
+  selectPlan(plan: Plan): void {
+    this.selectedPlanId = plan._id;
+  }
+
+  isPlanSelected(plan: Plan): boolean {
+    return this.selectedPlanId === plan._id;
   }
 
   ngOnDestroy(): void {
@@ -87,8 +124,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   choose(method: PaymentMethodCode): void {
+    if (this.needsPlanSelection && !this.selectedPlanId) {
+      this.messageService.add({ severity: 'warn', summary: 'Selecione um plano', detail: 'Escolha um plano de assinatura antes de continuar' });
+      return;
+    }
+
     this.generating = true;
-    this.billingService.checkout({ method }).subscribe({
+    this.billingService.checkout({ method, planId: this.selectedPlanId || undefined }).subscribe({
       next: (res) => {
         this.generating = false;
         this.payment = res;

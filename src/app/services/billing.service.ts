@@ -21,6 +21,8 @@ export interface BillingStatus {
   exempt?: boolean;
   reason?: BillingBlockReason;
   trialEndsAt?: string | null;
+  /** null quando a empresa ainda não tem plano vinculado — checkout precisa deixar escolher um. */
+  planId?: string | null;
   payment?: BillingPayment | null;
 }
 
@@ -31,6 +33,7 @@ export interface AvailablePaymentMethod {
 
 export interface CheckoutRequest {
   method?: PaymentMethodCode;
+  planId?: string;
 }
 
 export interface CheckoutResponse {
