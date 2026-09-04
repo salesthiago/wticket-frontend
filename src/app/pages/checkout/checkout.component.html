@@ -1,0 +1,102 @@
+<p-toast></p-toast>
+
+<div class="checkout-page">
+  <div class="checkout-container">
+    <div class="text-center mb-6">
+      <img src="/assets/logo-navbar.png" class="mx-auto h-9" alt="WTicket" />
+    </div>
+
+    @if (loading) {
+      <p-card>
+        <div class="text-center text-gray-400 py-10">Carregando...</div>
+      </p-card>
+    } @else if (!status?.blocked) {
+      <p-card>
+        <div class="text-center space-y-4 py-2">
+          <i class="pi pi-check-circle text-green-500" style="font-size: 3rem;"></i>
+          <h2 class="text-xl font-semibold">Sua assinatura está em dia</h2>
+          <p class="text-gray-600">Não há nenhuma cobrança pendente no momento.</p>
+          <p-button label="Ir para o dashboard" icon="pi pi-arrow-right" (click)="goToDashboard()"></p-button>
+        </div>
+      </p-card>
+    } @else {
+      <p-card>
+        <div class="text-center space-y-2 py-2 mb-4">
+          <i class="pi pi-exclamation-triangle text-amber-500" style="font-size: 2.5rem;"></i>
+          <h2 class="text-xl font-semibold">
+            {{ status?.reason === 'trial_expired' ? 'Seu período de teste expirou' : 'Assinatura com pagamento pendente' }}
+          </h2>
+          <p class="text-gray-600 text-sm">
+            Conclua o pagamento abaixo para liberar o acesso normal ao sistema.
+          </p>
+        </div>
+
+        <!-- Sem cobrança gerada ainda: escolha da forma de pagamento -->
+        @if (!payment) {
+          @if (methods.length) {
+            <div class="flex flex-col gap-2 max-w-sm mx-auto">
+              @for (m of methods; track m.method) {
+                <p-button
+                  [label]="'Pagar com ' + methodLabel(m.method)"
+                  [icon]="m.method === 'pix' ? 'pi pi-qrcode' : 'pi pi-credit-card'"
+                  styleClass="w-full"
+                  [loading]="generating"
+                  (click)="choose(m.method)">
+                </p-button>
+              }
+            </div>
+          } @else {
+            <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900 max-w-md mx-auto">
+              <i class="pi pi-info-circle mr-1"></i>
+              Nenhuma forma de pagamento está configurada no momento. Entre em contato com o suporte.
+            </div>
+          }
+        }
+
+        <!-- Cobrança Pix (Itaú): QR + copia-e-cola -->
+        @if (payment?.pix) {
+          <div class="max-w-sm mx-auto text-center space-y-3">
+            <div class="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
+              <span class="text-sm text-gray-600">Valor</span>
+              <span class="text-lg font-bold text-blue-700">R$ {{ payment!.amount | number:'1.2-2' }}</span>
+            </div>
+
+            <img [src]="pixQrImageUrl" alt="QR Code Pix" class="mx-auto border rounded-lg p-2" width="220" height="220" />
+
+            <div class="text-left">
+              <label class="block text-xs text-gray-500 mb-1">Pix copia e cola</label>
+              <div class="flex gap-2">
+                <input readonly class="flex-1 border border-gray-300 rounded-md p-2 text-xs truncate"
+                  [value]="payment!.pix!.copyPaste" />
+                <p-button icon="pi pi-copy" severity="secondary" (click)="copyPixCode()"></p-button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 pt-2">
+              <i class="pi pi-spin pi-spinner"></i>
+              Aguardando confirmação do pagamento...
+            </div>
+
+            <p-button label="Escolher outra forma de pagamento" [text]="true" severity="secondary"
+              styleClass="w-full" (click)="payment = null"></p-button>
+          </div>
+        }
+
+        <!-- Cobrança com checkout hospedado (cartão) -->
+        @if (payment && !payment.pix) {
+          <div class="max-w-sm mx-auto text-center space-y-3">
+            <div class="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
+              <span class="text-sm text-gray-600">Valor</span>
+              <span class="text-lg font-bold text-blue-700">R$ {{ payment.amount | number:'1.2-2' }}</span>
+            </div>
+            <p-button label="Pagar agora" icon="pi pi-credit-card" styleClass="w-full"
+              [loading]="redirecting" (click)="payNow()">
+            </p-button>
+            <p-button label="Escolher outra forma de pagamento" [text]="true" severity="secondary"
+              styleClass="w-full" (click)="payment = null"></p-button>
+          </div>
+        }
+      </p-card>
+    }
+  </div>
+</div>

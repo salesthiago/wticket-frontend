@@ -1,0 +1,11 @@
+@if (status?.blocked) {
+  <div class="trial-banner" role="alert">
+    <i class="pi pi-exclamation-triangle"></i>
+    <span class="trial-banner-text">
+      {{ message }} Escolha uma forma de pagamento para continuar usando o sistema normalmente.
+    </span>
+    <a routerLink="/checkout" class="trial-banner-link">
+      Ver formas de pagamento <i class="pi pi-arrow-right"></i>
+    </a>
+  </div>
+}

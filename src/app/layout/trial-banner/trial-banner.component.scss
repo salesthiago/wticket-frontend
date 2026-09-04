@@ -1,0 +1,63 @@
+// Faixa "trial expirado / assinatura pendente". Fica no fluxo normal do
+// documento (não fixed) — some da tela ao rolar, o que é intencional: evita
+// ter que empilhar mais uma barra "sticky" por cima do topbar mobile e do
+// sidebar fixo (ver a regra body.has-trial-banner em styles.scss, que só
+// precisa reposicionar o sidebar fixo por causa da altura fixa abaixo).
+.trial-banner {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  background: #fef3c7;
+  border-bottom: 1px solid #fcd34d;
+  color: #78350f;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+
+  i.pi-exclamation-triangle {
+    color: #b45309;
+    flex-shrink: 0;
+  }
+}
+
+.trial-banner-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trial-banner-link {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #92400e;
+  text-decoration: underline;
+  white-space: nowrap;
+
+  &:hover {
+    color: #78350f;
+  }
+}
+
+@media (max-width: 639px) {
+  .trial-banner-text {
+    display: none;
+  }
+}
+
+:host-context(.dark) {
+  .trial-banner {
+    background: #451a03;
+    border-bottom-color: #78350f;
+    color: #fde68a;
+  }
+
+  .trial-banner-link {
+    color: #fbbf24;
+
+    &:hover {
+      color: #fcd34d;
+    }
+  }
+}

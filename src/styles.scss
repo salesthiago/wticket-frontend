@@ -57,6 +57,18 @@ body {
   }
 }
 
+// Faixa "trial expirado / assinatura pendente" (TrialBannerComponent, no
+// topo de app.component.html): ela mesma empurra o conteúdo normal da página
+// para baixo por estar no fluxo do documento, mas o sidebar (#logo-sidebar) é
+// `position: fixed` — não reage ao fluxo — por isso precisa deste ajuste
+// explícito de altura/topo enquanto a faixa estiver visível. Especificidade
+// do seletor por id já vence as utilities do Tailwind, sem precisar de
+// !important.
+body.has-trial-banner #logo-sidebar {
+  top: 44px;
+  height: calc(100vh - 44px);
+}
+
 // Conteúdo salvo pelo editor de texto rico (app-rich-text-editor) e exibido
 // via [innerHTML] — descrição de projeto/tarefa, notas e respostas de ticket.
 // white-space: pre-wrap mantém quebras de linha de registros antigos (texto
