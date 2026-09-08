@@ -78,11 +78,21 @@ export class BillingConfigComponent implements OnInit {
   ];
 
   // Rascunhos editáveis (segredos ficam vazios; vazio = manter atual)
+  pixKeyTypeOptions = [
+    { label: 'CNPJ', value: 'cnpj' },
+    { label: 'CPF', value: 'cpf' },
+    { label: 'E-mail', value: 'email' },
+    { label: 'Telefone', value: 'telefone' },
+    { label: 'Chave aleatória', value: 'aleatoria' }
+  ];
+
   itau = {
     enabled: false,
     environment: 'production' as 'sandbox' | 'production',
     clientId: '',
     beneficiaryId: '',
+    pixKey: '',
+    pixKeyType: '' as '' | 'cnpj' | 'cpf' | 'email' | 'telefone' | 'aleatoria',
     recurringEnabled: false,
     clientSecret: '',
     webhookSecret: ''
@@ -133,6 +143,8 @@ export class BillingConfigComponent implements OnInit {
       environment: s.itau.environment,
       clientId: s.itau.clientId ?? '',
       beneficiaryId: s.itau.beneficiaryId ?? '',
+      pixKey: s.itau.pixKey ?? '',
+      pixKeyType: s.itau.pixKeyType ?? '',
       recurringEnabled: s.itau.recurringEnabled,
       clientSecret: '',
       webhookSecret: ''
@@ -182,6 +194,8 @@ export class BillingConfigComponent implements OnInit {
         environment: this.itau.environment,
         clientId: this.itau.clientId.trim(),
         beneficiaryId: this.itau.beneficiaryId.trim(),
+        pixKey: this.itau.pixKey.trim(),
+        ...(this.itau.pixKeyType ? { pixKeyType: this.itau.pixKeyType } : {}),
         recurringEnabled: this.itau.recurringEnabled,
         ...(this.itau.clientSecret ? { clientSecret: this.itau.clientSecret } : {}),
         ...(this.itau.webhookSecret ? { webhookSecret: this.itau.webhookSecret } : {})

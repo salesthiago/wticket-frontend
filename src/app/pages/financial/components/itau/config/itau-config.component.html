@@ -1,0 +1,196 @@
+<app-sidebar />
+<p-toast />
+<p-confirmDialog />
+
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando...</div>
+  }
+
+  @if (!loading) {
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <div class="lg:col-span-2 space-y-4">
+      <!-- ─── Credenciais ───────────────────────────────────────────────── -->
+      <p-card>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold">Integração Itaú — Configuração</h2>
+          <p-tag
+            [value]="config.complete ? (config.isActive ? 'Ativa' : 'Configurada') : 'Incompleta'"
+            [severity]="config.complete ? (config.isActive ? 'success' : 'warn') : 'secondary'" />
+        </div>
+
+        <p-message severity="info" styleClass="mb-4 w-full"
+          text="As credenciais e o certificado mTLS são fornecidos pelo Portal de Desenvolvedores do Itaú para a conta desta empresa." />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm mb-1">Ambiente *</label>
+            <p-select [options]="optionEnvironment" [(ngModel)]="config.environment"
+              optionLabel="label" optionValue="value" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Client ID *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.clientId" placeholder="client_id do app Itaú" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">
+              Client Secret {{ config.clientSecretConfigured ? '(configurado)' : '*' }}
+            </label>
+            <p-password [(ngModel)]="config.clientSecret" [feedback]="false" [toggleMask]="true"
+              styleClass="w-full" inputStyleClass="w-full"
+              [placeholder]="config.clientSecretConfigured ? '•••••••• (deixe em branco para manter)' : 'client_secret'" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">
+              Webhook Secret {{ config.webhookSecretConfigured ? '(configurado)' : '(opcional)' }}
+            </label>
+            <p-password [(ngModel)]="config.webhookSecret" [feedback]="false" [toggleMask]="true"
+              styleClass="w-full" inputStyleClass="w-full"
+              placeholder="Assinatura HMAC do webhook" />
+          </div>
+        </div>
+      </p-card>
+
+      <!-- ─── Certificado mTLS ──────────────────────────────────────────── -->
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Certificado mTLS</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border rounded p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium">Certificado (.crt / .pem)</span>
+              <p-tag [value]="config.certificate.configured ? 'Enviado' : 'Pendente'"
+                [severity]="config.certificate.configured ? 'success' : 'secondary'" />
+            </div>
+            @if (config.certificate.configured) {
+              <p class="text-xs text-gray-500">{{ config.certificate.subjectCN }}</p>
+              <p class="text-xs text-gray-500">Validade: {{ config.certificate.notAfter | date:'dd/MM/yyyy' }}</p>
+              <button pButton type="button" label="Remover" severity="danger" text size="small"
+                class="mt-2" (click)="removeCert()"></button>
+            } @else {
+              <input type="file" accept=".crt,.pem,.cer" (change)="onCertSelected($event)" [disabled]="uploadingCert" />
+            }
+          </div>
+          <div class="border rounded p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-medium">Chave privada (.key)</span>
+              <p-tag [value]="config.privateKey.configured ? 'Enviada' : 'Pendente'"
+                [severity]="config.privateKey.configured ? 'success' : 'secondary'" />
+            </div>
+            @if (config.privateKey.configured) {
+              <p class="text-xs text-gray-500">{{ config.privateKey.filename }}</p>
+              <button pButton type="button" label="Remover" severity="danger" text size="small"
+                class="mt-2" (click)="removeKey()"></button>
+            } @else {
+              <input type="file" accept=".key,.pem" (change)="onKeySelected($event)" [disabled]="uploadingKey" />
+            }
+          </div>
+        </div>
+      </p-card>
+
+      <!-- ─── Dados bancários / PIX ─────────────────────────────────────── -->
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Conta de Cobrança</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm mb-1">Agência *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.agencia" maxlength="4" placeholder="0000" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Conta *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.conta" maxlength="7" placeholder="0000000" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Dígito *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.contaDAC" maxlength="1" placeholder="0" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Carteira *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.carteira" placeholder="109" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-1">Chave PIX *</label>
+            <input pInputText class="w-full" [(ngModel)]="config.pixKey" placeholder="Chave DICT registrada na conta" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-1">Tipo da chave PIX</label>
+            <p-select [options]="optionPixKeyType" [(ngModel)]="config.pixKeyType"
+              optionLabel="label" optionValue="value" placeholder="Selecione" styleClass="w-full" [showClear]="true" />
+          </div>
+          <div class="md:col-span-4">
+            <label class="block text-sm mb-1">Mensagem no PIX (opcional)</label>
+            <input pInputText class="w-full" [(ngModel)]="config.mensagemPix" placeholder="Ex.: Pagamento referente à fatura" />
+          </div>
+        </div>
+
+        @if (config.beneficiaryId) {
+          <p class="text-xs text-gray-500 mt-2">id_beneficiário calculado: <code>{{ config.beneficiaryId }}</code></p>
+        }
+      </p-card>
+
+      <!-- ─── Beneficiário / instruções ─────────────────────────────────── -->
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Beneficiário e Instruções do Boleto</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm mb-1">Nome / Razão Social</label>
+            <input pInputText class="w-full" [(ngModel)]="config.nomeCobranca" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">CNPJ</label>
+            <input pInputText class="w-full" [(ngModel)]="config.documento" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Juros (% ao mês)</label>
+            <p-inputNumber [(ngModel)]="config.jurosPercent" mode="decimal" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Multa (%)</label>
+            <p-inputNumber [(ngModel)]="config.multaPercent" mode="decimal" [minFractionDigits]="0" [maxFractionDigits]="2" styleClass="w-full" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Dias p/ baixa automática</label>
+            <p-inputNumber [(ngModel)]="config.diasBaixaAutomatica" [useGrouping]="false" styleClass="w-full" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-1">Instruções impressas no boleto</label>
+            <input pInputText class="w-full" [(ngModel)]="config.instrucoes" placeholder="Ex.: Não receber após 60 dias do vencimento" />
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- ─── Coluna lateral: ativação + teste ────────────────────────────── -->
+    <div class="space-y-4">
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Ativação</h3>
+        <div class="flex items-center gap-3 mb-2">
+          <p-toggleSwitch [(ngModel)]="config.isActive" inputId="itauActive" />
+          <label for="itauActive" class="text-sm">Integração ativa</label>
+        </div>
+        <p class="text-xs text-gray-500">
+          Só com a integração <strong>ativa</strong> e a configuração completa o botão
+          <em>Imprimir Fatura / Gerar Boleto Itaú</em> aparece em Contas a Receber.
+        </p>
+        <p-divider />
+        <button pButton type="button" class="w-full" label="Salvar configuração"
+          icon="pi pi-save" [loading]="saving" (click)="save()"></button>
+      </p-card>
+
+      <p-card>
+        <h3 class="text-lg font-semibold mb-3">Teste de Conexão</h3>
+        <p class="text-xs text-gray-500 mb-3">Autentica no Itaú (OAuth2 + mTLS) usando as credenciais salvas.</p>
+        <button pButton type="button" class="w-full" label="Testar conexão"
+          icon="pi pi-bolt" severity="secondary" [loading]="testing" (click)="testConnection()"></button>
+        @if (config.testedAt) {
+          <p class="text-xs mt-3" [class.text-green-600]="config.testOk" [class.text-red-600]="!config.testOk">
+            Último teste: {{ config.testedAt | date:'dd/MM/yyyy HH:mm' }} — {{ config.testOk ? 'sucesso' : 'falha' }}
+          </p>
+        }
+      </p-card>
+    </div>
+  </div>
+  }
+</div>

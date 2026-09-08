@@ -203,7 +203,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
           items: [
             { label: 'Dashboard', routerLink: '/financial/dashboard' },
             { label: 'Contas a Receber', routerLink: '/financial/receivables' },
-            { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' }
+            { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' },
+            {
+              id: 'itau-group',
+              label: 'Integração Itaú',
+              icon: 'pi pi-building-columns',
+              items: [
+                { label: 'Configuração', routerLink: '/financial/itau/config' },
+                { label: 'Histórico de Integração', routerLink: '/financial/itau/history' }
+              ]
+            }
           ]
         }
       ]
@@ -236,6 +245,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.user = this.authService.getUser();
 
     this.menuItems = this.filterMenuByAccess(this.allItems);
+    this.pruneModuleSubItems();
 
     this.themeSubscription = this.themeService.isDarkTheme$.subscribe(isDark => {
       this.isDarkMode = isDark;
@@ -282,6 +292,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
         if (!this.authService.hasAnyModule(...item.modules)) return false;
       }
       return true;
+    });
+  }
+
+  /** Remove sub-itens de painel que dependem de um módulo que a empresa não tem. */
+  private pruneModuleSubItems(): void {
+    const gated: Record<string, ModuleCode> = { 'itau-group': 'itau_integration' };
+    this.menuItems.forEach(item => {
+      item.panelModel?.forEach(panel => {
+        if (!panel.items) return;
+        panel.items = panel.items.filter((sub: MenuItem) => {
+          const code = gated[sub['id'] as string];
+          return !code || this.authService.hasModule(code);
+        });
+      });
     });
   }
 

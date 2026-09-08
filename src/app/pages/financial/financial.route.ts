@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { moduleGuard } from '../../guards/module-guard';
 
 // Os componentes reais serão criados nas próximas fases (C, D).
 // Por enquanto todas as rotas apontam para o placeholder.
@@ -30,5 +31,17 @@ export const routes: Routes = [
   {
     path: 'receivables/view/:id',
     loadComponent: () => import('./components/receivables/view.component').then(m => m.ReceivableViewComponent)
+  },
+
+  // Integração Itaú (módulo itau_integration)
+  {
+    path: 'itau/config',
+    canActivate: [moduleGuard('itau_integration')],
+    loadComponent: () => import('./components/itau/config/itau-config.component').then(m => m.ItauConfigComponent)
+  },
+  {
+    path: 'itau/history',
+    canActivate: [moduleGuard('itau_integration')],
+    loadComponent: () => import('./components/itau/history/itau-history.component').then(m => m.ItauHistoryComponent)
   }
 ];

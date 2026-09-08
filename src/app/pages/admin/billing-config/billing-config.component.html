@@ -53,15 +53,15 @@
     <p-card>
       <div class="flex items-center gap-2 mb-1">
         <h2 class="text-xl font-semibold">Itaú — PIX</h2>
-        @if (settings.itau.clientSecretConfigured && settings.itau.certificate.configured && settings.itau.privateKey.configured) {
+        @if (settings.itau.clientSecretConfigured && settings.itau.certificate.configured && settings.itau.privateKey.configured && settings.itau.pixKey) {
           <p-tag severity="success" value="Configurado" />
         } @else {
           <p-tag severity="warn" value="Incompleto" />
         }
       </div>
       <p class="text-sm text-gray-500 mb-4">
-        Credenciais do <strong>Itaú Boletos v3</strong> (Pix Cobrança). Os segredos
-        são gravados cifrados; deixe em branco para manter o valor atual.
+        Credenciais da <strong>API PIX Recebimentos</strong> do Itaú (cobrança imediata).
+        Os segredos são gravados cifrados; deixe em branco para manter o valor atual.
       </p>
 
       <div class="flex items-center gap-2 mb-4">
@@ -109,6 +109,20 @@
           </label>
           <input pInputText class="w-full font-mono" [(ngModel)]="itau.beneficiaryId"
             placeholder="150000154711" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Chave PIX (DICT) <span class="text-xs text-red-500">*</span>
+            <span class="text-xs text-gray-500 ml-1">— chave da conta que recebe a assinatura</span>
+          </label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="itau.pixKey"
+            placeholder="00.000.000/0001-00 ou chave aleatória" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Tipo da chave PIX</label>
+          <p-select [options]="pixKeyTypeOptions" [(ngModel)]="itau.pixKeyType"
+            optionLabel="label" optionValue="value" placeholder="Selecione"
+            [showClear]="true" class="w-full" appendTo="body" />
         </div>
         <div class="flex items-center gap-2">
           <p-toggleSwitch [(ngModel)]="itau.recurringEnabled" inputId="itauRecurring" />

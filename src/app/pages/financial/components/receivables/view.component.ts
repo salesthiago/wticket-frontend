@@ -20,6 +20,8 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MessageModule } from 'primeng/message';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { FinancialService } from '../services/financial.service';
+import { ItauService } from '../services/itau.service';
+import { AuthService } from '../../../../services/auth.service';
 import {
   Receivable,
   ReceivableStatus,
@@ -29,6 +31,12 @@ import {
   PaymentMethodLabels,
   PaymentMethodIcons
 } from '../../financial.interface';
+import {
+  ItauBoleto,
+  ItauBoletoStatus,
+  ItauBoletoStatusLabels,
+  ItauBoletoStatusColors
+} from '../../itau.interface';
 
 @Component({
   selector: 'app-receivable-view',
@@ -91,13 +99,25 @@ export class ReceivableViewComponent implements OnInit {
   optionMethods: { label: string; value: PaymentMethod }[] = (Object.keys(PaymentMethodLabels) as PaymentMethod[])
     .map(k => ({ label: PaymentMethodLabels[k], value: k }));
 
+  // ─── Integração Itaú ───────────────────────────────────────────────────
+  itauEnabled = false;      // empresa tem o módulo itau_integration
+  itauActive = false;       // integração configurada + ativa
+  itauBoleto: ItauBoleto | null = null;
+  itauLoading = false;
+  itauGenerating = false;
+  itauPrinting = false;
+
   constructor(
     private financial: FinancialService,
+    private itau: ItauService,
+    private auth: AuthService,
     private route: ActivatedRoute,
     private router: Router,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
-  ) {}
+  ) {
+    this.itauEnabled = this.auth.hasModule('itau_integration');
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -108,7 +128,11 @@ export class ReceivableViewComponent implements OnInit {
   private load(id: string) {
     this.loading = true;
     this.financial.getReceivable(id).subscribe({
-      next: (r) => { this.item = r; this.loading = false; },
+      next: (r) => {
+        this.item = r;
+        this.loading = false;
+        this.loadItau(id);
+      },
       error: (err) => {
         this.loading = false;
         this.messageService.add({
@@ -118,6 +142,89 @@ export class ReceivableViewComponent implements OnInit {
       }
     });
   }
+
+  private loadItau(id: string) {
+    if (!this.itauEnabled) return;
+    this.itauLoading = true;
+    this.itau.getStatus().subscribe({
+      next: (st) => {
+        this.itauActive = !!st?.active;
+        if (!this.itauActive) { this.itauLoading = false; return; }
+        this.itau.getBoletoForReceivable(id).subscribe({
+          next: (b) => { this.itauBoleto = b; this.itauLoading = false; },
+          error: () => { this.itauBoleto = null; this.itauLoading = false; }
+        });
+      },
+      error: () => { this.itauActive = false; this.itauLoading = false; }
+    });
+  }
+
+  // Mostra o bloco Itaú só com integração ativa.
+  showItauSection(): boolean { return this.itauEnabled && this.itauActive; }
+
+  canGenerateBoleto(): boolean {
+    return this.showItauSection()
+      && !this.itauBoleto
+      && !!this.item
+      && (this.item.status === 'pending' || this.item.status === 'overdue');
+  }
+
+  generateBoleto() {
+    if (!this.item?._id) return;
+    this.itauGenerating = true;
+    this.itau.generateBoleto(this.item._id).subscribe({
+      next: (b) => {
+        this.itauGenerating = false;
+        this.itauBoleto = b;
+        this.messageService.add({ severity: 'success', summary: 'Boleto gerado', detail: 'Boleto Itaú registrado com sucesso.' });
+        if (this.item?._id) this.financial.getReceivable(this.item._id).subscribe(r => this.item = r);
+      },
+      error: (err) => {
+        this.itauGenerating = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha ao gerar boleto no Itaú' });
+      }
+    });
+  }
+
+  printFatura() {
+    if (!this.item?._id) return;
+    this.itauPrinting = true;
+    this.itau.downloadFaturaPdf(this.item._id).subscribe({
+      next: (blob) => {
+        this.itauPrinting = false;
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => {
+        this.itauPrinting = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao gerar o PDF da fatura' });
+      }
+    });
+  }
+
+  copyPix() {
+    const emv = this.itauBoleto?.pix?.emv;
+    if (!emv) return;
+    navigator.clipboard?.writeText(emv).then(() => {
+      this.messageService.add({ severity: 'success', summary: 'Copiado', detail: 'Código PIX copia-e-cola copiado.' });
+    });
+  }
+
+  refreshBoleto() {
+    if (!this.itauBoleto?._id) return;
+    this.itau.refreshBoletoStatus(this.itauBoleto._id).subscribe({
+      next: (b) => {
+        this.itauBoleto = b;
+        this.messageService.add({ severity: 'info', summary: 'Status atualizado', detail: this.itauBoletoStatusLabel(b.status) });
+        if (this.item?._id) this.financial.getReceivable(this.item._id).subscribe(r => this.item = r);
+      },
+      error: (err) => this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha ao consultar o Itaú' })
+    });
+  }
+
+  itauBoletoStatusLabel(s?: ItauBoletoStatus): string { return s ? (ItauBoletoStatusLabels[s] || s) : ''; }
+  itauBoletoStatusColor(s?: ItauBoletoStatus): string { return s ? (ItauBoletoStatusColors[s] || 'secondary') : 'secondary'; }
 
   back() { this.router.navigate(['/financial/receivables']); }
   edit() { if (this.item?._id) this.router.navigate(['/financial/receivables/edit', this.item._id]); }

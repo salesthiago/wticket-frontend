@@ -33,6 +33,8 @@ export interface BillingSettings {
     environment: 'sandbox' | 'production';
     clientId: string | null;
     beneficiaryId: string | null;
+    pixKey: string | null;
+    pixKeyType: 'cnpj' | 'cpf' | 'email' | 'telefone' | 'aleatoria' | null;
     recurringEnabled: boolean;
     clientSecretConfigured: boolean;
     webhookSecretConfigured: boolean;
@@ -58,6 +60,8 @@ export interface UpdateBillingSettings {
     environment?: 'sandbox' | 'production';
     clientId?: string;
     beneficiaryId?: string;
+    pixKey?: string;
+    pixKeyType?: 'cnpj' | 'cpf' | 'email' | 'telefone' | 'aleatoria';
     recurringEnabled?: boolean;
     clientSecret?: string;
     webhookSecret?: string;

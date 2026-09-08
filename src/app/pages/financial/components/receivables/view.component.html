@@ -126,6 +126,66 @@
     </p-card>
   </div>
 
+  <!-- ─── Integração Itaú: Boleto + PIX ──────────────────────────────── -->
+  @if (showItauSection()) {
+    <p-card header="Boleto Itaú (Fatura)" class="mt-4 block">
+      @if (itauLoading) {
+        <div class="text-gray-400 text-sm py-2">Carregando integração…</div>
+      } @else if (!itauBoleto) {
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <p class="text-sm text-gray-500">
+            Gere um boleto registrado no Itaú (com QR Code PIX) para este título e imprima a fatura para o cliente.
+          </p>
+          <p-button label="Gerar Boleto Itaú" icon="pi pi-building-columns"
+            [loading]="itauGenerating" [disabled]="!canGenerateBoleto()" (onClick)="generateBoleto()" />
+        </div>
+        @if (!canGenerateBoleto() && (item.status === 'paid' || item.status === 'cancelled')) {
+          <small class="text-gray-400">Disponível apenas para títulos aguardando pagamento ou em atraso.</small>
+        }
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <small class="text-gray-500 block">Status do Boleto</small>
+            <p-tag [value]="itauBoletoStatusLabel(itauBoleto.status)" [severity]="itauBoletoStatusColor(itauBoleto.status)" />
+          </div>
+          <div>
+            <small class="text-gray-500 block">Nosso Número</small>
+            <span class="font-mono">{{ itauBoleto.nossoNumero || '—' }}</span>
+          </div>
+          <div class="md:col-span-2">
+            <small class="text-gray-500 block">Linha Digitável</small>
+            <span class="font-mono break-all">{{ itauBoleto.linhaDigitavel || '—' }}</span>
+          </div>
+          @if (itauBoleto.pix?.emv) {
+            <div class="md:col-span-2">
+              <small class="text-gray-500 block">PIX copia-e-cola</small>
+              <div class="flex items-start gap-2">
+                <span class="font-mono text-xs break-all flex-1">{{ itauBoleto.pix?.emv }}</span>
+                <p-button icon="pi pi-copy" size="small" [text]="true" pTooltip="Copiar" (onClick)="copyPix()" />
+              </div>
+            </div>
+            @if (itauBoleto.pix?.qrCodeImage) {
+              <div class="md:col-span-2">
+                <img [src]="itauBoleto.pix?.qrCodeImage" alt="QR Code PIX" style="width:160px;height:160px" />
+              </div>
+            }
+          }
+          @if (itauBoleto.status === 'erro' && itauBoleto.errorMessage) {
+            <div class="md:col-span-2 text-red-600">{{ itauBoleto.errorMessage }}</div>
+          }
+        </div>
+
+        <p-divider />
+        <div class="flex gap-2 flex-wrap">
+          <p-button label="Imprimir Fatura" icon="pi pi-print"
+            [loading]="itauPrinting" (onClick)="printFatura()" />
+          <p-button label="Atualizar Status" icon="pi pi-sync" severity="secondary" [outlined]="true"
+            (onClick)="refreshBoleto()" />
+        </div>
+      }
+    </p-card>
+  }
+
   <!-- ─── Histórico ──────────────────────────────────────────────────── -->
   @if (item.statusHistory && item.statusHistory.length > 0) {
     <p-card header="Histórico de Status" class="mt-4 block">

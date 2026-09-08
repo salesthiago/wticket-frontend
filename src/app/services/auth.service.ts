@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { environment } from '../../environments/enviroment';
 
 export type UserRole = 'super_admin' | 'company_admin' | 'administrator' | 'finance' | 'default';
-export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance' | 'nfse' | 'financial';
+export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance' | 'nfse' | 'financial' | 'itau_integration';
 
 export interface AuthUser {
   id: string;
