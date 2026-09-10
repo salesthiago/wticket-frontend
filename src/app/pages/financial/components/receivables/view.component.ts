@@ -228,6 +228,9 @@ export class ReceivableViewComponent implements OnInit {
 
   back() { this.router.navigate(['/financial/receivables']); }
   edit() { if (this.item?._id) this.router.navigate(['/financial/receivables/edit', this.item._id]); }
+  printInvoice() {
+    if (this.item?._id) window.open(`/financial/receivables/print/${this.item._id}`, '_blank');
+  }
 
   // ─── Helpers de status ──────────────────────────────────────────────────
   statusLabel(s?: ReceivableStatus): string { return s ? (ReceivableStatusLabels[s] || s) : ''; }

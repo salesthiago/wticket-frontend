@@ -334,6 +334,22 @@
       O título será gerado com a descrição <strong>{{ project?.projectNumber }}</strong> (número do projeto).
     </p>
 
+    <!-- Memória de cálculo: horas trabalhadas x valor/hora do projeto -->
+    <div class="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+      <div class="font-medium mb-1">Valor calculado</div>
+      <div class="flex items-center justify-between">
+        <span class="text-gray-600">
+          {{ invoiceWorkedHours() | number:'1.2-2' }} h × R$ {{ invoiceHourlyRate() | number:'1.2-2' }}/h
+        </span>
+        <span class="font-mono font-semibold text-base">R$ {{ invoiceAmountPreview() | number:'1.2-2' }}</span>
+      </div>
+      @if (invoiceHourlyRate() === 0) {
+        <small class="text-amber-600 block mt-1">
+          Defina o valor/hora na edição do projeto para calcular automaticamente.
+        </small>
+      }
+    </div>
+
     <div class="field">
       <label class="block mb-1 text-sm">Vencimento <span class="text-red-500">*</span></label>
       <p-datepicker [(ngModel)]="invoiceDraft.dueDate"
@@ -345,6 +361,13 @@
       <p-select [options]="optionPaymentMethods"
         [(ngModel)]="invoiceDraft.paymentMethod"
         optionLabel="label" optionValue="value" appendTo="body" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Descrição da Fatura</label>
+      <textarea pTextarea [(ngModel)]="invoiceDraft.invoiceDescription" rows="5" class="w-full"
+        placeholder="Texto detalhado exibido na fatura impressa"></textarea>
+      <small class="text-gray-500">Preenchido automaticamente com a descrição do projeto. Pode ser editado.</small>
     </div>
 
     <div class="field">

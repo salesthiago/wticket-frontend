@@ -1,0 +1,101 @@
+<p-toast />
+<app-sidebar />
+
+<div class="p-4 sm:ml-64 pt-4 space-y-6">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-2 block" />
+
+  @if (loading) {
+    <div class="text-center text-gray-400 py-10">Carregando…</div>
+  }
+
+  @if (!loading && company) {
+    <!-- ─── Dados de recebimento ─────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xl font-semibold">Dados de recebimento</h2>
+      </div>
+      <p class="text-xs text-gray-500 mb-4">
+        Conta bancária e chave PIX exibidas na fatura impressa e usadas como referência de cobrança.
+      </p>
+
+      <h3 class="font-medium mb-3">Conta bancária</h3>
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="md:col-span-3">
+          <label class="block text-sm mb-1">Banco</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.bankName" placeholder="Ex.: Banco Itaú" />
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-sm mb-1">Agência</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.bankBranch" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Conta (com dígito)</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.bankAccount" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Tipo de conta</label>
+          <p-select [options]="accountTypeOptions" [(ngModel)]="receiving.accountType"
+            optionLabel="label" optionValue="value" [showClear]="true" placeholder="—" styleClass="w-full" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Titular</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.holderName" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">CPF/CNPJ do titular</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.holderDocument" />
+        </div>
+      </div>
+
+      <h3 class="font-medium mt-6 mb-3">PIX</h3>
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Tipo de chave</label>
+          <p-select [options]="pixKeyTypeOptions" [(ngModel)]="receiving.pixKeyType"
+            optionLabel="label" optionValue="value" [showClear]="true" placeholder="—" styleClass="w-full" />
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-sm mb-1">Chave PIX</label>
+          <input pInputText class="w-full" [(ngModel)]="receiving.pixKey" />
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-sm mb-1">Instruções de pagamento</label>
+        <textarea pTextarea [(ngModel)]="receiving.instructions" rows="3" class="w-full"
+          placeholder="Texto livre exibido na fatura (ex.: enviar comprovante para financeiro@empresa.com)"></textarea>
+      </div>
+
+      <div class="mt-4 text-right">
+        <p-button label="Salvar" icon="pi pi-save" [loading]="saving" (click)="save()" />
+      </div>
+    </p-card>
+
+    <!-- ─── Integração Itaú ──────────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-xl font-semibold">Integração Itaú — Boletos</h2>
+        <p-tag [value]="itauEnabled ? 'Módulo ativo' : 'Módulo inativo'"
+          [severity]="itauEnabled ? 'success' : 'secondary'" />
+      </div>
+      <p class="text-xs text-gray-500 mb-4">
+        Emissão de boletos registrados no Itaú (com QR Code PIX) vinculados aos títulos de Contas a Receber.
+      </p>
+
+      @if (itauEnabled) {
+        <div class="flex gap-2 flex-wrap">
+          <p-button label="Configurar Integração Itaú" icon="pi pi-building-columns"
+            routerLink="/financial/itau/config" />
+          <p-button label="Histórico de Integração" icon="pi pi-history" severity="secondary" [outlined]="true"
+            routerLink="/financial/itau/history" />
+          <p-button label="Ver Cobranças" icon="pi pi-barcode" severity="secondary" [text]="true"
+            routerLink="/financial/charges" />
+        </div>
+      } @else {
+        <p class="text-sm text-gray-500">
+          O módulo <strong>Integração Itaú</strong> não está ativo para esta empresa. Entre em contato para contratá-lo.
+        </p>
+      }
+    </p-card>
+  }
+</div>

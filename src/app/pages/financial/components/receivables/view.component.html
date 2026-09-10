@@ -40,6 +40,8 @@
         <p-button label="Editar" icon="pi pi-pencil" severity="secondary"
           (onClick)="edit()" />
       }
+      <p-button label="Imprimir Fatura" icon="pi pi-print" severity="secondary" [outlined]="true"
+        (onClick)="printInvoice()" />
       <p-button label="Voltar" icon="pi pi-arrow-left" [text]="true" (onClick)="back()" />
     </div>
   </p-card>
@@ -77,6 +79,20 @@
         </div>
       </div>
 
+      @if (item.invoiceDescription) {
+        <p-divider />
+        <small class="text-gray-500 block mb-1">Descrição da Fatura</small>
+        <p class="whitespace-pre-wrap text-sm">{{ item.invoiceDescription }}</p>
+      }
+      @if (item.billingBreakdown && (item.billingBreakdown.workedHours != null || item.billingBreakdown.hourlyRate != null)) {
+        <p-divider />
+        <small class="text-gray-500 block mb-1">Cálculo</small>
+        <p class="text-sm font-mono">
+          {{ (item.billingBreakdown.workedHours || 0) | number:'1.2-2' }} h ×
+          R$ {{ (item.billingBreakdown.hourlyRate || 0) | number:'1.2-2' }}/h =
+          R$ {{ ((item.billingBreakdown.workedHours || 0) * (item.billingBreakdown.hourlyRate || 0)) | number:'1.2-2' }}
+        </p>
+      }
       @if (item.notes) {
         <p-divider />
         <small class="text-gray-500 block mb-1">Observações</small>

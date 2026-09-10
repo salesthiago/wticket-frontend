@@ -204,6 +204,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
             { label: 'Dashboard', routerLink: '/financial/dashboard' },
             { label: 'Contas a Receber', routerLink: '/financial/receivables' },
             { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' },
+            { label: 'Cobrança', routerLink: '/financial/charges' },
+            { label: 'Configurações', routerLink: '/financial/settings' },
             {
               id: 'itau-group',
               label: 'Integração Itaú',

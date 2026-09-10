@@ -57,11 +57,20 @@ export interface ReceivableStatusHistoryItem {
   changedAt?: string;
 }
 
+export interface ReceivableBillingBreakdown {
+  workedHours?: number | null;
+  hourlyRate?: number | null;
+}
+
 export interface Receivable {
   _id?: string;
   companyId?: string;
   number?: string;
   description: string;
+  /** Texto detalhado exibido na fatura impressa (texto simples). */
+  invoiceDescription?: string;
+  /** Memória de cálculo quando faturado a partir de um projeto. */
+  billingBreakdown?: ReceivableBillingBreakdown | null;
   amount: number;
   dueDate: string | Date;
   paymentDate?: string | Date | null;
@@ -90,6 +99,7 @@ export interface Receivable {
 
 export interface ReceivableCreateInput {
   description: string;
+  invoiceDescription?: string;
   amount: number;
   dueDate: string | Date;
   paymentMethod: PaymentMethod;
@@ -101,6 +111,7 @@ export interface ReceivableCreateInput {
 
 export interface ReceivableUpdateInput {
   description?: string;
+  invoiceDescription?: string;
   amount?: number;
   dueDate?: string | Date;
   paymentMethod?: PaymentMethod;
@@ -116,6 +127,7 @@ export interface ReceivablePaymentInput {
 
 export interface ReceivableInvoiceFromOSInput {
   description?: string;
+  invoiceDescription?: string;
   amount?: number;
   dueDate?: string | Date;
   paymentMethod: PaymentMethod;
@@ -125,6 +137,7 @@ export interface ReceivableInvoiceFromOSInput {
 
 export interface ReceivableInvoiceFromProjectInput {
   amount?: number;
+  invoiceDescription?: string;
   dueDate: string | Date;
   paymentMethod: PaymentMethod;
   customerId?: string;

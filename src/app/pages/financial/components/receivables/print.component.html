@@ -1,0 +1,194 @@
+<div class="inv-wrap">
+  <div class="toolbar no-print">
+    <p-button label="Imprimir" icon="pi pi-print" (onClick)="print()" />
+    <p-button label="Voltar" icon="pi pi-arrow-left" severity="secondary" [text]="true" (onClick)="back()" />
+  </div>
+
+  @if (loading) {
+    <div class="inv-msg">Carregando fatura…</div>
+  } @else if (error) {
+    <div class="inv-msg inv-msg--err">{{ error }}</div>
+  } @else if (item) {
+    <article class="inv-doc">
+
+      <!-- ─── Cabeçalho ─────────────────────────────────────────────────── -->
+      <header class="inv-head">
+        <div class="inv-head__brand">
+          @if (company?.logo?.url) {
+            <img class="inv-head__logo" [src]="company!.logo!.url" alt="Logomarca" />
+          }
+          <div class="inv-head__company">
+            <div class="inv-head__name">{{ company?.name || '—' }}</div>
+            @if (companyDocLabel()) {
+              <div class="inv-head__sub">{{ companyDocLabel() }}</div>
+            }
+          </div>
+        </div>
+
+        <div class="inv-head__meta">
+          <div class="inv-head__title">FATURA</div>
+          <table class="inv-head__grid">
+            <tr>
+              <td>Número</td>
+              <td class="mono">{{ item.number || '—' }}</td>
+            </tr>
+            <tr>
+              <td>Data da fatura</td>
+              <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+            </tr>
+            <tr>
+              <td>Situação</td>
+              <td>{{ statusLabel(item.status) }}</td>
+            </tr>
+          </table>
+        </div>
+      </header>
+
+      <!-- ─── Quadro de valor / vencimento ─────────────────────────────── -->
+      <div class="inv-duebox">
+        <span>VALOR TOTAL — VENCIMENTO EM {{ item.dueDate | date:'dd/MM/yyyy' }}</span>
+        <strong>R$ {{ item.amount | number:'1.2-2' }}</strong>
+      </div>
+
+      <!-- ─── Partes ───────────────────────────────────────────────────── -->
+      <div class="inv-parties">
+        <section class="inv-party">
+          <h4>Emitente</h4>
+          <div class="inv-party__name">{{ company?.name || '—' }}</div>
+          @if (companyDocLabel()) { <div>{{ companyDocLabel() }}</div> }
+          @if (companyAddressLine()) { <div>{{ companyAddressLine() }}</div> }
+          @if (company?.phone) { <div>Tel.: {{ company?.phone }}</div> }
+          @if (company?.email) { <div>{{ company?.email }}</div> }
+        </section>
+
+        <section class="inv-party">
+          <h4>Cliente</h4>
+          @if (customerName()) {
+            <div class="inv-party__name">{{ customerName() }}</div>
+            @if (customerDoc()) { <div>{{ customerDoc() }}</div> }
+            @if (customerContact()) { <div>{{ customerContact() }}</div> }
+          } @else {
+            <div class="inv-party__muted">Sem cliente vinculado</div>
+          }
+        </section>
+      </div>
+
+      <!-- ─── Resumo ───────────────────────────────────────────────────── -->
+      <section class="inv-section">
+        <h3>Resumo</h3>
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Origem</th>
+              <th>Forma de pagamento</th>
+              <th class="right">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ item.description }}</td>
+              <td>{{ sourceLabel() }}</td>
+              <td>{{ methodLabel(item.paymentMethod) }}</td>
+              <td class="right mono">R$ {{ item.amount | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ─── Detalhamento (horas x valor/hora) ────────────────────────── -->
+      @if (hasBreakdown()) {
+        <section class="inv-section">
+          <h3>Detalhamento</h3>
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Horas trabalhadas</th>
+                <th class="right">Valor/hora</th>
+                <th class="right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ (breakdown?.workedHours || 0) | number:'1.2-2' }} h</td>
+                <td class="right mono">R$ {{ (breakdown?.hourlyRate || 0) | number:'1.2-2' }}</td>
+                <td class="right mono">R$ {{ breakdownSubtotal() | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="inv-formula">
+            {{ (breakdown?.workedHours || 0) | number:'1.2-2' }} h ×
+            R$ {{ (breakdown?.hourlyRate || 0) | number:'1.2-2' }}/h =
+            <strong>R$ {{ breakdownSubtotal() | number:'1.2-2' }}</strong>
+          </p>
+        </section>
+      }
+
+      <!-- ─── Descrição da fatura ──────────────────────────────────────── -->
+      @if (item.invoiceDescription) {
+        <section class="inv-section">
+          <h3>Descrição da fatura</h3>
+          <pre class="inv-desc">{{ item.invoiceDescription }}</pre>
+        </section>
+      }
+
+      <!-- ─── Total ────────────────────────────────────────────────────── -->
+      <div class="inv-total">
+        <span>TOTAL</span>
+        <strong>R$ {{ item.amount | number:'1.2-2' }}</strong>
+      </div>
+
+      <!-- ─── Formas de pagamento ──────────────────────────────────────── -->
+      @if (hasReceiving()) {
+        <section class="inv-section">
+          <h3>Formas de pagamento</h3>
+          <div class="inv-pay">
+            @if (receiving?.pixKey) {
+              <div class="inv-pay__row">
+                <span class="inv-pay__label">PIX{{ pixKeyTypeLabel() ? ' (' + pixKeyTypeLabel() + ')' : '' }}</span>
+                <span class="mono">{{ receiving?.pixKey }}</span>
+              </div>
+            }
+            @if (bankLine()) {
+              <div class="inv-pay__row">
+                <span class="inv-pay__label">Depósito / TED</span>
+                <span>{{ bankLine() }}</span>
+              </div>
+            }
+            @if (receiving?.holderName) {
+              <div class="inv-pay__row">
+                <span class="inv-pay__label">Titular</span>
+                <span>{{ receiving?.holderName }}{{ receiving?.holderDocument ? ' — ' + receiving?.holderDocument : '' }}</span>
+              </div>
+            }
+            @if (receiving?.instructions) {
+              <p class="inv-pay__note">{{ receiving?.instructions }}</p>
+            }
+          </div>
+        </section>
+      }
+
+      @if (item.notes) {
+        <p class="inv-note">{{ item.notes }}</p>
+      }
+
+      <!-- ─── Rodapé ───────────────────────────────────────────────────── -->
+      <footer class="inv-foot">
+        <div class="inv-foot__company">
+          <div class="inv-foot__name">{{ company?.name || '—' }}</div>
+          @if (companyDocLabel()) { <div>{{ companyDocLabel() }}</div> }
+          @if (companyAddressLine()) { <div>{{ companyAddressLine() }}</div> }
+          <div>
+            @if (company?.phone) { <span>{{ company?.phone }}</span> }
+            @if (company?.phone && company?.email) { <span> • </span> }
+            @if (company?.email) { <span>{{ company?.email }}</span> }
+          </div>
+        </div>
+        <div class="inv-foot__brand">
+          <img [src]="wticketLogo" alt="wticket" />
+          <span>Documento gerado pelo wticket</span>
+        </div>
+      </footer>
+    </article>
+  }
+</div>

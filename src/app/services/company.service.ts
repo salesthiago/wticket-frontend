@@ -18,6 +18,28 @@ export interface CompanyAddress {
   country?: string;
 }
 
+export type PixKeyType = 'cnpj' | 'cpf' | 'email' | 'telefone' | 'aleatoria' | '';
+export type BankAccountType = 'corrente' | 'poupanca' | '';
+
+export interface CompanyReceivingInfo {
+  bankName?: string;
+  bankBranch?: string;
+  bankAccount?: string;
+  accountType?: BankAccountType;
+  holderName?: string;
+  holderDocument?: string;
+  pixKey?: string;
+  pixKeyType?: PixKeyType;
+  instructions?: string;
+}
+
+export interface CompanyLogo {
+  url?: string | null;
+  storageKey?: string;
+  storageBucket?: string;
+  storageSource?: string;
+}
+
 export interface CompanyModule {
   moduleId: string | { _id: string; code: ModuleCode; name: string; price?: number };
   code: ModuleCode;
@@ -34,6 +56,8 @@ export interface Company {
   email: string;
   phone?: string;
   address?: CompanyAddress;
+  logo?: CompanyLogo | null;
+  receiving?: CompanyReceivingInfo | null;
   status: CompanyStatus;
   ownerId?: string;
   modules: CompanyModule[];
@@ -178,5 +202,16 @@ export class CompanyService {
 
   testStorageConnection(id: string, payload?: StorageConfigUpdate): Observable<StorageTestResult> {
     return this.http.post<StorageTestResult>(`${this.apiUrl}/${id}/storage/test`, payload || {});
+  }
+
+  // Logomarca da empresa (usada em documentos: fatura impressa, PDF de OS etc.)
+  uploadLogo(id: string, file: File): Observable<{ logo: CompanyLogo }> {
+    const form = new FormData();
+    form.append('logo', file);
+    return this.http.post<{ logo: CompanyLogo }>(`${this.apiUrl}/${id}/logo`, form);
+  }
+
+  deleteLogo(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/logo`);
   }
 }

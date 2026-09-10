@@ -103,10 +103,12 @@ export class ProjectViewComponent implements OnInit {
   invoiceDraft: {
     dueDate: Date;
     paymentMethod: PaymentMethod;
+    invoiceDescription: string;
     notes: string;
   } = {
     dueDate: new Date(),
     paymentMethod: 'pix',
+    invoiceDescription: '',
     notes: ''
   };
 
@@ -466,9 +468,34 @@ export class ProjectViewComponent implements OnInit {
     this.invoiceDraft = {
       dueDate: due,
       paymentMethod: 'pix',
+      invoiceDescription: this.stripHtml(this.project?.description || ''),
       notes: `Faturamento do projeto ${this.project?.projectNumber}`
     };
     this.showInvoiceDialog = true;
+  }
+
+  /** Remove marcação HTML da descrição rich-text do projeto (fatura usa texto simples). */
+  private stripHtml(html: string): string {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html
+      .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+      .replace(/<\s*\/\s*(p|div|li|h[1-6]|tr)\s*>/gi, '\n');
+    return (tmp.textContent || tmp.innerText || '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .trim();
+  }
+
+  // ─── Prévia do cálculo (horas trabalhadas x valor/hora) ───────────────────
+  invoiceWorkedHours(): number {
+    return (this.tasks || []).reduce((acc, t) => acc + Number(t?.workedHours || 0), 0);
+  }
+  invoiceHourlyRate(): number {
+    return Number(this.project?.hourlyRate || 0);
+  }
+  invoiceAmountPreview(): number {
+    return this.invoiceWorkedHours() * this.invoiceHourlyRate();
   }
 
   submitInvoice(): void {
@@ -484,6 +511,7 @@ export class ProjectViewComponent implements OnInit {
     const payload: ReceivableInvoiceFromProjectInput = {
       dueDate: this.invoiceDraft.dueDate,
       paymentMethod: this.invoiceDraft.paymentMethod,
+      invoiceDescription: this.invoiceDraft.invoiceDescription?.trim() || undefined,
       notes: this.invoiceDraft.notes || undefined
     };
 
