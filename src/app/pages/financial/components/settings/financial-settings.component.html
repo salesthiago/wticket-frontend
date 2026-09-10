@@ -73,29 +73,20 @@
 
     <!-- ─── Integração Itaú ──────────────────────────────────────────────── -->
     <p-card>
-      <div class="flex items-center justify-between mb-1">
-        <h2 class="text-xl font-semibold">Integração Itaú — Boletos</h2>
-        <p-tag [value]="itauEnabled ? 'Módulo ativo' : 'Módulo inativo'"
-          [severity]="itauEnabled ? 'success' : 'secondary'" />
-      </div>
+      <h2 class="text-xl font-semibold mb-1">Integração Itaú — Boletos</h2>
       <p class="text-xs text-gray-500 mb-4">
         Emissão de boletos registrados no Itaú (com QR Code PIX) vinculados aos títulos de Contas a Receber.
+        Faz parte do módulo Financeiro.
       </p>
 
-      @if (itauEnabled) {
-        <div class="flex gap-2 flex-wrap">
-          <p-button label="Configurar Integração Itaú" icon="pi pi-building-columns"
-            routerLink="/financial/itau/config" />
-          <p-button label="Histórico de Integração" icon="pi pi-history" severity="secondary" [outlined]="true"
-            routerLink="/financial/itau/history" />
-          <p-button label="Ver Cobranças" icon="pi pi-barcode" severity="secondary" [text]="true"
-            routerLink="/financial/charges" />
-        </div>
-      } @else {
-        <p class="text-sm text-gray-500">
-          O módulo <strong>Integração Itaú</strong> não está ativo para esta empresa. Entre em contato para contratá-lo.
-        </p>
-      }
+      <div class="flex gap-2 flex-wrap">
+        <p-button label="Configurar Integração Itaú" icon="pi pi-building-columns"
+          routerLink="/financial/itau/config" />
+        <p-button label="Histórico de Integração" icon="pi pi-history" severity="secondary" [outlined]="true"
+          routerLink="/financial/itau/history" />
+        <p-button label="Ver Cobranças" icon="pi pi-barcode" severity="secondary" [text]="true"
+          routerLink="/financial/charges" />
+      </div>
     </p-card>
   }
 </div>

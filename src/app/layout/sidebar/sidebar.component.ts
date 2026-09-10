@@ -299,7 +299,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   /** Remove sub-itens de painel que dependem de um módulo que a empresa não tem. */
   private pruneModuleSubItems(): void {
-    const gated: Record<string, ModuleCode> = { 'itau-group': 'itau_integration' };
+    const gated: Record<string, ModuleCode> = {};
     this.menuItems.forEach(item => {
       item.panelModel?.forEach(panel => {
         if (!panel.items) return;

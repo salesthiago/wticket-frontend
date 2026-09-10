@@ -9,75 +9,66 @@
       <h2 class="text-xl font-semibold flex items-center gap-2">
         <i class="pi pi-barcode"></i> Cobrança
       </h2>
-      @if (itauEnabled) {
-        <div class="flex items-center gap-2">
-          <p-select [options]="optionStatus" [(ngModel)]="filterStatus"
-            optionLabel="label" optionValue="value" (onChange)="applyFilters()"
-            styleClass="w-56" />
-          <p-button icon="pi pi-refresh" severity="secondary" [text]="true" pTooltip="Recarregar" (onClick)="load()" />
-        </div>
-      }
+      <div class="flex items-center gap-2">
+        <p-select [options]="optionStatus" [(ngModel)]="filterStatus"
+          optionLabel="label" optionValue="value" (onChange)="applyFilters()"
+          styleClass="w-56" />
+        <p-button icon="pi pi-refresh" severity="secondary" [text]="true" pTooltip="Recarregar" (onClick)="load()" />
+      </div>
     </div>
 
-    @if (!itauEnabled) {
-      <p class="text-sm text-gray-500">
-        A tela de Cobrança lista os boletos gerados pela <strong>Integração Itaú</strong>.
-        O módulo não está ativo para esta empresa.
-        <a routerLink="/financial/settings" class="underline ml-1">Ver configurações</a>
-      </p>
-    } @else {
-      <p class="text-xs text-gray-500 mb-3">
-        Cada cobrança está amarrada a um título de Contas a Receber. Gere novos boletos pela tela do título.
-      </p>
+    <p class="text-xs text-gray-500 mb-3">
+      Cada cobrança está amarrada a um título de Contas a Receber. Gere novos boletos pela tela do título;
+      configure a integração em <a routerLink="/financial/settings" class="underline">Financeiro › Configurações</a>.
+    </p>
 
-      <p-table [value]="items" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
-        [paginator]="true" [rows]="rows" [totalRecords]="total" [loading]="loading"
-        [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '70rem' }">
-        <ng-template #header>
-          <tr>
-            <th>Nosso Número</th>
-            <th>Título</th>
-            <th>Cliente</th>
-            <th class="text-right">Valor</th>
-            <th>Vencimento</th>
-            <th>Emissão</th>
-            <th>Status</th>
-            <th style="width: 12rem">Ações</th>
-          </tr>
-        </ng-template>
-        <ng-template #body let-b>
-          <tr>
-            <td class="font-mono">{{ b.nossoNumero || '—' }}</td>
-            <td>
-              <a class="text-primary underline font-mono cursor-pointer" (click)="openReceivable(b)">
-                {{ receivableNumber(b) }}
-              </a>
-            </td>
-            <td>{{ customerName(b) }}</td>
-            <td class="text-right font-mono">R$ {{ b.valor | number:'1.2-2' }}</td>
-            <td>{{ b.dataVencimento | date:'dd/MM/yyyy' }}</td>
-            <td>{{ b.dataEmissao ? (b.dataEmissao | date:'dd/MM/yyyy') : (b.createdAt | date:'dd/MM/yyyy') }}</td>
-            <td><p-tag [value]="statusLabel(b.status)" [severity]="statusColor(b.status)" /></td>
-            <td>
-              <div class="flex gap-1">
-                <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info"
-                  pTooltip="Abrir título" (onClick)="openReceivable(b)" />
-                <p-button icon="pi pi-copy" [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Copiar linha digitável" [disabled]="!b.linhaDigitavel" (onClick)="copyLine(b)" />
-                <p-button icon="pi pi-sync" [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Atualizar status" [loading]="busyId === b._id" (onClick)="refresh(b)" />
-                @if (canCancel(b)) {
-                  <p-button icon="pi pi-times-circle" [rounded]="true" [text]="true" severity="danger"
-                    pTooltip="Cancelar cobrança" [loading]="busyId === b._id" (onClick)="cancel(b)" />
-                }
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template #emptymessage>
-          <tr><td colspan="8" class="text-center text-gray-400 py-6">Nenhuma cobrança gerada.</td></tr>
-        </ng-template>
-      </p-table>
-    }
+    <p-table [value]="items" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
+      [paginator]="true" [rows]="rows" [totalRecords]="total" [loading]="loading"
+      [rowsPerPageOptions]="[10, 20, 50]" [tableStyle]="{ 'min-width': '70rem' }">
+      <ng-template #header>
+        <tr>
+          <th>Nosso Número</th>
+          <th>Título</th>
+          <th>Cliente</th>
+          <th class="text-right">Valor</th>
+          <th>Vencimento</th>
+          <th>Emissão</th>
+          <th>Status</th>
+          <th style="width: 12rem">Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-b>
+        <tr>
+          <td class="font-mono">{{ b.nossoNumero || '—' }}</td>
+          <td>
+            <a class="text-primary underline font-mono cursor-pointer" (click)="openReceivable(b)">
+              {{ receivableNumber(b) }}
+            </a>
+          </td>
+          <td>{{ customerName(b) }}</td>
+          <td class="text-right font-mono">R$ {{ b.valor | number:'1.2-2' }}</td>
+          <td>{{ b.dataVencimento | date:'dd/MM/yyyy' }}</td>
+          <td>{{ b.dataEmissao ? (b.dataEmissao | date:'dd/MM/yyyy') : (b.createdAt | date:'dd/MM/yyyy') }}</td>
+          <td><p-tag [value]="statusLabel(b.status)" [severity]="statusColor(b.status)" /></td>
+          <td>
+            <div class="flex gap-1">
+              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info"
+                pTooltip="Abrir título" (onClick)="openReceivable(b)" />
+              <p-button icon="pi pi-copy" [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Copiar linha digitável" [disabled]="!b.linhaDigitavel" (onClick)="copyLine(b)" />
+              <p-button icon="pi pi-sync" [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Atualizar status" [loading]="busyId === b._id" (onClick)="refresh(b)" />
+              @if (canCancel(b)) {
+                <p-button icon="pi pi-times-circle" [rounded]="true" [text]="true" severity="danger"
+                  pTooltip="Cancelar cobrança" [loading]="busyId === b._id" (onClick)="cancel(b)" />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="8" class="text-center text-gray-400 py-6">Nenhuma cobrança gerada.</td></tr>
+      </ng-template>
+    </p-table>
   </p-card>
 </div>

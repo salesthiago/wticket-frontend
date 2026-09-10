@@ -21,7 +21,6 @@ import { MessageModule } from 'primeng/message';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { FinancialService } from '../services/financial.service';
 import { ItauService } from '../services/itau.service';
-import { AuthService } from '../../../../services/auth.service';
 import {
   Receivable,
   ReceivableStatus,
@@ -99,8 +98,8 @@ export class ReceivableViewComponent implements OnInit {
   optionMethods: { label: string; value: PaymentMethod }[] = (Object.keys(PaymentMethodLabels) as PaymentMethod[])
     .map(k => ({ label: PaymentMethodLabels[k], value: k }));
 
-  // ─── Integração Itaú ───────────────────────────────────────────────────
-  itauEnabled = false;      // empresa tem o módulo itau_integration
+  // ─── Integração Itaú (parte do módulo financeiro) ──────────────────────
+  itauEnabled = true;
   itauActive = false;       // integração configurada + ativa
   itauBoleto: ItauBoleto | null = null;
   itauLoading = false;
@@ -110,14 +109,11 @@ export class ReceivableViewComponent implements OnInit {
   constructor(
     private financial: FinancialService,
     private itau: ItauService,
-    private auth: AuthService,
     private route: ActivatedRoute,
     private router: Router,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
-  ) {
-    this.itauEnabled = this.auth.hasModule('itau_integration');
-  }
+  ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

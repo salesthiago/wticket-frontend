@@ -13,7 +13,6 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { Toast } from 'primeng/toast';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { ItauService } from '../services/itau.service';
-import { AuthService } from '../../../../services/auth.service';
 import {
   ItauBoleto,
   ItauBoletoStatus,
@@ -53,8 +52,6 @@ export class FinancialChargesComponent implements OnInit {
     { label: 'Cobrança' }
   ];
 
-  itauEnabled = false;
-
   items: ItauBoleto[] = [];
   total = 0;
   loading = false;
@@ -73,15 +70,12 @@ export class FinancialChargesComponent implements OnInit {
 
   constructor(
     private itau: ItauService,
-    private auth: AuthService,
     private router: Router,
     private messageService: MessageService
-  ) {
-    this.itauEnabled = this.auth.hasModule('itau_integration');
-  }
+  ) {}
 
   ngOnInit(): void {
-    if (this.itauEnabled) this.load();
+    this.load();
   }
 
   onLazyLoad(event: TableLazyLoadEvent): void {

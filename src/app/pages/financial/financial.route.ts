@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { moduleGuard } from '../../guards/module-guard';
 
 // Os componentes reais serão criados nas próximas fases (C, D).
 // Por enquanto todas as rotas apontam para o placeholder.
@@ -49,15 +48,14 @@ export const routes: Routes = [
     loadComponent: () => import('./components/charges/charges.component').then(m => m.FinancialChargesComponent)
   },
 
-  // Integração Itaú (módulo itau_integration)
+  // Integração Itaú — parte do módulo financeiro (o grupo /financial já é
+  // protegido por moduleGuard('financial') em app.routes)
   {
     path: 'itau/config',
-    canActivate: [moduleGuard('itau_integration')],
     loadComponent: () => import('./components/itau/config/itau-config.component').then(m => m.ItauConfigComponent)
   },
   {
     path: 'itau/history',
-    canActivate: [moduleGuard('itau_integration')],
     loadComponent: () => import('./components/itau/history/itau-history.component').then(m => m.ItauHistoryComponent)
   }
 ];

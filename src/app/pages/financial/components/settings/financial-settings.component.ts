@@ -8,7 +8,6 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { Toast } from 'primeng/toast';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
@@ -34,7 +33,6 @@ import { CompanyService, Company, CompanyReceivingInfo } from '../../../../servi
     InputTextModule,
     TextareaModule,
     SelectModule,
-    TagModule,
     BreadcrumbModule,
     Toast,
     SidebarComponent
@@ -52,8 +50,6 @@ export class FinancialSettingsComponent implements OnInit {
   company: Company | null = null;
   receiving: CompanyReceivingInfo = {};
 
-  itauEnabled = false;
-
   accountTypeOptions = [
     { label: 'Conta corrente', value: 'corrente' },
     { label: 'Conta poupança', value: 'poupanca' }
@@ -70,9 +66,7 @@ export class FinancialSettingsComponent implements OnInit {
     private auth: AuthService,
     private companyService: CompanyService,
     private messageService: MessageService
-  ) {
-    this.itauEnabled = this.auth.hasModule('itau_integration');
-  }
+  ) {}
 
   ngOnInit(): void {
     const companyId = this.auth.getCompanyId();
