@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -140,8 +139,7 @@ export class IssuanceFormComponent implements OnInit {
     private nfse: NfseService,
     private customersService: CustomersService,
     private router: Router,
-    private messageService: MessageService,
-    private http: HttpClient
+    private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
@@ -213,6 +211,35 @@ export class IssuanceFormComponent implements OnInit {
       this.setTomadorMunicipality(value);
     } else {
       this.onCMunClear();
+    }
+  }
+
+  // Consulta o CEP no ViaCEP e preenche endereço + município (o ViaCEP já devolve o código IBGE).
+  // Usa fetch para não passar pelo interceptor, que anexaria o token JWT à requisição externa.
+  async onCepBlur() {
+    const end = this.tomadorOverride.endereco;
+    const cep = (end.cep || '').replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    this.cepLoading = true;
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = resp.ok ? await resp.json() : null;
+      if (!data || data.erro) {
+        this.messageService.add({ severity: 'warn', summary: 'CEP', detail: 'CEP não encontrado.' });
+        return;
+      }
+      end.cep = cep.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+      end.uf = data.uf || end.uf;
+      end.xLgr = end.xLgr || data.logradouro || '';
+      end.xBairro = end.xBairro || data.bairro || '';
+      end.xCpl = end.xCpl || data.complemento || '';
+      if (data.ibge) {
+        this.setTomadorMunicipality({ cMun: String(data.ibge), name: data.localidade, uf: data.uf });
+      }
+    } catch {
+      this.messageService.add({ severity: 'warn', summary: 'CEP', detail: 'Não foi possível consultar o CEP.' });
+    } finally {
+      this.cepLoading = false;
     }
   }
 
