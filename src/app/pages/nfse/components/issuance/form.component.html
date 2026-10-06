@@ -186,7 +186,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm mb-1">Local de prestação (cMun)</label>
-              <input pInputText class="w-full font-mono" [ngModel]="cMunSelected ? cMunSelected.name + ' / ' + cMunSelected.uf + ' • ' + cLocPrestacao : cLocPrestacao"
+              <input pInputText class="w-full font-mono" [ngModel]="cLocPrestacao && cMunSelected ? cMunSelected.name + ' / ' + cMunSelected.uf + ' • ' + cLocPrestacao : cLocPrestacao"
                 [readonly]="true" placeholder="Município do endereço do tomador"
                 pTooltip="Preenchido automaticamente com o município do endereço do tomador" />
             </div>

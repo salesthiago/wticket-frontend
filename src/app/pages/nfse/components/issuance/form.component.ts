@@ -207,6 +207,15 @@ export class IssuanceFormComponent implements OnInit {
     this.setTomadorMunicipality(m);
   }
 
+  // Enquanto o usuário digita, o model vira string: limpa o cMun até escolher uma opção
+  onCMunModelChange(value: IbgeMunicipality | string | null) {
+    if (value && typeof value === 'object') {
+      this.setTomadorMunicipality(value);
+    } else {
+      this.onCMunClear();
+    }
+  }
+
   onCMunClear() {
     this.tomadorOverride.endereco.cMun = '';
     this.cLocPrestacao = '';
