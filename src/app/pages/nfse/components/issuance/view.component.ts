@@ -69,7 +69,7 @@ export class IssuanceViewComponent implements OnInit {
 
   // ─── Edição ─────────────────────────────────────────────────────────────────
   editVisible = false;
-  editDraft: any = {};
+  editDraft: any = this.buildEditDraft(null);
 
   breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/dashboard' };
   breadcrumbItems: MenuItem[] = [
@@ -107,11 +107,17 @@ export class IssuanceViewComponent implements OnInit {
 
   openEdit(): void {
     if (!this.item) return;
-    const t = this.item.tomador;
-    const s = this.item.servico;
-    const v = this.item.valores;
-    this.editDraft = {
-      dCompet: this.item.dCompet ? new Date(this.item.dCompet).toISOString().substring(0, 10) : '',
+    this.editDraft = this.buildEditDraft(this.item);
+    this.editVisible = true;
+  }
+
+  // O p-dialog avalia o template mesmo fechado: o draft precisa ter sempre a estrutura completa
+  private buildEditDraft(item: any): any {
+    const t = item?.tomador;
+    const s = item?.servico;
+    const v = item?.valores;
+    return {
+      dCompet: item?.dCompet ? new Date(item.dCompet).toISOString().substring(0, 10) : '',
       tomador: {
         documentType: t?.documentType || 'cnpj',
         document: t?.document || '',
@@ -143,7 +149,6 @@ export class IssuanceViewComponent implements OnInit {
         pAliq:      v?.issqn?.pAliq ?? 0
       }
     };
-    this.editVisible = true;
   }
 
   saveEdit(): void {
