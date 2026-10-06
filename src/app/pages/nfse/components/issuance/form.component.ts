@@ -200,13 +200,47 @@ export class IssuanceFormComponent implements OnInit {
   onCMunSelect(event: { value: IbgeMunicipality }) {
     const m = event?.value;
     if (!m) return;
-    this.tomadorOverride.endereco.cMun = m.cMun;
-    this.tomadorOverride.endereco.uf = m.uf;
+    this.setTomadorMunicipality(m);
+  }
+
+  onCMunClear() {
+    this.tomadorOverride.endereco.cMun = '';
+    this.cLocPrestacao = '';
+  }
+
+  // Local de prestação é sempre o município do endereço do tomador
+  private setTomadorMunicipality(m: IbgeMunicipality | null) {
+    this.cMunSelected = m;
+    this.tomadorOverride.endereco.cMun = m?.cMun || '';
+    if (m?.uf) this.tomadorOverride.endereco.uf = m.uf;
+    this.cLocPrestacao = m?.cMun || '';
+  }
+
+  // Preenche o município a partir do endereço do cliente (cMun cadastrado ou cidade/UF)
+  private loadCustomerMunicipality(c: any) {
+    const addr = c?.address || {};
+    if (addr.cMun) {
+      this.nfse.getIbgeMunicipality(addr.cMun).subscribe({
+        next: (m) => this.setTomadorMunicipality(m),
+        error: () => this.setTomadorMunicipality({ cMun: addr.cMun, name: addr.city || addr.cMun, uf: addr.state || '' })
+      });
+    } else if (addr.city && addr.state) {
+      this.nfse.resolveIbgeMunicipality(addr.city, addr.state).subscribe({
+        next: (m) => this.setTomadorMunicipality(m),
+        error: () => this.setTomadorMunicipality(null)
+      });
+    } else {
+      this.setTomadorMunicipality(null);
+    }
   }
 
   onCustomerChange() {
     const c = this.customers.find(x => x._id === this.customerId);
-    if (!c) return;
+    if (!c) {
+      this.setTomadorMunicipality(null);
+      return;
+    }
+    this.loadCustomerMunicipality(c);
     // Se o customer não tem cMun no endereço, sugerir override
     if (!c.address?.cMun) {
       this.useTomadorOverride = true;
