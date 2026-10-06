@@ -1,11 +1,12 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Input, Renderer2, Inject } from '@angular/core';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService, ModuleCode, UserRole } from '../../services/auth.service';
 import { SidebarService } from '../../services/sidebar.service';
 import { Subscription } from 'rxjs';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { PanelMenuModule } from 'primeng/panelmenu';
+import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
 
@@ -18,6 +19,8 @@ interface NavItem {
   modules?: ModuleCode[];
   /** roles allowed; if empty, all roles allowed */
   roles?: UserRole[];
+  /** true = visível para acesso de cliente (portal restrito); os demais itens ficam ocultos para esse login */
+  visibleForCustomerScope?: boolean;
   panelModel?: MenuItem[];
 }
 
@@ -29,10 +32,14 @@ interface NavItem {
   imports: [
     CommonModule,
     RouterModule,
-    PanelMenuModule
+    PanelMenuModule,
+    TooltipModule
   ]
 })
 export class SidebarComponent implements OnInit, OnDestroy {
+  /** Página já possui seu próprio header mobile (ex.: my-account) — evita duplicar a barra. */
+  @Input() showMobileBar = true;
+
   private readonly allItems: NavItem[] = [
     {
       id: 0,
@@ -54,7 +61,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
           items: [
             { label: 'Empresas', routerLink: '/admin/companies' },
             { label: 'Módulos', routerLink: '/admin/modules' },
-            { label: 'Assinaturas', routerLink: '/admin/plans' }
+            { label: 'Assinaturas', routerLink: '/admin/plans' },
+            { label: 'E-mail', routerLink: '/admin/email-config' },
+            { label: 'Pagamentos', routerLink: '/admin/billing-config' }
           ]
         }
       ]
@@ -75,7 +84,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         }
       ]
     },
-    {
+    /*{
       id: 2,
       name: 'Whatsapp',
       link: '',
@@ -90,7 +99,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ]
         }
       ]
-    },
+    },*/
     {
       id: 3,
       name: 'Contatos',
@@ -103,7 +112,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
       name: 'Tickets',
       link: '/tickets',
       icon: 'pi pi-tags',
-      modules: ['attendance']
+      modules: ['attendance'],
+      visibleForCustomerScope: true
+    },
+    {
+      id: 5,
+      name: 'Projetos',
+      link: '/projects',
+      icon: 'pi pi-folder-open',
+      modules: ['attendance'],
+      visibleForCustomerScope: true
     },
     {
       id: 6,
@@ -177,7 +195,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       link: '',
       icon: 'pi pi-wallet',
       modules: ['financial'],
-      roles: ['administrator', 'finance', 'super_admin'],
+      roles: ['administrator', 'company_admin', 'finance', 'super_admin'],
       panelModel: [
         {
           label: 'Financeiro',
@@ -185,7 +203,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
           items: [
             { label: 'Dashboard', routerLink: '/financial/dashboard' },
             { label: 'Contas a Receber', routerLink: '/financial/receivables' },
-            { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' }
+            { label: 'Novo Lançamento', routerLink: '/financial/receivables/create' },
+            { label: 'Cobrança', routerLink: '/financial/charges' },
+            { label: 'Configurações', routerLink: '/financial/settings' },
+            {
+              id: 'itau-group',
+              label: 'Integração Itaú',
+              icon: 'pi pi-building-columns',
+              items: [
+                { label: 'Configuração', routerLink: '/financial/itau/config' },
+                { label: 'Histórico de Integração', routerLink: '/financial/itau/history' }
+              ]
+            }
           ]
         }
       ]
@@ -196,17 +225,21 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   isDarkMode = false;
   isMobileOpen = false;
+  isCollapsed = false;
   user: any;
   private themeSubscription!: Subscription;
   private routerSubscription!: Subscription;
   private sidebarSubscription!: Subscription;
+  private collapseSubscription!: Subscription;
 
   constructor(
     private themeService: ThemeService,
     private authService: AuthService,
     private sidebarService: SidebarService,
     private cdRef: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit() {
@@ -214,6 +247,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.user = this.authService.getUser();
 
     this.menuItems = this.filterMenuByAccess(this.allItems);
+    this.pruneModuleSubItems();
 
     this.themeSubscription = this.themeService.isDarkTheme$.subscribe(isDark => {
       this.isDarkMode = isDark;
@@ -222,6 +256,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     this.sidebarSubscription = this.sidebarService.isOpen$.subscribe(isOpen => {
       this.isMobileOpen = isOpen;
+      this.cdRef.detectChanges();
+    });
+
+    // Classe global no <body>: páginas fora do sidebar (conteúdo com sm:ml-64)
+    // reagem ao recolhimento via CSS, sem precisar editar cada tela.
+    this.collapseSubscription = this.sidebarService.isCollapsed$.subscribe(isCollapsed => {
+      this.isCollapsed = isCollapsed;
+      if (isCollapsed) {
+        this.renderer.addClass(this.document.body, 'sidebar-collapsed');
+      } else {
+        this.renderer.removeClass(this.document.body, 'sidebar-collapsed');
+      }
       this.cdRef.detectChanges();
     });
 
@@ -237,7 +283,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private filterMenuByAccess(items: NavItem[]): NavItem[] {
     const role = this.authService.getRole();
+    const customerScoped = this.authService.isCustomerScoped();
     return items.filter(item => {
+      // Acesso de cliente (portal restrito): só vê os itens marcados explicitamente.
+      if (customerScoped) return !!item.visibleForCustomerScope;
       if (item.roles?.length) {
         if (!role || !item.roles.includes(role)) return false;
       }
@@ -245,6 +294,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
         if (!this.authService.hasAnyModule(...item.modules)) return false;
       }
       return true;
+    });
+  }
+
+  /** Remove sub-itens de painel que dependem de um módulo que a empresa não tem. */
+  private pruneModuleSubItems(): void {
+    const gated: Record<string, ModuleCode> = {};
+    this.menuItems.forEach(item => {
+      item.panelModel?.forEach(panel => {
+        if (!panel.items) return;
+        panel.items = panel.items.filter((sub: MenuItem) => {
+          const code = gated[sub['id'] as string];
+          return !code || this.authService.hasModule(code);
+        });
+      });
     });
   }
 
@@ -267,8 +330,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return this.user?.name ? this.user.name.charAt(0).toUpperCase() : 'U';
   }
 
+  openSidebar(): void {
+    this.sidebarService.open();
+  }
+
   closeSidebar(): void {
     this.sidebarService.close();
+  }
+
+  toggleCollapse(): void {
+    this.sidebarService.toggleCollapsed();
   }
 
   logout(): void {
@@ -284,6 +355,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
     if (this.sidebarSubscription) {
       this.sidebarSubscription.unsubscribe();
+    }
+    if (this.collapseSubscription) {
+      this.collapseSubscription.unsubscribe();
     }
   }
 }

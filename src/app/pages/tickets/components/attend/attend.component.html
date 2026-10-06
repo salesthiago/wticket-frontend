@@ -1,9 +1,15 @@
 <p-toast />
+<p-confirmDialog />
 
 <div class="attend-container">
   <div class="attend-header">
     <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" />
-    <button pButton icon="pi pi-arrow-left" label="Voltar" class="p-button-text" (click)="goBack()"></button>
+    <div class="flex gap-2">
+      @if (ticket && canDeleteTicket) {
+        <button pButton icon="pi pi-trash" label="Excluir Tarefa" class="p-button-danger p-button-text" (click)="deleteTicket($event)"></button>
+      }
+      <button pButton icon="pi pi-arrow-left" label="Voltar" class="p-button-text" (click)="goBack()"></button>
+    </div>
   </div>
 
   @if (loading) {
@@ -60,7 +66,7 @@
               <p-divider />
               <div class="notes-section">
                 <strong>Observações:</strong>
-                <p>{{ ticket.notes }}</p>
+                <div class="rich-text-content" [innerHTML]="ticket.notes"></div>
               </div>
             }
           </div>
@@ -89,47 +95,97 @@
         <!-- Registrar resposta -->
         <p-card header="Registrar Resposta">
           <div class="response-form">
-            <textarea
-              pTextarea
-              [(ngModel)]="newResponse"
-              rows="4"
+            <app-rich-text-editor
+              [(value)]="newResponse"
               placeholder="Digite a resposta ou tratativa para este ticket..."
-              class="w-full">
-            </textarea>
+              height="160px"
+              [uploader]="uploadImage">
+            </app-rich-text-editor>
+            <div class="response-hours-row">
+              <label for="responseHours">Horas gastas</label>
+              <p-inputNumber
+                inputId="responseHours"
+                [(ngModel)]="newResponseHours"
+                [min]="0"
+                suffix=" h"
+                placeholder="0" />
+            </div>
             <button
               pButton
               label="Registrar Resposta"
               icon="pi pi-send"
               (click)="saveResponse()"
               [loading]="responseLoading"
-              [disabled]="!newResponse.trim()">
+              [disabled]="!newResponse">
             </button>
           </div>
         </p-card>
 
-        <!-- Histórico de respostas -->
+        <!-- Histórico de respostas: estilo conversa, minhas respostas à -->
+        <!-- direita (como no WhatsApp), respostas de outros atendentes à esquerda -->
         @if (ticket.responses?.length > 0) {
           <p-card header="Histórico de Respostas">
-            <p-timeline [value]="ticket.responses">
-              <ng-template #content let-response>
-                <div class="response-item">
-                  <div class="response-header">
-                    <p-avatar
-                      [label]="response.respondedBy?.name?.charAt(0) || 'A'"
-                      shape="circle" />
-                    <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
-                    <span class="response-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            <div class="response-chat">
+              @for (response of ticket.responses; track response._id) {
+                <div class="response-chat-row" [class.response-chat-row--mine]="isMyResponse(response)">
+                  <p-avatar
+                    [label]="response.respondedBy?.name?.charAt(0) || 'A'"
+                    shape="circle"
+                    styleClass="response-chat-avatar" />
+                  <div class="response-chat-bubble" [class.response-chat-bubble--mine]="isMyResponse(response)">
+                    <div class="response-chat-meta">
+                      <strong>{{ response.respondedBy?.name || 'Atendente' }}</strong>
+                      <span class="response-chat-date">{{ response.respondedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                      @if (response.hoursSpent) {
+                        <span class="status-badge-sm">{{ response.hoursSpent }}h</span>
+                      }
+                      @if (canDeleteResponse(response)) {
+                        <button
+                          pButton
+                          icon="pi pi-trash"
+                          class="p-button-text p-button-danger p-button-sm response-delete-btn"
+                          pTooltip="Excluir resposta"
+                          (click)="deleteResponse(response, $event)">
+                        </button>
+                      }
+                    </div>
+                    <div class="rich-text-content" [innerHTML]="response.content"></div>
                   </div>
-                  <p class="response-content">{{ response.content }}</p>
                 </div>
-              </ng-template>
-            </p-timeline>
+              }
+            </div>
           </p-card>
         }
       </div>
 
       <!-- Coluna lateral: ações e vínculos -->
       <div class="attend-sidebar">
+
+        <!-- Designar tarefa: somente administradores, para usuário interno -->
+        @if (isAdmin) {
+          <p-card header="Designar Tarefa">
+            <div class="status-change-row">
+              <p-select
+                [options]="assignableUsers"
+                [(ngModel)]="selectedAssignUserId"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecione um usuário"
+                [filter]="true"
+                filterPlaceholder="Buscar usuário..."
+                styleClass="w-full" />
+              <button
+                pButton
+                icon="pi pi-save"
+                pTooltip="Designar"
+                tooltipPosition="top"
+                (click)="assignTicket()"
+                [loading]="assignLoading"
+                [disabled]="!selectedAssignUserId">
+              </button>
+            </div>
+          </p-card>
+        }
 
         <!-- Ações opcionais por módulo -->
         <p-card header="Ações">
@@ -183,6 +239,27 @@
               </p>
             }
           </div>
+        </p-card>
+
+        <!-- Vínculo com Projeto -->
+        @if (ticket.projectId) {
+          <p-card header="Projeto">
+            <div class="linked-item">
+              <i class="pi pi-folder-open"></i>
+              <div>
+                <small>Tarefa do projeto</small>
+                <strong>{{ ticket.projectId?.title }}</strong>
+                <span class="status-badge-sm">{{ ticket.projectId?.projectNumber }}</span>
+              </div>
+            </div>
+            <a class="project-link" [routerLink]="['/projects', ticket.projectId?._id]">Ver projeto</a>
+          </p-card>
+        }
+
+        <!-- Horas trabalhadas nesta tarefa: soma das horas lançadas em cada resposta -->
+        <p-card header="Horas Trabalhadas">
+          <div class="worked-hours-display">{{ ticket.workedHours ?? 0 }}h</div>
+          <small class="text-gray-500">Some automaticamente as horas lançadas em cada resposta abaixo.</small>
         </p-card>
 
         <!-- Informações do ticket -->

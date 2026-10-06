@@ -3,6 +3,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { RouterOutlet } from '@angular/router';
+import { TrialBannerComponent } from './layout/trial-banner/trial-banner.component';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +14,8 @@ import { RouterOutlet } from '@angular/router';
   imports: [
     ToastModule,
     ButtonModule,
-    RouterOutlet
+    RouterOutlet,
+    TrialBannerComponent
   ]
 })
 export class App {

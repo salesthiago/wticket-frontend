@@ -11,16 +11,18 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
-import { TextareaModule } from 'primeng/textarea';
 import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 import { TicketService } from '../services/ticket.service';
 import { TicketCategoryService } from '../services/ticket-category.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { TicketSubjectService } from '../services/ticket-subject.service';
+import { CustomersService } from '../../../customers/components/services/customers.service';
+import { AuthService } from '../../../../services/auth.service';
 
 // WhatsApp e Socket.io desabilitados temporariamente (serão serviços separados no futuro)
 // import { WhatsappService } from '../../../whatsapp/components/services/whatsapp.service';
@@ -29,6 +31,7 @@ interface Ticket {
   _id: string;
   contactNumber?: string;
   contactName?: string;
+  customerId?: { _id?: string; name?: string; phone?: string; email?: string } | string;
   categoryId?: any;
   subjectId?: any;
   statusId?: any;
@@ -57,11 +60,11 @@ interface Ticket {
     FormsModule,
     ProgressSpinnerModule,
     TooltipModule,
-    TextareaModule,
     ConfirmDialogModule,
     ToastModule,
     BreadcrumbModule,
-    SidebarComponent
+    SidebarComponent,
+    RichTextEditorComponent
   ],
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss']
@@ -95,23 +98,49 @@ export class TicketsComponent implements OnInit {
   // Criar ticket
   createDialog = false;
   createLoading = false;
-  createForm: any = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+  createForm: any = { customerId: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
   createSubjectOptions: any[] = [];
+  customerOptions: any[] = [];
   private allSubjects: any[] = [];
+
+  uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   constructor(
     private ticketService: TicketService,
     private categoryService: TicketCategoryService,
     private statusService: TicketStatusService,
     private subjectService: TicketSubjectService,
+    private customersService: CustomersService,
+    private authService: AuthService,
     private router: Router,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
   ) { }
 
+  // Acesso de cliente (portal restrito): não pode listar clientes (a API
+  // bloqueia) e nem precisa, já que o backend já força o próprio cliente.
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
+
   ngOnInit(): void {
     this.loadFiltersData();
+    if (!this.isCustomerScoped) {
+      this.loadCustomers();
+    }
     this.loadTickets();
+  }
+
+  loadCustomers(): void {
+    this.customersService.findAll({ limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.customerOptions = records.map((c: any) => ({
+          name: `${c.name} - ${c.phone}`,
+          value: c._id
+        }));
+      }
+    });
   }
 
   loadFiltersData(): void {
@@ -161,10 +190,13 @@ export class TicketsComponent implements OnInit {
   }
 
   openCreateDialog(): void {
-    this.createForm = { contactNumber: '', contactName: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+    this.createForm = { customerId: '', categoryId: '', subjectId: '', priority: 'medium', notes: '' };
     this.createSubjectOptions = [];
     if (!this.allSubjects.length) {
       this.subjectService.findAll().subscribe({ next: (data) => { this.allSubjects = data; } });
+    }
+    if (!this.isCustomerScoped && !this.customerOptions.length) {
+      this.loadCustomers();
     }
     this.createDialog = true;
   }
@@ -177,14 +209,13 @@ export class TicketsComponent implements OnInit {
   }
 
   saveTicket(): void {
-    if (!this.createForm.contactNumber.trim()) {
-      this.messageService.add({ severity: 'warn', summary: 'Número do contato é obrigatório' });
+    if (!this.isCustomerScoped && !this.createForm.customerId) {
+      this.messageService.add({ severity: 'warn', summary: 'Selecione um cliente' });
       return;
     }
     this.createLoading = true;
     const payload: any = {
-      contactNumber: this.createForm.contactNumber,
-      contactName: this.createForm.contactName,
+      customerId: this.createForm.customerId,
       priority: this.createForm.priority,
       notes: this.createForm.notes
     };
@@ -205,14 +236,25 @@ export class TicketsComponent implements OnInit {
     });
   }
 
+  // Nome/telefone exibidos vêm do cliente vinculado (customerId) quando
+  // existir; tickets antigos sem vínculo caem para contactName/contactNumber.
+  getTicketCustomerName(ticket: Ticket): string {
+    return (typeof ticket.customerId === 'object' ? ticket.customerId?.name : null) || ticket.contactName || '';
+  }
+
+  getTicketCustomerPhone(ticket: Ticket): string {
+    return (typeof ticket.customerId === 'object' ? ticket.customerId?.phone : null) || ticket.contactNumber || '';
+  }
+
   get filteredTickets(): Ticket[] {
     return this.tickets.filter(ticket => {
       const matchesStatus = !this.statusFilter || ticket.statusId?._id === this.statusFilter || ticket.statusId === this.statusFilter;
       const matchesPriority = !this.priorityFilter || ticket.priority === this.priorityFilter;
+      const search = this.searchText.toLowerCase();
       const matchesSearch = !this.searchText ||
-        (ticket.contactNumber?.includes(this.searchText)) ||
-        (ticket.contactName?.toLowerCase().includes(this.searchText.toLowerCase())) ||
-        (ticket.subjectId?.name?.toLowerCase().includes(this.searchText.toLowerCase()));
+        (this.getTicketCustomerPhone(ticket).includes(this.searchText)) ||
+        (this.getTicketCustomerName(ticket).toLowerCase().includes(search)) ||
+        (ticket.subjectId?.name?.toLowerCase().includes(search));
       return matchesStatus && matchesPriority && matchesSearch;
     });
   }

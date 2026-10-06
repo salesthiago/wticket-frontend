@@ -42,8 +42,69 @@
         </div>
       </div>
 
+      <h3 class="font-medium mt-6 mb-3">Endereço</h3>
+      <p class="text-xs text-gray-500 mb-3">Usado no rodapé da fatura impressa e em outros documentos.</p>
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div class="md:col-span-4">
+          <label class="block text-sm mb-1">Logradouro</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.street" />
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-sm mb-1">Número</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.number" />
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-sm mb-1">Complemento</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.complement" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Bairro</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.neighborhood" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Cidade</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.city" />
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-sm mb-1">UF</label>
+          <input pInputText class="w-full" maxlength="2" [(ngModel)]="company.address!.state" />
+        </div>
+        <div class="md:col-span-1">
+          <label class="block text-sm mb-1">CEP</label>
+          <input pInputText class="w-full" [(ngModel)]="company.address!.zipCode" />
+        </div>
+      </div>
+
       <div class="mt-4 text-right">
         <p-button label="Salvar" icon="pi pi-save" [loading]="saving" (click)="save()"></p-button>
+      </div>
+    </p-card>
+
+    <p-card>
+      <h3 class="font-medium mb-1">Logomarca</h3>
+      <p class="text-xs text-gray-500 mb-3">
+        Exibida no cabeçalho e rodapé da fatura impressa quando configurada. PNG, JPG, WEBP ou SVG (máx. 2 MB).
+      </p>
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="w-40 h-24 border border-gray-200 rounded flex items-center justify-center bg-gray-50 overflow-hidden">
+          @if (company.logo?.url) {
+            <img [src]="company.logo!.url" alt="Logomarca" class="max-w-full max-h-full object-contain" />
+          } @else {
+            <span class="text-xs text-gray-400">Sem logomarca</span>
+          }
+        </div>
+        <div class="flex gap-2">
+          <label class="p-button p-component p-button-sm cursor-pointer"
+            [class.p-disabled]="logoUploading">
+            <span class="pi pi-upload mr-2"></span>
+            <span>{{ company.logo?.url ? 'Trocar' : 'Enviar' }}</span>
+            <input type="file" accept="image/*" class="hidden" (change)="onLogoSelected($event)" [disabled]="logoUploading" />
+          </label>
+          @if (company.logo?.url) {
+            <p-button label="Remover" icon="pi pi-trash" severity="danger" [outlined]="true" size="small"
+              [loading]="logoUploading" (click)="removeLogo()"></p-button>
+          }
+        </div>
       </div>
     </p-card>
 

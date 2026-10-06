@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -133,11 +134,14 @@ export class IssuanceFormComponent implements OnInit {
     { label: 'CPF', value: 'cpf' }
   ];
 
+  cepLoading = false;
+
   constructor(
     private nfse: NfseService,
     private customersService: CustomersService,
     private router: Router,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {

@@ -78,7 +78,7 @@ export class TicketSettingsComponent implements OnInit {
   // Status
   statuses: any[] = [];
   statusDialog = false;
-  statusForm: any = { name: '', label: '', color: '#6c757d', isDefault: false, order: 0, isActive: true };
+  statusForm: any = { name: '', label: '', color: '#6c757d', isDefault: false, isDone: false, isInProgress: false, order: 0, isActive: true };
   editingStatusId: string | null = null;
   statusLoading = false;
 
@@ -244,12 +244,14 @@ export class TicketSettingsComponent implements OnInit {
         label: status.label,
         color: status.color,
         isDefault: status.isDefault,
+        isDone: status.isDone,
+        isInProgress: status.isInProgress,
         order: status.order,
         isActive: status.isActive
       };
     } else {
       this.editingStatusId = null;
-      this.statusForm = { name: '', label: '', color: '#6c757d', isDefault: false, order: 0, isActive: true };
+      this.statusForm = { name: '', label: '', color: '#6c757d', isDefault: false, isDone: false, isInProgress: false, order: 0, isActive: true };
     }
     this.statusDialog = true;
   }

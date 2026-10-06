@@ -1,0 +1,94 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  <p-card>
+    <p-table
+      [value]="items"
+      [loading]="loading"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [rows]="rows"
+      [first]="first"
+      [paginator]="true"
+      [totalRecords]="total"
+      [rowsPerPageOptions]="[20, 50, 100]"
+      [tableStyle]="{ 'min-width': '70rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate="{first} a {last} de {totalRecords}"
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <h2 class="text-lg font-semibold">Histórico de Integração</h2>
+          <div class="flex items-center gap-2 flex-wrap">
+            <p-select [options]="optionOperation" [(ngModel)]="filterOperation"
+              optionLabel="name" optionValue="value" placeholder="Operação"
+              (onChange)="applyFilters()" class="w-52" />
+            <p-select [options]="optionSuccess" [(ngModel)]="filterSuccess"
+              optionLabel="name" optionValue="value" placeholder="Resultado"
+              (onChange)="applyFilters()" class="w-36" />
+            <p-datePicker [(ngModel)]="dateRange" selectionMode="range" [readonlyInput]="true"
+              dateFormat="dd/mm/yy" placeholder="Período" (onSelect)="applyFilters()"
+              [showButtonBar]="true" (onClear)="dateRange = null; applyFilters()" styleClass="w-60" />
+            @if (filterOperation || filterSuccess || dateRange) {
+              <p-button icon="pi pi-times" severity="secondary" (onClick)="clearFilters()" pTooltip="Limpar filtros" />
+            }
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr><td colspan="6" class="text-center text-gray-400 py-6">Nenhum registro de integração.</td></tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>Data / Hora</th>
+          <th>Operação</th>
+          <th>Resultado</th>
+          <th class="text-right">HTTP</th>
+          <th class="text-right">Duração</th>
+          <th>Mensagem</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-row>
+        <tr class="cursor-pointer" (click)="openDetail(row)">
+          <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>{{ operationLabel(row.operation) }}</td>
+          <td><p-tag [value]="row.success ? 'Sucesso' : 'Falha'" [severity]="row.success ? 'success' : 'danger'" /></td>
+          <td class="text-right font-mono">{{ row.httpStatus || '—' }}</td>
+          <td class="text-right font-mono">{{ row.durationMs != null ? row.durationMs + ' ms' : '—' }}</td>
+          <td class="max-w-md truncate" [pTooltip]="row.errorMessage || ''">{{ row.errorMessage || '—' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-dialog header="Detalhe da chamada" [(visible)]="showDetail" [modal]="true" [style]="{ width: '48rem' }">
+  @if (detail) {
+    <div class="space-y-3 text-sm">
+      <div class="grid grid-cols-2 gap-2">
+        <div><span class="text-gray-500">Operação:</span> {{ operationLabel(detail.operation) }}</div>
+        <div><span class="text-gray-500">Data:</span> {{ detail.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+        <div><span class="text-gray-500">Método:</span> {{ detail.method || '—' }}</div>
+        <div><span class="text-gray-500">HTTP:</span> {{ detail.httpStatus || '—' }}</div>
+        <div class="col-span-2 break-all"><span class="text-gray-500">URL:</span> {{ detail.url || '—' }}</div>
+      </div>
+      <div>
+        <div class="text-gray-500 mb-1">Requisição</div>
+        <pre class="bg-gray-100 dark:bg-gray-800 rounded p-2 overflow-x-auto text-xs">{{ pretty(detail.requestBody) }}</pre>
+      </div>
+      <div>
+        <div class="text-gray-500 mb-1">Resposta</div>
+        <pre class="bg-gray-100 dark:bg-gray-800 rounded p-2 overflow-x-auto text-xs">{{ pretty(detail.responseBody) }}</pre>
+      </div>
+      @if (detail.errorMessage) {
+        <div class="text-red-600">{{ detail.errorMessage }}</div>
+      }
+    </div>
+  }
+</p-dialog>

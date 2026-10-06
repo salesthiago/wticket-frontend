@@ -514,7 +514,12 @@
         optionLabel="label" optionValue="value"
         placeholder="Selecione um código do catálogo…"
         (onChange)="onNfseServiceCodeChange()"
-        styleClass="w-full" />
+        appendTo="body" panelStyleClass="max-w-[560px]"
+        fluid styleClass="w-full">
+        <ng-template #item let-item>
+          <div class="whitespace-normal break-words leading-snug py-1">{{ item.label }}</div>
+        </ng-template>
+      </p-select>
       <small class="text-gray-500">
         Configure o catálogo em
         <a routerLink="/nfse/service-codes" class="underline">NFS-e › Códigos de Serviço</a>.
@@ -529,22 +534,22 @@
       <small class="text-gray-500">Pré-preenchida com base nos serviços/diagnóstico da OS.</small>
     </div>
 
-    <div class="grid grid-cols-3 gap-3">
-      <div class="field">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="field min-w-0">
         <label class="block mb-1 text-sm">Valor (R$) *</label>
         <p-inputNumber [(ngModel)]="nfseDraft.vServ"
-          mode="currency" currency="BRL" locale="pt-BR" [min]="0" styleClass="w-full" />
+          mode="currency" currency="BRL" locale="pt-BR" [min]="0" fluid styleClass="w-full" />
       </div>
-      <div class="field">
+      <div class="field min-w-0">
         <label class="block mb-1 text-sm">Alíquota ISS (%)</label>
         <p-inputNumber [(ngModel)]="nfseDraft.pAliq"
           [minFractionDigits]="2" [maxFractionDigits]="4"
-          [min]="0" [max]="100" suffix=" %" styleClass="w-full" />
+          [min]="0" [max]="100" suffix=" %" fluid styleClass="w-full" />
       </div>
-      <div class="field">
+      <div class="field min-w-0">
         <label class="block mb-1 text-sm">Competência *</label>
         <p-datePicker [(ngModel)]="nfseDraft.dCompet"
-          dateFormat="dd/mm/yy" [showButtonBar]="true" styleClass="w-full" />
+          dateFormat="dd/mm/yy" [showButtonBar]="true" appendTo="body" fluid styleClass="w-full" />
       </div>
     </div>
 

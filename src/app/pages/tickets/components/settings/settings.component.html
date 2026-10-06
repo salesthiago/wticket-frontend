@@ -116,6 +116,8 @@
                 <th>Nome</th>
                 <th>Label</th>
                 <th>Padrão</th>
+                <th>Conclui tarefa</th>
+                <th>Em andamento</th>
                 <th>Ativo</th>
                 <th style="width: 160px">Ações</th>
               </tr>
@@ -136,6 +138,12 @@
                   }
                 </td>
                 <td>
+                  <i [class]="st.isDone ? 'pi pi-check-circle text-green-500' : 'pi pi-minus text-gray-400'"></i>
+                </td>
+                <td>
+                  <i [class]="st.isInProgress ? 'pi pi-check-circle text-green-500' : 'pi pi-minus text-gray-400'"></i>
+                </td>
+                <td>
                   <i [class]="st.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"></i>
                 </td>
                 <td>
@@ -145,7 +153,7 @@
               </tr>
             </ng-template>
             <ng-template #emptymessage>
-              <tr><td colspan="7" class="text-center">Nenhum status cadastrado.</td></tr>
+              <tr><td colspan="9" class="text-center">Nenhum status cadastrado.</td></tr>
             </ng-template>
           </p-table>
         </p-card>
@@ -254,6 +262,14 @@
     <div class="field-inline">
       <label>Status padrão</label>
       <p-toggleSwitch [(ngModel)]="statusForm.isDefault" />
+    </div>
+    <div class="field-inline">
+      <label>Conclui a tarefa (100% no projeto)</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isDone" />
+    </div>
+    <div class="field-inline">
+      <label>Em andamento (50% no projeto)</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isInProgress" />
     </div>
     <div class="field-inline">
       <label>Ativo</label>

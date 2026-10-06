@@ -77,6 +77,14 @@
       </div>
 
       <div class="md:col-span-3">
+        <label class="block text-sm mb-1">Descrição da Fatura</label>
+        <textarea pTextarea [(ngModel)]="invoiceDescription" rows="5" class="w-full"
+          [disabled]="isReadOnly()"
+          placeholder="Texto detalhado exibido na fatura impressa"></textarea>
+        <small class="text-gray-500">Exibido no corpo da fatura impressa. Ao faturar de um projeto, vem da descrição do projeto.</small>
+      </div>
+
+      <div class="md:col-span-3">
         <label class="block text-sm mb-1">Observações</label>
         <textarea pTextarea [(ngModel)]="notes" rows="3" maxlength="1000" class="w-full"
           [disabled]="isReadOnly()"

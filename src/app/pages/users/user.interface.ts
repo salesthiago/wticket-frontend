@@ -8,6 +8,8 @@ export interface UserModel {
   status?: string;
   role?: UserRole;
   companyId?: string | null;
+  // Quando setado, restringe este login a ver apenas os Projetos/Tickets deste cliente.
+  customerId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

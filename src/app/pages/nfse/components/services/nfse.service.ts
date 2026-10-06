@@ -126,6 +126,30 @@ export class NfseService {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}/destroy`);
   }
 
+  public retransmit(id: string): Observable<NfseIssuance> {
+    return this.http.post<NfseIssuance>(`${this.apiUrl}/${id}/retransmit`, {});
+  }
+
+  public editIssuance(id: string, patch: {
+    dCompet?: string;
+    tomador?: any;
+    servico?: {
+      cTribNac?: string;
+      cTribMun?: string;
+      cNBS?: string;
+      xDescServ?: string;
+      cLocPrestacao?: string;
+    };
+    valoresInput?: {
+      vServ?: number;
+      descIncond?: number;
+      descCond?: number;
+      pAliq?: number;
+    };
+  }): Observable<NfseIssuance> {
+    return this.http.put<NfseIssuance>(`${this.apiUrl}/${id}/edit`, patch);
+  }
+
   /**
    * Retorna o XML como texto (DPS assinada ou retorno NFS-e).
    * type: 'dps' (default) | 'nfse'

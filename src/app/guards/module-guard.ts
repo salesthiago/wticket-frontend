@@ -37,3 +37,18 @@ export const superAdminGuard: CanActivateFn = () => {
   router.navigate(['/dashboard']);
   return false;
 };
+
+/**
+ * Guard: bloqueia acesso de cliente (portal restrito) a rotas fora de
+ * Projetos/Tickets. Espelha o bloqueio já feito no backend (blockCustomerScope).
+ */
+export const notCustomerScopeGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (auth.isCustomerScoped()) {
+    router.navigate(['/projects']);
+    return false;
+  }
+  return true;
+};

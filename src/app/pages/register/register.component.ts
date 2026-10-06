@@ -16,6 +16,8 @@ import { PlanService, Plan, PlanCycle, CYCLE_LABELS } from '../../services/plan.
 import { ModuleService, ModuleDef } from '../../services/module.service';
 import { ModuleCode } from '../../services/auth.service';
 
+declare function gtag(...args: unknown[]): void;
+
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -193,6 +195,7 @@ export class RegisterComponent implements OnInit {
         this.registered = true;
         this.checkout = res.checkout ?? null;
         this.checkoutError = res.checkoutError ?? null;
+        this.trackRegistrationConversion(res.company.id);
         this.messageService.add({
           severity: 'success',
           summary: 'Cadastro realizado',
@@ -218,6 +221,16 @@ export class RegisterComponent implements OnInit {
 
   goToLogin(): void {
     this.router.navigate(['/login'], { queryParams: { registered: '1' } });
+  }
+
+  // Evento de conversão do Google Ads (cadastro de empresa concluído).
+  // transaction_id = id da empresa criada, garante contagem única por conversão.
+  private trackRegistrationConversion(companyId: string): void {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'conversion', {
+      send_to: 'AW-18251595513/ZSduCNDxscwcEPn9hP9D',
+      transaction_id: companyId
+    });
   }
 
   private hasAnyAddressField(): boolean {

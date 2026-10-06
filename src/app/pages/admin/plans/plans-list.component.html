@@ -20,6 +20,7 @@
           <th>Módulos</th>
           <th>Preço</th>
           <th>Ciclo</th>
+          <th>Trial</th>
           <th>Status</th>
           <th style="width: 180px;">Ações</th>
         </tr>
@@ -39,6 +40,13 @@
           </td>
           <td><span class="font-semibold text-blue-700">R$ {{ (p.price ?? 0) | number:'1.2-2' }}</span></td>
           <td>{{ cycleLabel(p.cycle) }}</td>
+          <td>
+            @if (p.trialDays > 0) {
+              <p-tag [value]="p.trialDays + ' dias'" severity="warn"></p-tag>
+            } @else {
+              <span class="text-gray-400 text-xs">—</span>
+            }
+          </td>
           <td>
             <p-tag [value]="p.isActive ? 'ativo' : 'inativo'" [severity]="p.isActive ? 'success' : 'secondary'"></p-tag>
           </td>
@@ -113,6 +121,18 @@
           }
         </select>
       </div>
+    </div>
+
+    <div>
+      <label class="block text-sm mb-1">Período de trial (dias)</label>
+      <p-inputNumber [(ngModel)]="draft.trialDays" [min]="0" [max]="365" [useGrouping]="false"
+        styleClass="w-full" placeholder="0 = sem trial"></p-inputNumber>
+      @if (draft.trialDays > 0) {
+        <p class="text-xs text-amber-600 mt-1">
+          <i class="pi pi-info-circle mr-1"></i>
+          Novos cadastros neste plano terão <strong>{{ draft.trialDays }} dias grátis</strong> com acesso imediato, sem precisar pagar.
+        </p>
+      }
     </div>
 
     <div class="flex items-center gap-2">

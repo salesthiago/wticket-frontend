@@ -11,6 +11,7 @@ import { InputTextModule } from "primeng/inputtext"
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
 import { PasswordModule } from 'primeng/password';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { CustomersService } from '../../../customers/components/services/customers.service';
 @Component({
   selector: 'app-form',
   standalone: true,
@@ -38,7 +39,8 @@ export class FormComponent {
     password: '',
     name: '',
     role: 'default',
-    status: 'enabled'
+    status: 'enabled',
+    customerId: null
   };
   public password: string = '';
   public optionStatus = [
@@ -49,11 +51,13 @@ export class FormComponent {
     { name: 'Administrador', value: 'administrator'},
     { name: 'Padrão', value: 'default'},
   ]
+  public customerOptions: any[] = [];
   public confirmPassword: string = ''
   public loading = false;
 
   constructor(
     private service: UsersService,
+    private customersService: CustomersService,
     private router: Router,
     private messageService: MessageService,
     private route: ActivatedRoute
@@ -70,6 +74,19 @@ export class FormComponent {
       { label: 'Usuários', routerLink: '/users' },
       { label: id ? 'Editar Usuário' : 'Novo Usuário' }
     ];
+    this.loadCustomers();
+  }
+
+  loadCustomers(): void {
+    this.customersService.findAll({ limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.customerOptions = records.map((c: any) => ({
+          name: `${c.name} - ${c.phone}`,
+          value: c._id
+        }));
+      }
+    });
   }
 
   findById(id: string) {

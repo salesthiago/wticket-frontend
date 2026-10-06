@@ -13,17 +13,22 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DividerModule } from 'primeng/divider';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { DialogModule } from 'primeng/dialog';
-import { TimelineModule } from 'primeng/timeline';
 import { AvatarModule } from 'primeng/avatar';
-import { MessageService, MenuItem } from 'primeng/api';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
 import { ServiceOrdersService } from '../../../service-orders/components/services/service-orders.service';
 import { AppointmentsService } from '../../../appointments/components/services/appointments.service';
+import { UsersService } from '../../../users/components/services/users.service';
+import { AuthService } from '../../../../services/auth.service';
+import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-ticket-attend',
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   imports: [
     CommonModule,
     RouterModule,
@@ -39,8 +44,11 @@ import { AppointmentsService } from '../../../appointments/components/services/a
     DividerModule,
     BreadcrumbModule,
     DialogModule,
-    TimelineModule,
-    AvatarModule
+    AvatarModule,
+    InputNumberModule,
+    ConfirmDialogModule,
+    TooltipModule,
+    RichTextEditorComponent
   ],
   templateUrl: './attend.component.html',
   styleUrls: ['./attend.component.scss']
@@ -49,8 +57,11 @@ export class TicketAttendComponent implements OnInit {
   ticket: any = null;
   loading = true;
   responseLoading = false;
-  newResponse = '';
+  newResponse: string | null = '';
+  newResponseHours: number | null = null;
   selectedStatusId = '';
+
+  uploadImage = (file: File) => this.ticketService.uploadImage(file);
 
   statuses: any[] = [];
 
@@ -92,6 +103,11 @@ export class TicketAttendComponent implements OnInit {
     { label: 'Urgente', value: 'urgent' }
   ];
 
+  // Designar tarefa para outro usuário (somente administradores)
+  assignableUsers: any[] = [];
+  selectedAssignUserId = '';
+  assignLoading = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -99,8 +115,47 @@ export class TicketAttendComponent implements OnInit {
     private ticketStatusService: TicketStatusService,
     private serviceOrdersService: ServiceOrdersService,
     private appointmentsService: AppointmentsService,
-    private messageService: MessageService
+    private usersService: UsersService,
+    private authService: AuthService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) { }
+
+  // Acesso de cliente (portal restrito): não pode gerar OS/agendamento (a API bloqueia).
+  get isCustomerScoped(): boolean {
+    return this.authService.isCustomerScoped();
+  }
+
+  private get currentUserId(): string | null {
+    return this.authService.getUser()?.id ?? null;
+  }
+
+  // Designar a tarefa para outro usuário: ação restrita a administradores.
+  get isAdmin(): boolean {
+    return this.authService.hasAnyRole('administrator', 'company_admin');
+  }
+
+  // Excluir a tarefa: só quem a criou ou um administrador.
+  get canDeleteTicket(): boolean {
+    if (!this.ticket) return false;
+    if (this.isAdmin) return true;
+    const ownerId = this.ticket.createdBy?._id || this.ticket.createdBy;
+    return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
+  }
+
+  // Excluir uma resposta: só quem a registrou ou um administrador.
+  canDeleteResponse(response: any): boolean {
+    if (this.isAdmin) return true;
+    const ownerId = response?.respondedBy?._id || response?.respondedBy;
+    return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
+  }
+
+  // Diferencia no histórico quais respostas são do usuário logado (exibidas
+  // à direita, como em um app de mensagens) das demais (à esquerda).
+  isMyResponse(response: any): boolean {
+    const responderId = response?.respondedBy?._id || response?.respondedBy;
+    return !!responderId && !!this.currentUserId && responderId === this.currentUserId;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -109,6 +164,42 @@ export class TicketAttendComponent implements OnInit {
     }
     this.loadStatuses();
     this.checkModules();
+    if (this.isAdmin) {
+      this.loadAssignableUsers();
+    }
+  }
+
+  // Usuários elegíveis para designação: apenas equipe interna (sem
+  // customerId), já que um acesso de cliente não pode ser responsável por
+  // atendimento.
+  loadAssignableUsers(): void {
+    this.usersService.findAll({ internalOnly: true, limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.assignableUsers = records.map((u: any) => ({ label: u.name, value: u._id }));
+      }
+    });
+  }
+
+  assignTicket(): void {
+    if (!this.selectedAssignUserId) return;
+    this.assignLoading = true;
+    this.ticketService.assign(this.ticket._id, this.selectedAssignUserId).subscribe({
+      next: (updated) => {
+        this.ticket = updated;
+        this.selectedAssignUserId = '';
+        this.assignLoading = false;
+        this.messageService.add({ severity: 'success', summary: 'Tarefa designada com sucesso' });
+      },
+      error: (error) => {
+        this.assignLoading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao designar tarefa'
+        });
+      }
+    });
   }
 
   loadTicket(id: string): void {
@@ -136,6 +227,12 @@ export class TicketAttendComponent implements OnInit {
   }
 
   checkModules(): void {
+    // Acesso de cliente nunca vê essas ações (a API já bloqueia).
+    if (this.isCustomerScoped) {
+      this.hasServiceOrderModule = false;
+      this.hasAppointmentModule = false;
+      return;
+    }
     // Verifica se os módulos estão ativos no plano do cliente via licença
     // A verificação real deve ser feita via endpoint de licença/perfil
     try {
@@ -150,18 +247,72 @@ export class TicketAttendComponent implements OnInit {
   }
 
   saveResponse(): void {
-    if (!this.newResponse.trim()) return;
+    if (!this.newResponse) return;
     this.responseLoading = true;
-    this.ticketService.addResponse(this.ticket._id, this.newResponse.trim()).subscribe({
+    const hours = this.newResponseHours ?? 0;
+    this.ticketService.addResponse(this.ticket._id, this.newResponse, hours).subscribe({
       next: (updated) => {
         this.ticket = updated;
         this.newResponse = '';
+        this.newResponseHours = null;
         this.responseLoading = false;
         this.messageService.add({ severity: 'success', summary: 'Resposta registrada' });
       },
       error: () => {
         this.responseLoading = false;
         this.messageService.add({ severity: 'error', summary: 'Erro ao registrar resposta' });
+      }
+    });
+  }
+
+  deleteResponse(response: any, event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Excluir esta resposta? As horas lançadas nela serão descontadas do total da tarefa.',
+      header: 'Excluir Resposta',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Excluir', severity: 'danger' },
+      accept: () => {
+        this.ticketService.deleteResponse(this.ticket._id, response._id).subscribe({
+          next: (updated) => {
+            this.ticket = updated;
+            this.messageService.add({ severity: 'success', summary: 'Resposta excluída' });
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Erro ao excluir resposta'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  deleteTicket(event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: 'Excluir esta tarefa? Essa ação não pode ser desfeita.',
+      header: 'Excluir Tarefa',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Excluir', severity: 'danger' },
+      accept: () => {
+        this.ticketService.destroy(this.ticket._id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Tarefa excluída' });
+            this.goBack();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Erro ao excluir tarefa'
+            });
+          }
+        });
       }
     });
   }

@@ -1,0 +1,62 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card>
+    <div class="flex justify-between items-center flex-wrap gap-2 mb-4">
+      <div class="flex items-center gap-2">
+        <p-button icon="pi pi-list" label="Lista" severity="secondary" [outlined]="true" (click)="goToList()"></p-button>
+      </div>
+      <input pInputText type="text" placeholder="Pesquisar por título, número ou cliente..."
+        [(ngModel)]="search" (ngModelChange)="onSearchChange()" class="w-72" />
+    </div>
+
+    <div class="kanban-board" cdkDropListGroup>
+      @for (column of columns; track column.status._id) {
+        <div class="kanban-column">
+          <div class="kanban-column-header" [style.borderTopColor]="column.status.color">
+            <span class="kanban-column-title">{{ column.status.label }}</span>
+            <span class="kanban-column-count">{{ column.projects.length }}</span>
+          </div>
+          <div
+            class="kanban-column-body"
+            cdkDropList
+            [id]="column.status._id"
+            [cdkDropListData]="column.projects"
+            (cdkDropListDropped)="drop($event, column.status)">
+            @for (item of column.projects; track item._id) {
+              <div class="kanban-card" cdkDrag (click)="view(item._id)">
+                <div class="kanban-card-header">
+                  <span class="kanban-card-number">{{ item.projectNumber }}</span>
+                  <p-tag [value]="getPriorityLabel(item.priority)" [severity]="getPriorityColor(item.priority)" />
+                </div>
+                <div class="kanban-card-title">{{ item.title }}</div>
+                <div class="kanban-card-customer">
+                  <i class="pi pi-user"></i> {{ getCustomerName(item) }}
+                </div>
+                @if (item.endDate) {
+                  <div class="kanban-card-date">
+                    <i class="pi pi-calendar"></i> {{ item.endDate | date:'dd/MM/yyyy' }}
+                  </div>
+                }
+              </div>
+            } @empty {
+              <div class="kanban-column-empty">Nenhum projeto</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="flex justify-end mt-4">
+      <p-paginator
+        [first]="first"
+        [rows]="rows"
+        [totalRecords]="filteredItems.length"
+        currentPageReportTemplate=" {first} de {last} "
+        [showCurrentPageReport]="true"
+        (onPageChange)="onPageChange($event)" />
+    </div>
+  </p-card>
+</div>
+
+<p-toast />

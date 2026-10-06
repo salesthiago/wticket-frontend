@@ -1,0 +1,393 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  @if (loading) {
+    <div class="flex justify-center p-8">
+      <p-progressSpinner />
+    </div>
+  } @else if (project) {
+
+    <p-card class="mb-4">
+      <div class="flex justify-between items-start flex-wrap gap-2">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-xl font-semibold m-0">{{ project.title }}</h2>
+            <span class="text-gray-500">{{ project.projectNumber }}</span>
+            @if (project.statusId) {
+              <span class="status-badge" [style.background]="project.statusId?.color">
+                {{ project.statusId?.label }}
+              </span>
+            }
+            <p-tag [value]="getPriorityLabel(project.priority)" [severity]="getPrioritySeverity(project.priority)"></p-tag>
+          </div>
+          @if (project.description) {
+            <div class="text-gray-600 mt-2 mb-0 rich-text-content" [innerHTML]="project.description"></div>
+          }
+        </div>
+        <div class="flex gap-2">
+          <p-button label="Voltar" severity="secondary" (click)="goBack()"></p-button>
+          <p-button icon="pi pi-file-excel" label="Exportar Excel" severity="success" [outlined]="true" [loading]="exporting" (click)="exportExcel()" pTooltip="Exportar este projeto e suas tarefas seguindo o modelo de planilha"></p-button>
+          @if (hasFinancialAccess) {
+            <p-button icon="pi pi-wallet" label="Faturar" severity="info"
+              [disabled]="!canInvoiceProject()"
+              [pTooltip]="invoiceTooltip()"
+              tooltipPosition="left"
+              (click)="openInvoiceDialog()"></p-button>
+          }
+          <p-button label="Editar" (click)="edit()"></p-button>
+          @if (canDelete) {
+            <p-button icon="pi pi-trash" label="Excluir" severity="danger" [outlined]="true" (click)="confirmDelete($event)"></p-button>
+          }
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <div>
+          <div class="text-gray-500 text-sm">Cliente</div>
+          <div class="font-medium">{{ project.customerId?.name ?? 'Sem cliente vinculado' }}</div>
+        </div>
+        <div>
+          <div class="text-gray-500 text-sm">Início</div>
+          <div class="font-medium">{{ project.startDate ? (project.startDate | date:'dd/MM/yyyy') : '—' }}</div>
+        </div>
+        <div>
+          <div class="text-gray-500 text-sm">Prazo</div>
+          <div class="font-medium">{{ project.endDate ? (project.endDate | date:'dd/MM/yyyy') : '—' }}</div>
+        </div>
+        <div>
+          <div class="text-gray-500 text-sm">Encerrado em</div>
+          <div class="font-medium">{{ project.closedAt ? (project.closedAt | date:'dd/MM/yyyy') : '—' }}</div>
+        </div>
+      </div>
+    </p-card>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <p-card>
+        <div class="text-gray-500 text-sm">Total de Horas Trabalhadas</div>
+        <div class="text-2xl font-semibold">{{ project.stats?.totalWorkedHours ?? 0 }}h</div>
+      </p-card>
+      <p-card>
+        <div class="text-gray-500 text-sm">Valor do Projeto</div>
+        <div class="text-2xl font-semibold">{{ (project.stats?.totalValue ?? 0) | currency:'BRL' }}</div>
+        <small class="text-gray-500">{{ project.hourlyRate | currency:'BRL' }} / hora</small>
+      </p-card>
+      <p-card>
+        <div class="text-gray-500 text-sm">Tarefas</div>
+        <div class="text-2xl font-semibold">{{ project.stats?.totalTasks ?? 0 }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-gray-500 text-sm">Progresso</div>
+        <div class="text-2xl font-semibold">{{ (project.stats?.completionPercentage ?? 0) | percent }}</div>
+        <small class="text-gray-500">Concluídas + em andamento</small>
+      </p-card>
+    </div>
+
+    <p-card>
+      <div class="flex justify-between items-center flex-wrap gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Tarefas do Projeto</span>
+          <p-button icon="pi pi-list" label="Lista" [severity]="tasksViewMode === 'list' ? 'primary' : 'secondary'" [outlined]="tasksViewMode !== 'list'" size="small" (click)="setTasksViewMode('list')"></p-button>
+          <p-button icon="pi pi-th-large" label="Kanban" [severity]="tasksViewMode === 'kanban' ? 'primary' : 'secondary'" [outlined]="tasksViewMode !== 'kanban'" size="small" (click)="setTasksViewMode('kanban')"></p-button>
+        </div>
+        <div class="flex items-center gap-2">
+          <input pInputText type="text" placeholder="Pesquisar tarefa por número, contato, assunto ou responsável..."
+            [(ngModel)]="tasksSearch" (ngModelChange)="onTasksSearchChange()" class="w-80" />
+          <p-button icon="pi pi-plus" label="Nova Tarefa" (click)="openTaskDialog()"></p-button>
+        </div>
+      </div>
+
+      @if (tasksViewMode === 'list') {
+        <p-table
+          [value]="filteredTasks"
+          [loading]="tasksLoading"
+          [rows]="10"
+          [paginator]="true"
+          [rowHover]="true"
+          dataKey="_id">
+
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="8">Nenhuma tarefa encontrada.</td>
+            </tr>
+          </ng-template>
+
+          <ng-template #header>
+            <tr>
+              <th>Nº Tarefa</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Prioridade</th>
+              <th>Responsável</th>
+              <th>Prazo</th>
+              <th>Horas Trabalhadas</th>
+              <th>Ações</th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-task>
+            <tr>
+              <td class="font-semibold">{{ task.taskNumber || '—' }}</td>
+              <td>
+                <div>{{ task.contactName || task.contactNumber }}</div>
+                @if (task.subjectId?.name) {
+                  <small class="text-gray-500">{{ task.subjectId?.name }}</small>
+                }
+              </td>
+              <td>
+                @if (task.statusId) {
+                  <span class="status-badge" [style.background]="task.statusId?.color">
+                    {{ task.statusId?.label }}
+                  </span>
+                }
+              </td>
+              <td>
+                <p-tag [value]="getTaskPriorityLabel(task.priority)" [severity]="getTaskPrioritySeverity(task.priority)"></p-tag>
+              </td>
+              <td>{{ task.assignedTo?.name ?? '—' }}</td>
+              <td>{{ task.endDate ? (task.endDate | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ task.workedHours ?? 0 }}h</td>
+              <td>
+                <p-button icon="pi pi-arrow-up-right" [rounded]="true" [text]="true" (onClick)="openTask(task)" pTooltip="Abrir tarefa"></p-button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="task-kanban-board" cdkDropListGroup>
+          @for (column of taskColumns; track column.status._id) {
+            <div class="task-kanban-column">
+              <div class="task-kanban-column-header" [style.borderTopColor]="column.status.color">
+                <span class="task-kanban-column-title">{{ column.status.label }}</span>
+                <span class="task-kanban-column-count">{{ column.tasks.length }}</span>
+              </div>
+              <div
+                class="task-kanban-column-body"
+                cdkDropList
+                [id]="column.status._id"
+                [cdkDropListData]="column.tasks"
+                (cdkDropListDropped)="dropTask($event, column.status)">
+                @for (task of column.tasks; track task._id) {
+                  <div class="task-kanban-card" cdkDrag (click)="openTask(task)">
+                    <div class="task-kanban-card-header">
+                      <span class="task-kanban-card-number">{{ task.taskNumber || '—' }}</span>
+                      <p-tag [value]="getTaskPriorityLabel(task.priority)" [severity]="getTaskPrioritySeverity(task.priority)" />
+                    </div>
+                    <div class="task-kanban-card-title">{{ task.contactName || task.contactNumber }}</div>
+                    @if (task.subjectId?.name) {
+                      <div class="task-kanban-card-subject">{{ task.subjectId?.name }}</div>
+                    }
+                    <div class="task-kanban-card-meta">
+                      <span><i class="pi pi-user"></i> {{ task.assignedTo?.name ?? 'Não atribuído' }}</span>
+                      @if (task.endDate) {
+                        <span><i class="pi pi-calendar"></i> {{ task.endDate | date:'dd/MM/yyyy' }}</span>
+                      }
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="task-kanban-column-empty">Nenhuma tarefa</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </p-card>
+
+    <!-- Faturamento (Contas a Receber) -->
+    @if (hasFinancialAccess) {
+      <p-card class="mt-4">
+        <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+          <h3 class="text-lg font-semibold flex items-center gap-2">
+            <i class="pi pi-wallet"></i> Faturamento
+          </h3>
+          <p-button label="Faturar Projeto" icon="pi pi-plus" size="small" severity="info"
+            [disabled]="!canInvoiceProject()"
+            [pTooltip]="invoiceTooltip()"
+            tooltipPosition="left"
+            (click)="openInvoiceDialog()" />
+        </div>
+
+        @if (loadingReceivables) {
+          <div class="text-center text-gray-400 py-4">
+            <i class="pi pi-spinner pi-spin"></i> Carregando…
+          </div>
+        } @else if (receivables.length === 0) {
+          <p class="text-gray-400 text-sm">Nenhum título a receber foi gerado para este projeto.</p>
+        } @else {
+          <p-table [value]="receivables" [tableStyle]="{ 'min-width': '60rem' }">
+            <ng-template #header>
+              <tr>
+                <th>Número</th>
+                <th>Descrição</th>
+                <th class="text-right">Valor</th>
+                <th>Vencimento</th>
+                <th>Pagamento</th>
+                <th>Forma</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-r>
+              <tr class="cursor-pointer" (click)="viewReceivable(r)">
+                <td class="font-mono">{{ r.number }}</td>
+                <td class="max-w-md truncate" [pTooltip]="r.description">{{ r.description }}</td>
+                <td class="text-right font-mono">R$ {{ r.amount | number:'1.2-2' }}</td>
+                <td>{{ r.dueDate | date:'dd/MM/yyyy' }}</td>
+                <td>{{ r.paymentDate ? (r.paymentDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="text-xs">{{ paymentMethodLabel(r.paymentMethod) }}</td>
+                <td>
+                  <p-tag [value]="receivableStatusLabel(r.status)" [severity]="receivableStatusColor(r.status)" />
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-button icon="pi pi-eye" severity="info" [rounded]="true" [text]="true"
+                    pTooltip="Visualizar" (click)="viewReceivable(r)" />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+    }
+
+    <p-card header="Documentos" class="mt-4">
+      @if (documents.length > 0) {
+        <div class="flex flex-col gap-2">
+          @for (doc of documents; track doc._id) {
+            <div class="flex items-center justify-between gap-2 p-3 border border-gray-200 rounded">
+              <div class="flex items-center gap-2 min-w-0">
+                <i class="pi pi-file text-gray-500"></i>
+                <a [href]="doc.viewUrl" target="_blank" rel="noopener" class="truncate font-medium" pTooltip="Abrir/baixar">
+                  {{ doc.filename }}
+                </a>
+                <span class="text-xs text-gray-400 whitespace-nowrap">{{ formatFileSize(doc.size) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-gray-400 text-sm">Nenhum documento anexado. Anexe pela tela de edição do projeto.</p>
+      }
+    </p-card>
+  }
+</div>
+
+<p-dialog header="Nova Tarefa" [(visible)]="taskDialog" [modal]="true" [style]="{ width: '32rem' }">
+  <div class="grid grid-cols-1 gap-4">
+    <p class="text-gray-500 text-sm m-0">O número da tarefa é gerado automaticamente a partir do número do projeto.</p>
+    <div class="field">
+      <label class="block mb-2">Cliente <span class="text-red-500">*</span></label>
+      <p-select
+        [options]="customerOptions"
+        [(ngModel)]="taskForm.customerId"
+        optionLabel="name"
+        optionValue="value"
+        placeholder="Selecione o cliente..."
+        [filter]="true"
+        filterPlaceholder="Buscar cliente..."
+        [disabled]="isTaskCustomerLocked"
+        appendTo="body"
+        class="w-full">
+      </p-select>
+      @if (isTaskCustomerLocked) {
+        <small class="text-gray-500">O cliente da tarefa é sempre o mesmo do projeto.</small>
+      }
+    </div>
+    <div class="field">
+      <label class="block mb-2">Status</label>
+      <p-select [options]="statusOptions" [(ngModel)]="taskForm.statusId" optionLabel="label" optionValue="value" placeholder="Status padrão" [showClear]="true" appendTo="body" class="w-full"></p-select>
+    </div>
+    <div class="field">
+      <label class="block mb-2">Prioridade</label>
+      <p-select [options]="priorityOptions" [(ngModel)]="taskForm.priority" optionLabel="label" optionValue="value" appendTo="body" class="w-full"></p-select>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="field">
+        <label class="block mb-2">Data de Início</label>
+        <p-datepicker [(ngModel)]="taskForm.startDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Opcional" appendTo="body" class="w-full" />
+      </div>
+      <div class="field">
+        <label class="block mb-2">Data de Término</label>
+        <p-datepicker [(ngModel)]="taskForm.endDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Opcional" appendTo="body" class="w-full" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="block mb-2">Notas</label>
+      <app-rich-text-editor
+        [(value)]="taskForm.notes"
+        height="160px"
+        [uploader]="uploadImage">
+      </app-rich-text-editor>
+    </div>
+  </div>
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" (click)="taskDialog = false"></p-button>
+    <p-button label="Salvar" [loading]="taskLoading" (click)="saveTask()"></p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog Faturar Projeto -->
+<p-dialog header="Faturar Projeto" [(visible)]="showInvoiceDialog"
+  [modal]="true" [style]="{ width: '500px' }" [closable]="!invoicingProject">
+  <div class="grid grid-cols-1 gap-4 p-2">
+    <p class="text-gray-500 text-sm m-0">
+      O título será gerado com a descrição <strong>{{ project?.projectNumber }}</strong> (número do projeto).
+    </p>
+
+    <!-- Memória de cálculo: horas trabalhadas x valor/hora do projeto -->
+    <div class="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+      <div class="font-medium mb-1">Valor calculado</div>
+      <div class="flex items-center justify-between">
+        <span class="text-gray-600">
+          {{ invoiceWorkedHours() | number:'1.2-2' }} h × R$ {{ invoiceHourlyRate() | number:'1.2-2' }}/h
+        </span>
+        <span class="font-mono font-semibold text-base">R$ {{ invoiceAmountPreview() | number:'1.2-2' }}</span>
+      </div>
+      @if (invoiceHourlyRate() === 0) {
+        <small class="text-amber-600 block mt-1">
+          Defina o valor/hora na edição do projeto para calcular automaticamente.
+        </small>
+      }
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Vencimento <span class="text-red-500">*</span></label>
+      <p-datepicker [(ngModel)]="invoiceDraft.dueDate"
+        dateFormat="dd/mm/yy" [showButtonBar]="true" [showIcon]="true" appendTo="body" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Forma de Pagamento <span class="text-red-500">*</span></label>
+      <p-select [options]="optionPaymentMethods"
+        [(ngModel)]="invoiceDraft.paymentMethod"
+        optionLabel="label" optionValue="value" appendTo="body" class="w-full" />
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Descrição da Fatura</label>
+      <textarea pTextarea [(ngModel)]="invoiceDraft.invoiceDescription" rows="5" class="w-full"
+        placeholder="Texto detalhado exibido na fatura impressa"></textarea>
+      <small class="text-gray-500">Preenchido automaticamente com a descrição do projeto. Pode ser editado.</small>
+    </div>
+
+    <div class="field">
+      <label class="block mb-1 text-sm">Observações</label>
+      <textarea pTextarea [(ngModel)]="invoiceDraft.notes" rows="3" maxlength="500" class="w-full"></textarea>
+    </div>
+
+    <div class="text-xs text-gray-500 border-t pt-2">
+      O título será gerado vinculado ao cliente deste projeto e poderá ser baixado posteriormente
+      em <a routerLink="/financial/receivables" class="underline">Financeiro › Contas a Receber</a>.
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true"
+      [disabled]="invoicingProject" (click)="showInvoiceDialog = false" />
+    <p-button label="Gerar Título" icon="pi pi-wallet" severity="info"
+      [loading]="invoicingProject" (click)="submitInvoice()" />
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />
+<p-toast />

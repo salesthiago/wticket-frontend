@@ -35,6 +35,7 @@ import { StorageConfigComponent } from '../../components/storage-config/storage-
 export class MyCompanyComponent implements OnInit {
   loading = false;
   saving = false;
+  logoUploading = false;
   company: Company | null = null;
   catalog: ModuleDef[] = [];
 
@@ -60,7 +61,7 @@ export class MyCompanyComponent implements OnInit {
     this.loading = true;
     this.moduleService.findAll(true).subscribe(m => this.catalog = m);
     this.companyService.findById(companyId).subscribe({
-      next: (c) => { this.company = c; this.loading = false; },
+      next: (c) => { this.company = { ...c, address: c.address || {} }; this.loading = false; },
       error: () => { this.loading = false; this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao carregar empresa' }); }
     });
   }
@@ -76,6 +77,53 @@ export class MyCompanyComponent implements OnInit {
         this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Dados atualizados' });
       },
       error: (err) => { this.saving = false; this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha' }); }
+    });
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.company) return;
+
+    if (!/^image\/(png|jpe?g|webp|gif|svg\+xml)$/.test(file.type)) {
+      this.messageService.add({ severity: 'warn', summary: 'Formato inválido', detail: 'Envie uma imagem (PNG, JPG, WEBP ou SVG).' });
+      input.value = '';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      this.messageService.add({ severity: 'warn', summary: 'Arquivo grande', detail: 'A logomarca deve ter no máximo 2 MB.' });
+      input.value = '';
+      return;
+    }
+
+    this.logoUploading = true;
+    this.companyService.uploadLogo(this.company._id, file).subscribe({
+      next: (res) => {
+        this.logoUploading = false;
+        if (this.company) this.company.logo = res.logo;
+        this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Logomarca atualizada' });
+      },
+      error: (err) => {
+        this.logoUploading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha ao enviar a logomarca' });
+      }
+    });
+    input.value = '';
+  }
+
+  removeLogo(): void {
+    if (!this.company?.logo) return;
+    this.logoUploading = true;
+    this.companyService.deleteLogo(this.company._id).subscribe({
+      next: () => {
+        this.logoUploading = false;
+        if (this.company) this.company.logo = null;
+        this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Logomarca removida' });
+      },
+      error: (err) => {
+        this.logoUploading = false;
+        this.messageService.add({ severity: 'error', summary: 'Erro', detail: err?.error?.message || 'Falha ao remover' });
+      }
     });
   }
 

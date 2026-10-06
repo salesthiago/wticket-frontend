@@ -1,0 +1,238 @@
+:host {
+  display: block;
+  background: #f3f4f6;
+  min-height: 100vh;
+}
+
+.inv-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.inv-msg {
+  background: #fff;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  color: #6b7280;
+
+  &--err { color: #b91c1c; }
+}
+
+.inv-doc {
+  background: #fff;
+  color: #1f2937;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 40px 44px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ─── Cabeçalho ────────────────────────────────────────────────────────── */
+.inv-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 20px;
+
+  &__brand { display: flex; gap: 14px; align-items: center; }
+  &__logo { max-height: 64px; max-width: 200px; object-fit: contain; }
+  &__name { font-size: 18px; font-weight: 700; }
+  &__sub { color: #6b7280; font-size: 12px; }
+
+  &__meta { text-align: right; min-width: 240px; }
+  &__title { font-size: 22px; font-weight: 700; letter-spacing: 2px; color: #111827; }
+  &__grid {
+    margin-top: 8px;
+    margin-left: auto;
+    border-collapse: collapse;
+
+    td { padding: 2px 0 2px 16px; }
+    td:first-child { color: #6b7280; text-align: right; padding-left: 0; }
+  }
+}
+
+/* ─── Quadro de valor / vencimento ────────────────────────────────────── */
+.inv-duebox {
+  margin-top: 18px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+
+  strong { font-size: 18px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+}
+
+/* ─── Partes ──────────────────────────────────────────────────────────── */
+.inv-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 22px;
+}
+
+.inv-party {
+  h4 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+  }
+  &__name { font-weight: 600; }
+  &__muted { color: #9ca3af; }
+  div { word-break: break-word; }
+}
+
+/* ─── Seções / tabelas ───────────────────────────────────────────────── */
+.inv-section {
+  margin-top: 26px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 4px;
+  }
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eef0f2;
+    vertical-align: top;
+  }
+  thead th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    background: #f9fafb;
+  }
+  .right { text-align: right; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+}
+
+.inv-formula {
+  margin: 8px 0 0;
+  text-align: right;
+  color: #4b5563;
+}
+
+.inv-desc {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  background: #f9fafb;
+  border: 1px solid #eef0f2;
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+/* ─── Total ───────────────────────────────────────────────────────────── */
+.inv-total {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 20px;
+  border-top: 2px solid #e5e7eb;
+  padding-top: 14px;
+
+  span { font-weight: 600; color: #374151; letter-spacing: 1px; }
+  strong { font-size: 22px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+}
+
+.inv-note {
+  margin-top: 16px;
+  color: #6b7280;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* ─── Formas de pagamento ─────────────────────────────────────────────── */
+.inv-pay {
+  &__row {
+    display: flex;
+    gap: 12px;
+    padding: 4px 0;
+  }
+  &__label {
+    min-width: 140px;
+    color: #6b7280;
+  }
+  &__note {
+    margin: 8px 0 0;
+    color: #4b5563;
+    white-space: pre-wrap;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+}
+
+/* ─── Rodapé ──────────────────────────────────────────────────────────── */
+.inv-foot {
+  margin-top: 40px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  font-size: 11px;
+  color: #6b7280;
+
+  &__name { font-weight: 600; color: #374151; }
+  &__brand {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+
+    img { max-height: 28px; max-width: 140px; object-fit: contain; }
+  }
+}
+
+/* ─── Impressão ───────────────────────────────────────────────────────── */
+@media print {
+  :host { background: #fff; }
+  .inv-wrap { max-width: none; padding: 0; }
+  .no-print { display: none !important; }
+  .inv-doc { box-shadow: none; border-radius: 0; padding: 0; }
+  .inv-duebox, .inv-desc, .inv-table thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .inv-section { break-inside: avoid; }
+}
+
+@media (max-width: 640px) {
+  .inv-doc { padding: 24px 20px; }
+  .inv-head { flex-direction: column; }
+  .inv-head__meta { text-align: left; }
+  .inv-head__grid { margin-left: 0; }
+  .inv-head__grid td:first-child { text-align: left; }
+  .inv-parties { grid-template-columns: 1fr; }
+}

@@ -30,5 +30,32 @@ export const routes: Routes = [
   {
     path: 'receivables/view/:id',
     loadComponent: () => import('./components/receivables/view.component').then(m => m.ReceivableViewComponent)
+  },
+  {
+    path: 'receivables/print/:id',
+    loadComponent: () => import('./components/receivables/print.component').then(m => m.ReceivablePrintComponent)
+  },
+
+  // Configurações do financeiro (dados de recebimento + atalho Integração Itaú)
+  {
+    path: 'settings',
+    loadComponent: () => import('./components/settings/financial-settings.component').then(m => m.FinancialSettingsComponent)
+  },
+
+  // Cobrança (boletos gerados via Integração Itaú, amarrados aos títulos)
+  {
+    path: 'charges',
+    loadComponent: () => import('./components/charges/charges.component').then(m => m.FinancialChargesComponent)
+  },
+
+  // Integração Itaú — parte do módulo financeiro (o grupo /financial já é
+  // protegido por moduleGuard('financial') em app.routes)
+  {
+    path: 'itau/config',
+    loadComponent: () => import('./components/itau/config/itau-config.component').then(m => m.ItauConfigComponent)
+  },
+  {
+    path: 'itau/history',
+    loadComponent: () => import('./components/itau/history/itau-history.component').then(m => m.ItauHistoryComponent)
   }
 ];

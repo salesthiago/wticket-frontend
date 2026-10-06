@@ -31,8 +31,22 @@ export class TicketService {
     return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/status`, { statusId });
   }
 
-  addResponse(id: string, content: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content });
+  assign(id: string, assignedTo: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/assign`, { assignedTo });
+  }
+
+  addResponse(id: string, content: string, hoursSpent: number = 0): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/tickets/${id}/responses`, { content, hoursSpent });
+  }
+
+  uploadImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/tickets/upload-image`, formData);
+  }
+
+  deleteResponse(id: string, responseId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/tickets/${id}/responses/${responseId}`);
   }
 
   updateSaleItems(id: string, data: { saleItems?: any[]; categoryId?: string }): Observable<any> {

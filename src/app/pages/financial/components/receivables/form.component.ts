@@ -70,6 +70,7 @@ export class ReceivableFormComponent implements OnInit {
 
   // Form model
   description = '';
+  invoiceDescription = '';
   amount: number | null = null;
   dueDate: Date = (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
   paymentMethod: PaymentMethod = 'pix';
@@ -124,6 +125,7 @@ export class ReceivableFormComponent implements OnInit {
     this.financial.getReceivable(id).subscribe({
       next: (r: Receivable) => {
         this.description = r.description || '';
+        this.invoiceDescription = r.invoiceDescription || '';
         this.amount = r.amount;
         this.dueDate = r.dueDate ? new Date(r.dueDate) : new Date();
         this.paymentMethod = r.paymentMethod;
@@ -187,6 +189,7 @@ export class ReceivableFormComponent implements OnInit {
     if (this.id) {
       const patch: ReceivableUpdateInput = {
         description: this.description,
+        invoiceDescription: this.invoiceDescription || '',
         amount: Number(this.amount),
         dueDate: this.dueDate,
         paymentMethod: this.paymentMethod,
@@ -210,6 +213,7 @@ export class ReceivableFormComponent implements OnInit {
     } else {
       const payload: ReceivableCreateInput = {
         description: this.description,
+        invoiceDescription: this.invoiceDescription || undefined,
         amount: Number(this.amount),
         dueDate: this.dueDate,
         paymentMethod: this.paymentMethod,

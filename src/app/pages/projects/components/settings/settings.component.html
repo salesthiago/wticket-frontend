@@ -1,0 +1,104 @@
+<p-toast />
+<p-confirmDialog />
+
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [home]="breadcrumbHome" [model]="breadcrumbItems" class="mb-4 block" />
+
+  <p-card>
+    <div class="card-toolbar">
+      <h3>Status de Projetos</h3>
+      <button pButton label="Novo Status" icon="pi pi-plus" (click)="openStatusDialog()"></button>
+    </div>
+    <p-table [value]="statuses" [rowHover]="true" responsiveLayout="scroll">
+      <ng-template #header>
+        <tr>
+          <th>Ordem</th>
+          <th>Cor</th>
+          <th>Nome</th>
+          <th>Label</th>
+          <th>Padrão</th>
+          <th>Encerra projeto</th>
+          <th>Ativo</th>
+          <th style="width: 160px">Ações</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-st>
+        <tr>
+          <td>{{ st.order }}</td>
+          <td><span class="color-dot" [style.background]="st.color"></span></td>
+          <td><strong>{{ st.name }}</strong></td>
+          <td>
+            <span class="status-preview" [style.background]="st.color">{{ st.label }}</span>
+          </td>
+          <td>
+            @if (st.isDefault) {
+              <i class="pi pi-star-fill text-yellow-500"></i>
+            } @else {
+              <button pButton icon="pi pi-star" class="p-button-text p-button-sm p-button-warning" pTooltip="Definir como padrão" (click)="setDefaultStatus(st._id)"></button>
+            }
+          </td>
+          <td>
+            <i [class]="st.isClosingStatus ? 'pi pi-check-circle text-green-500' : 'pi pi-minus text-gray-400'"></i>
+          </td>
+          <td>
+            <i [class]="st.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"></i>
+          </td>
+          <td>
+            <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openStatusDialog(st)"></button>
+            <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" [disabled]="st.isDefault" (click)="deleteStatus(st._id, $event)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="8" class="text-center">Nenhum status cadastrado.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Dialog: Status -->
+<p-dialog
+  [header]="editingStatusId ? 'Editar Status' : 'Novo Status'"
+  [(visible)]="statusDialog"
+  [modal]="true"
+  [style]="{ width: '440px' }">
+  <div class="dialog-form">
+    <div class="field">
+      <label>Nome interno *</label>
+      <input pInputText [(ngModel)]="statusForm.name" class="w-full" placeholder="Ex: in_progress" />
+    </div>
+    <div class="field">
+      <label>Label (exibição) *</label>
+      <input pInputText [(ngModel)]="statusForm.label" class="w-full" placeholder="Ex: Em Andamento" />
+    </div>
+    <div class="field">
+      <label>Cor</label>
+      <div class="color-field">
+        <p-colorPicker [(ngModel)]="statusForm.color" format="hex" />
+        <input pInputText [(ngModel)]="statusForm.color" class="color-input" placeholder="#6c757d" />
+        <span class="status-preview" [style.background]="statusForm.color">{{ statusForm.label || 'Preview' }}</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ordem</label>
+      <p-inputNumber [(ngModel)]="statusForm.order" [min]="0" styleClass="w-full" />
+    </div>
+    <div class="field-inline">
+      <label>Status padrão</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isDefault" />
+    </div>
+    <div class="field-inline">
+      <label>Encerra o projeto (define data de encerramento)</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isClosingStatus" />
+    </div>
+    <div class="field-inline">
+      <label>Ativo</label>
+      <p-toggleSwitch [(ngModel)]="statusForm.isActive" />
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="statusDialog = false"></button>
+    <button pButton label="Salvar" icon="pi pi-check" [loading]="statusLoading" (click)="saveStatus()"></button>
+  </ng-template>
+</p-dialog>

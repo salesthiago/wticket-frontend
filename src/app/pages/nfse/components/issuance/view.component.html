@@ -27,6 +27,22 @@
         } @else {
           <p-tag value="Produção" severity="danger" />
         }
+        @if (canRetransmit()) {
+          <p-button
+            label="Editar dados"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="openEdit()"
+            pTooltip="Corrigir dados e regenerar XML antes de retransmitir" />
+          <p-button
+            label="Retransmitir"
+            icon="pi pi-send"
+            severity="warn"
+            [loading]="retransmitting"
+            (onClick)="retransmit()"
+            pTooltip="Reenviar esta DPS ao webservice da prefeitura" />
+        }
         @if (item.urlConsulta) {
           <p-button label="Consultar na prefeitura" icon="pi pi-external-link"
             severity="secondary" [outlined]="true" (onClick)="openConsultaUrl()" />
@@ -60,37 +76,73 @@
     }
   </p-card>
 
+  <!-- ─── Painel de erro técnico ────────────────────────────────────────── -->
+  @if (item.status === 'error') {
+    <div class="mb-4 border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950 rounded-lg p-4">
+      <div class="flex items-start gap-3">
+        <i class="pi pi-times-circle text-red-600 dark:text-red-400 text-xl mt-0.5 flex-shrink-0"></i>
+        <div class="flex-1">
+          <h3 class="font-semibold text-red-800 dark:text-red-300 mb-1">Erro técnico na transmissão</h3>
+          @if (item.statusHistory && item.statusHistory.length > 0) {
+            <p class="text-sm text-red-700 dark:text-red-400">
+              {{ item.statusHistory[item.statusHistory.length - 1].message }}
+            </p>
+          }
+          <p class="text-xs text-red-500 dark:text-red-500 mt-2">
+            Verifique os detalhes na aba <strong>Transmissões WS</strong> e use o botão <strong>Retransmitir</strong> para tentar novamente.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- ─── Mensagens de retorno ─────────────────────────────────────────── -->
   @if (item.mensagensRetorno && item.mensagensRetorno.length > 0) {
-    <p-card class="mb-4">
-      <h3 class="font-medium mb-2">Mensagens de Retorno</h3>
-      <div class="space-y-2">
-        @for (m of item.mensagensRetorno; track m.codigo) {
-          <p-message
-            [severity]="item.status === 'authorized' ? 'success' : 'error'"
-            styleClass="w-full">
-            <div>
-              <strong>[{{ m.codigo || '—' }}]</strong> {{ m.mensagem }}
-              @if (m.correcao) {
-                <div class="text-xs mt-1 opacity-75">
-                  <strong>Correção:</strong> {{ m.correcao }}
-                </div>
-              }
-            </div>
-          </p-message>
+    <div class="mb-4 border rounded-lg overflow-hidden"
+         [class]="item.status === 'authorized' ? 'border-green-300 dark:border-green-700' : 'border-red-300 dark:border-red-700'">
+      <div class="px-4 py-3 font-semibold text-sm flex items-center gap-2"
+           [class]="item.status === 'authorized'
+             ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+             : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'">
+        <i [class]="item.status === 'authorized' ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"></i>
+        Retorno do Webservice
+        @if (item.status !== 'authorized') {
+          <span class="ml-auto text-xs font-normal opacity-75">Use o botão Retransmitir após corrigir o problema</span>
         }
       </div>
-    </p-card>
+      <div class="p-4 space-y-3">
+        @for (m of item.mensagensRetorno; track m.codigo) {
+          <div class="rounded p-3 text-sm"
+               [class]="item.status === 'authorized'
+                 ? 'bg-green-50 dark:bg-green-950'
+                 : 'bg-red-50 dark:bg-red-950'">
+            <div class="font-mono font-semibold text-xs mb-1 opacity-70">[{{ m.codigo || '—' }}]</div>
+            <div class="font-medium">{{ m.mensagem }}</div>
+            @if (m.correcao) {
+              <div class="mt-2 text-xs border-t pt-2 opacity-75">
+                <strong>Correção sugerida:</strong> {{ m.correcao }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
   }
 
   <!-- ─── Tabs com snapshot ────────────────────────────────────────────── -->
   <p-card>
-    <p-tabs [value]="activeTab" (valueChange)="activeTab = $any($event)">
+    <p-tabs [value]="activeTab" (valueChange)="onTabChange($any($event))">
       <p-tablist>
         <p-tab value="snapshot">Detalhes</p-tab>
         <p-tab value="parties">Prestador & Tomador</p-tab>
         <p-tab value="valores">Valores & Tributação</p-tab>
-        <p-tab value="historico">Histórico</p-tab>
+        <p-tab value="historico">Histórico de status</p-tab>
+        <p-tab value="transmissoes">
+          Transmissões WS
+          @if (item.status === 'error' || item.status === 'rejected') {
+            <span class="ml-1 inline-flex items-center justify-center w-4 h-4 text-xs font-bold bg-red-500 text-white rounded-full">!</span>
+          }
+        </p-tab>
       </p-tablist>
 
       <p-tabpanels>
@@ -292,10 +344,231 @@
             <p class="text-gray-400 text-sm">Sem histórico registrado.</p>
           }
         </p-tabpanel>
+
+        <!-- ─── Aba de transmissões ao webservice ──────────────────────── -->
+        <p-tabpanel value="transmissoes">
+          @if (logsLoading) {
+            <div class="space-y-3">
+              @for (_ of [1,2,3]; track $index) {
+                <p-skeleton height="4rem" />
+              }
+            </div>
+          } @else if (logs.length === 0) {
+            <div class="text-center py-8 text-gray-400 text-sm">
+              <i class="pi pi-database text-2xl block mb-2"></i>
+              Nenhuma transmissão registrada para esta emissão.
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for (log of logs; track log._id) {
+                <div class="border rounded-lg overflow-hidden"
+                     [class]="log.success ? 'border-green-200 dark:border-green-800' : 'border-red-200 dark:border-red-800'">
+                  <!-- Linha principal -->
+                  <div class="flex flex-wrap items-center gap-3 px-4 py-3 cursor-pointer"
+                       [class]="log.success ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'"
+                       (click)="toggleLogDetail(log._id!)">
+                    <i [class]="log.success ? 'pi pi-check-circle text-green-600' : 'pi pi-times-circle text-red-600'"></i>
+
+                    <span class="font-mono text-xs font-semibold"
+                          [class]="log.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">
+                      HTTP {{ log.httpStatus || 0 }}
+                    </span>
+
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ log.operation }}
+                    </span>
+
+                    <span class="text-xs text-gray-500 font-mono truncate max-w-xs" [title]="log.endpoint">
+                      {{ log.endpoint }}
+                    </span>
+
+                    <span class="ml-auto flex items-center gap-3 text-xs text-gray-400">
+                      @if (log.durationMs != null) {
+                        <span>{{ log.durationMs }} ms</span>
+                      }
+                      <span>{{ log.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                      <i class="pi" [class]="expandedLogId === log._id ? 'pi-chevron-up' : 'pi-chevron-down'"></i>
+                    </span>
+                  </div>
+
+                  <!-- Erro de comunicação -->
+                  @if (!log.success && log.errorMessage) {
+                    <div class="px-4 py-2 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 border-t border-red-200 dark:border-red-800">
+                      <i class="pi pi-exclamation-circle mr-1"></i>
+                      {{ log.errorMessage }}
+                    </div>
+                  }
+
+                  <!-- Detalhe expandível: request/response XML -->
+                  @if (expandedLogId === log._id) {
+                    <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 space-y-4">
+                      @if (log.request) {
+                        <div>
+                          <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Requisição (SOAP)</div>
+                          <pre class="text-xs bg-white dark:bg-gray-800 border rounded p-3 overflow-x-auto max-h-60 whitespace-pre-wrap break-all">{{ log.request }}</pre>
+                        </div>
+                      }
+                      @if (log.response) {
+                        <div>
+                          <div class="text-xs font-semibold text-gray-500 uppercase mb-1">Resposta do Webservice</div>
+                          <pre class="text-xs bg-white dark:bg-gray-800 border rounded p-3 overflow-x-auto max-h-60 whitespace-pre-wrap break-all">{{ log.response }}</pre>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </p-tabpanel>
       </p-tabpanels>
     </p-tabs>
   </p-card>
   }
 </div>
+
+<!-- ─── Dialog de edição de dados ──────────────────────────────────────────── -->
+<p-dialog
+  header="Corrigir dados da emissão"
+  [(visible)]="editVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  [draggable]="false">
+
+  <div class="space-y-6">
+    <!-- Competência -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Data de competência</label>
+      <input pInputText type="date" [(ngModel)]="editDraft.dCompet" class="w-full max-w-xs" />
+      <p class="text-xs text-gray-500 mt-1">Mês/ano em que o serviço foi prestado.</p>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Tomador do serviço</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Tipo de documento</label>
+        <select [(ngModel)]="editDraft.tomador.documentType"
+                class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-800">
+          <option value="cnpj">CNPJ</option>
+          <option value="cpf">CPF</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Documento (somente números)</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.document" class="w-full" placeholder="00.000.000/0001-00" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Razão social / Nome</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.nome" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Inscrição Municipal (opcional)</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.inscricaoMunicipal" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">E-mail</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.email" class="w-full" type="email" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Telefone</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.fone" class="w-full" />
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">CEP</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.cep" class="w-full" maxlength="8" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Logradouro</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xLgr" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Número</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.nro" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Complemento</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xCpl" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Bairro</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.xBairro" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cód. IBGE Município</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.cMun" class="w-full" maxlength="7" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">UF</label>
+        <input pInputText [(ngModel)]="editDraft.tomador.endereco.uf" class="w-full" maxlength="2" style="text-transform:uppercase" />
+      </div>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Serviço</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Descrição do serviço</label>
+        <textarea pInputText [(ngModel)]="editDraft.servico.xDescServ" rows="3"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-800 resize-y"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cTribNac</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cTribNac" class="w-full font-mono" maxlength="6" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cTribMun</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cTribMun" class="w-full font-mono" maxlength="6" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">cNBS</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cNBS" class="w-full font-mono" maxlength="9" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cód. IBGE local de prestação</label>
+        <input pInputText [(ngModel)]="editDraft.servico.cLocPrestacao" class="w-full font-mono" maxlength="7" />
+      </div>
+    </div>
+
+    <p-divider align="left"><span class="text-sm font-semibold">Valores</span></p-divider>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Valor do serviço (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.vServ"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Desconto incondicional (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.descIncond"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Desconto condicional (R$)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.descCond"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
+          [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Alíquota ISSQN (%)</label>
+        <p-inputnumber [(ngModel)]="editDraft.valoresInput.pAliq"
+          mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="4"
+          [min]="0" [max]="100" class="w-full" />
+      </div>
+    </div>
+
+    <div class="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded p-3 text-sm text-amber-800 dark:text-amber-200">
+      <i class="pi pi-info-circle mr-1"></i>
+      Ao salvar, o XML será regenerado e assinado digitalmente com os novos dados. Em seguida utilize o botão <strong>Retransmitir</strong>.
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="editVisible = false" />
+    <p-button label="Salvar e regenerar XML" icon="pi pi-refresh" [loading]="saving" (onClick)="saveEdit()" />
+  </ng-template>
+</p-dialog>
 
 <p-toast />

@@ -1,0 +1,96 @@
+<p-toast></p-toast>
+<app-sidebar></app-sidebar>
+
+<div class="sm:ml-64 p-6 space-y-6">
+  <p-card>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold">E-mail (AWS SES)</h2>
+    </div>
+
+    @if (loading) {
+      <div class="text-center text-gray-400 py-8">
+        <i class="pi pi-spinner pi-spin"></i> Carregando…
+      </div>
+    }
+
+    @if (!loading) {
+      <div class="flex items-center gap-2 mb-4">
+        <p-toggleSwitch [(ngModel)]="enabled" inputId="emailEnabled" />
+        <label for="emailEnabled" class="text-sm">
+          Serviço de e-mail <strong>{{ enabled ? 'ativado' : 'desativado' }}</strong>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Região *</label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="config.region" placeholder="sa-east-1" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">E-mail remetente *</label>
+          <input pInputText class="w-full" [(ngModel)]="config.fromEmail" placeholder="no-reply@suaempresa.com" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Nome do remetente</label>
+          <input pInputText class="w-full" [(ngModel)]="config.fromName" placeholder="WTicket" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Access Key ID *</label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="config.accessKeyId" placeholder="AKIA…" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">
+            Secret Access Key
+            <span class="text-xs text-gray-500 ml-1">(deixe em branco para manter a atual)</span>
+          </label>
+          <p-password [(ngModel)]="config.secretKey" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <p-button label="Salvar configuração" icon="pi pi-check" [loading]="saving" (click)="saveConfig()"></p-button>
+      </div>
+
+      <hr class="my-5" />
+
+      <div class="flex items-end gap-2 flex-wrap">
+        <div class="flex-1 min-w-[240px]">
+          <label class="block text-sm mb-1">Enviar e-mail de teste para</label>
+          <input pInputText class="w-full" [(ngModel)]="testEmail" placeholder="teste@exemplo.com" />
+        </div>
+        <p-button label="Testar" icon="pi pi-send" severity="secondary" [loading]="testing" (click)="sendTest()"></p-button>
+      </div>
+    }
+  </p-card>
+
+  <p-card>
+    <h2 class="text-xl font-semibold mb-4">Templates de e-mail</h2>
+
+    <div class="space-y-6">
+      @for (t of templates; track t.code) {
+        <div class="border rounded-lg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-medium">{{ t.label }}</h3>
+            <p-button label="Salvar" size="small" icon="pi pi-check" [loading]="t.saving" (click)="saveTemplate(t)"></p-button>
+          </div>
+          <p class="text-xs text-gray-500 mb-3">
+            Variáveis disponíveis:
+            @for (p of t.placeholders; track p) {
+              <code class="font-mono bg-black/5 dark:bg-white/10 px-1 rounded mr-1">{{ p }}</code>
+            }
+          </p>
+          <div class="mb-3">
+            <label class="block text-sm mb-1">Assunto</label>
+            <input pInputText class="w-full" [(ngModel)]="t.draft.subject" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Corpo</label>
+            <textarea class="w-full border border-gray-300 rounded-md p-2 text-sm font-mono" rows="6"
+              [(ngModel)]="t.draft.body"></textarea>
+          </div>
+        </div>
+      }
+    </div>
+  </p-card>
+</div>

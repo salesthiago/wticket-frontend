@@ -41,17 +41,21 @@
 
       <ng-template #header>
         <tr>
+          <th>Ações</th>
           <th>Nome</th>
           <th>Telefone</th>
           <th>E-mail</th>
           <th>CPF / CNPJ</th>
           <th>Origem</th>
-          <th>Ações</th>
         </tr>
       </ng-template>
 
       <ng-template #body let-customer>
         <tr>
+          <td>
+            <p-button icon="pi pi-pencil" (onClick)="edit(customer._id)" severity="primary" />
+            <p-button icon="pi pi-trash" (onClick)="confirmDelete(customer._id)" severity="danger" class="px-2" />
+          </td>
           <td>{{ customer.name }}</td>
           <td>{{ customer.phone }}</td>
           <td>{{ customer.email || '—' }}</td>
@@ -61,10 +65,6 @@
               [value]="customer.source === 'lead' ? 'Lead' : 'Manual'"
               [severity]="customer.source === 'lead' ? 'info' : 'secondary'">
             </p-tag>
-          </td>
-          <td>
-            <p-button icon="pi pi-pencil" (onClick)="edit(customer._id)" severity="primary" />
-            <p-button icon="pi pi-trash" (onClick)="confirmDelete(customer._id)" severity="danger" class="px-2" />
           </td>
         </tr>
       </ng-template>

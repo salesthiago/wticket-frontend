@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { environment } from '../../environments/enviroment';
 
 export type UserRole = 'super_admin' | 'company_admin' | 'administrator' | 'finance' | 'default';
-export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance' | 'nfse' | 'financial';
+export type ModuleCode = 'attendance' | 'service_order' | 'auto_attendance' | 'nfse' | 'financial' | 'itau_integration';
 
 export interface AuthUser {
   id: string;
@@ -13,6 +13,9 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   companyId: string | null;
+  // Quando setado, este login é um "acesso de cliente" (portal restrito) e só
+  // enxerga os Projetos/Tickets vinculados a este cliente.
+  customerId?: string | null;
 }
 
 export interface LoginRequest {
@@ -46,6 +49,14 @@ export class AuthService {
           this.isAuthenticated.next(true);
         })
       );
+  }
+
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, password: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, { token, password });
   }
 
   private setSession(authResult: LoginResponse): void {
@@ -112,6 +123,16 @@ export class AuthService {
 
   getCompanyId(): string | null {
     return this.getUser()?.companyId ?? null;
+  }
+
+  getCustomerId(): string | null {
+    return this.getUser()?.customerId ?? null;
+  }
+
+  // Acesso de cliente (portal restrito): só enxerga Projetos e Tickets do
+  // cliente vinculado a este login.
+  isCustomerScoped(): boolean {
+    return !!this.getCustomerId();
   }
 
   isLoggedIn(): boolean {

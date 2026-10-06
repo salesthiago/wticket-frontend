@@ -13,13 +13,28 @@
           <p-button icon="pi pi-arrow-left" severity="secondary" size="small" label="Voltar" (click)="back()"></p-button>
           <h2 class="text-xl font-semibold mt-2">{{ company.name }}</h2>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <p-tag [value]="company.status"></p-tag>
-          @if (company.status !== 'active') {
+          @if (company.subscriptionExempt) {
+            <p-tag value="Isento de assinatura" severity="info"></p-tag>
+          }
+          @if (company.trialEndsAt) {
+            <p-tag [value]="'Trial até ' + (company.trialEndsAt | date:'dd/MM/yyyy')" severity="warn"></p-tag>
+          }
+          @if (company.status !== 'active' && !company.subscriptionExempt) {
             <p-button label="Ativar" icon="pi pi-check" size="small" (click)="setCompanyStatus('active')"></p-button>
           }
-          @if (company.status === 'active') {
+          @if (company.status === 'active' && !company.subscriptionExempt) {
             <p-button label="Suspender" icon="pi pi-ban" severity="warn" size="small" (click)="setCompanyStatus('suspended')"></p-button>
+          }
+          @if (!company.subscriptionExempt) {
+            <p-button label="Isentar assinatura" icon="pi pi-shield" severity="secondary" size="small"
+              (click)="toggleExempt()"
+              pTooltip="Empresa terá acesso a todos os módulos cadastrados sem precisar pagar"></p-button>
+          } @else {
+            <p-button label="Remover isenção" icon="pi pi-shield" severity="danger" [outlined]="true" size="small"
+              (click)="toggleExempt()"
+              pTooltip="Restaura exigência de pagamento"></p-button>
           }
         </div>
       </div>

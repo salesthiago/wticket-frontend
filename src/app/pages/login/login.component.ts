@@ -65,21 +65,14 @@ export class LoginComponent implements OnInit {
           summary: 'Sucesso',
           detail: 'Login realizado com sucesso!'
         });
-        this.router.navigate(['/dashboard']);
+        this.router.navigate([this.authService.isCustomerScoped() ? '/projects' : '/dashboard']);
       },
       error: (error) => {
         this.loading = false;
         const status = error?.status;
         const detail = error?.error?.message || 'Erro ao fazer login';
 
-        if (status === 403 && error?.error?.companyStatus === 'pending_payment') {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Aguardando pagamento',
-            detail: 'Seu cadastro está aguardando confirmação do pagamento.',
-            life: 6000
-          });
-        } else if (status === 403) {
+        if (status === 403) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Acesso bloqueado',
