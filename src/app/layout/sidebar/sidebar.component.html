@@ -43,10 +43,38 @@
       @for (menuItem of menuItems; track $index) {
         <li class="nav-item">
           @if (menuItem.panelModel) {
-            <!-- Expandido: acordeão normal. Recolhido (sm+): só o ícone, com um
+            <!-- Expandido: acordeão no mesmo estilo dos demais itens. Recolhido (sm+): só o ícone, com um
                  flyout no hover mostrando os subitens (estilos em sidebar.component.scss). -->
             <div class="nav-expanded-view">
-              <p-panelMenu [model]="menuItem.panelModel"></p-panelMenu>
+              <button type="button" (click)="toggleGroup(menuItem)"
+                [attr.aria-expanded]="!!menuItem.expanded"
+                [class]="isDarkMode
+                  ? 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors'
+                  : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors'"
+                [ngClass]="{ 'nav-group-open': menuItem.expanded }">
+                <i [class]="menuItem.icon" style="font-size: 1.1rem; width: 1.25rem; text-align: center;"></i>
+                <span class="text-sm flex-1 text-left">{{ menuItem.name }}</span>
+                <i class="pi pi-chevron-down nav-group-chevron" [class.rotated]="!menuItem.expanded"></i>
+              </button>
+              <div class="nav-submenu" [class.open]="menuItem.expanded">
+                <div class="nav-submenu-inner">
+                  <ul class="space-y-1 pt-1">
+                    @for (panel of menuItem.panelModel; track $index) {
+                      @for (sub of (panel.items || []); track $index) {
+                        <li>
+                          <a [routerLink]="sub['routerLink']" routerLinkActive="active-nav-item"
+                            [tabindex]="menuItem.expanded ? 0 : -1"
+                            [class]="isDarkMode
+                              ? 'block pl-11 pr-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-colors'
+                              : 'block pl-11 pr-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors'">
+                            {{ sub['label'] }}
+                          </a>
+                        </li>
+                      }
+                    }
+                  </ul>
+                </div>
+              </div>
             </div>
             <div class="nav-collapsed-view">
               <div class="nav-collapsed-trigger"

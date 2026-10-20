@@ -106,20 +106,34 @@
   }
 }
 
-// Destaque no item ativo dentro do PanelMenu
-:host ::ng-deep {
-  .p-panelmenu-item-link.p-panelmenu-item-link-active,
-  .p-panelmenu .p-panelmenu-item > .p-panelmenu-item-content .p-panelmenu-item-link.p-menuitem-link-active {
-    background-color: #16a34a !important;
-    color: #ffffff !important;
+// ─── Grupos com subitens (acordeão) ────────────────────────────────────────
+.nav-group-open {
+  font-weight: 600;
+}
 
-    .p-menuitem-icon,
-    .p-menuitem-text {
-      color: #ffffff !important;
-    }
-  }
+.nav-group-chevron {
+  font-size: 0.75rem;
+  transition: transform 200ms ease;
 
-  .p-panelmenu .p-panelmenu-item-link:not(.p-disabled):hover {
-    background-color: #f0fdf4;
+  &.rotated {
+    transform: rotate(-90deg);
   }
+}
+
+// Abre/fecha com altura animada (grid 0fr → 1fr), sem precisar medir o conteúdo.
+.nav-submenu {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 220ms ease, opacity 220ms ease;
+
+  &.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+.nav-submenu-inner {
+  overflow: hidden;
+  min-height: 0;
 }

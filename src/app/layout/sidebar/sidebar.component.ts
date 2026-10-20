@@ -5,7 +5,6 @@ import { SidebarService } from '../../services/sidebar.service';
 import { Subscription } from 'rxjs';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { PanelMenuModule } from 'primeng/panelmenu';
 import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { filter } from 'rxjs/operators';
@@ -24,6 +23,8 @@ interface NavItem {
   /** true = visível para acesso de cliente (portal restrito); os demais itens ficam ocultos para esse login */
   visibleForCustomerScope?: boolean;
   panelModel?: MenuItem[];
+  /** grupo (panelModel) aberto no acordeão */
+  expanded?: boolean;
 }
 
 @Component({
@@ -34,7 +35,6 @@ interface NavItem {
   imports: [
     CommonModule,
     RouterModule,
-    PanelMenuModule,
     TooltipModule
   ]
 })
@@ -323,6 +323,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
   }
 
+  public toggleGroup(item: NavItem): void {
+    item.expanded = !item.expanded;
+  }
+
   private updateExpandedState(currentUrl: string): void {
     this.menuItems.forEach(item => {
       if (item.panelModel) {
@@ -331,9 +335,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
             currentUrl.startsWith(sub['routerLink'] as string)
           )
         );
-        item.panelModel.forEach(panel => {
-          panel.expanded = hasActiveChild;
-        });
+        // Abre o grupo da página atual; não fecha um que o usuário abriu.
+        if (hasActiveChild) item.expanded = true;
       }
     });
   }
