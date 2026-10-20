@@ -45,6 +45,26 @@ export class TicketService {
     return this.http.post<{ url: string }>(`${this.apiUrl}/tickets/upload-image`, formData);
   }
 
+  // Edição de categoria/assunto/prioridade/observações — a API só permite
+  // enquanto o ticket não tiver respostas.
+  updateContent(id: string, data: { categoryId?: string | null; subjectId?: string | null; priority?: string; notes?: string | null }): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/tickets/${id}/content`, data);
+  }
+
+  getAttachments(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tickets/${id}/attachments`);
+  }
+
+  addAttachment(id: string, file: File): Observable<any[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any[]>(`${this.apiUrl}/tickets/${id}/attachments`, formData);
+  }
+
+  deleteAttachment(id: string, attachmentId: string): Observable<any[]> {
+    return this.http.delete<any[]>(`${this.apiUrl}/tickets/${id}/attachments/${attachmentId}`);
+  }
+
   deleteResponse(id: string, responseId: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/tickets/${id}/responses/${responseId}`);
   }

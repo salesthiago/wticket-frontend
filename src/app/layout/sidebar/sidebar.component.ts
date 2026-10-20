@@ -17,6 +17,8 @@ interface NavItem {
   icon: string;
   /** module(s) required to see this item; if empty, always visible to logged-in users */
   modules?: ModuleCode[];
+  /** módulos exigidos todos ao mesmo tempo (além de `modules`, que basta um) */
+  allModules?: ModuleCode[];
   /** roles allowed; if empty, all roles allowed */
   roles?: UserRole[];
   /** true = visível para acesso de cliente (portal restrito); os demais itens ficam ocultos para esse login */
@@ -122,6 +124,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       icon: 'pi pi-folder-open',
       modules: ['attendance'],
       visibleForCustomerScope: true
+    },
+    {
+      id: 15,
+      name: 'Leads',
+      link: '/leads',
+      icon: 'pi pi-user-plus',
+      allModules: ['attendance', 'service_order']
     },
     {
       id: 6,
@@ -293,6 +302,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
       if (item.modules?.length) {
         if (!this.authService.hasAnyModule(...item.modules)) return false;
       }
+      if (item.allModules?.length) {
+        if (!item.allModules.every(code => this.authService.hasModule(code))) return false;
+      }
       return true;
     });
   }
@@ -340,6 +352,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   toggleCollapse(): void {
     this.sidebarService.toggleCollapsed();
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   logout(): void {

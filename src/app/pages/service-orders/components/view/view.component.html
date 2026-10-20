@@ -44,23 +44,29 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       <!-- Cliente -->
-      <p-card header="Cliente">
+      <p-card [header]="isLeadQuote ? 'Lead (orçamento)' : 'Cliente'">
+        @if (isLeadQuote) {
+          <div class="mb-3 p-2 rounded bg-blue-50 text-blue-800 text-sm">
+            <i class="pi pi-info-circle mr-1"></i>
+            Ao aprovar este orçamento, o lead é convertido em cliente automaticamente.
+          </div>
+        }
         <div class="grid grid-cols-2 gap-3">
           <div>
             <small class="text-gray-500 block">Nome</small>
-            <span class="font-semibold">{{ order.customerId?.name ?? '—' }}</span>
+            <span class="font-semibold">{{ party?.name ?? '—' }}</span>
           </div>
           <div>
             <small class="text-gray-500 block">Telefone</small>
-            <span>{{ order.customerId?.phone ?? '—' }}</span>
+            <span>{{ party?.phone ?? '—' }}</span>
           </div>
           <div>
             <small class="text-gray-500 block">E-mail</small>
-            <span>{{ order.customerId?.email ?? '—' }}</span>
+            <span>{{ party?.email ?? '—' }}</span>
           </div>
           <div>
             <small class="text-gray-500 block">Documento</small>
-            <span>{{ order.customerId?.document ?? '—' }}</span>
+            <span>{{ party?.document ?? '—' }}</span>
           </div>
         </div>
       </p-card>

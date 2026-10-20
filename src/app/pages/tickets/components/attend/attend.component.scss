@@ -273,3 +273,85 @@
 }
 
 .w-full { width: 100%; }
+
+// Anexos do ticket (PDF/imagens)
+.attachments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 0;
+
+  .attachments-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+}
+
+.attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--p-content-border-color, var(--surface-300));
+  border-radius: 8px;
+}
+
+.attachment-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .attachment-name { text-decoration: underline; }
+}
+
+.attachment-thumb,
+.attachment-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.attachment-thumb { object-fit: cover; }
+
+.attachment-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-size: 1.3rem;
+}
+
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small { color: var(--text-color-secondary); }
+}
+
+.no-attachments-msg {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}

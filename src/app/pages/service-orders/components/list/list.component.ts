@@ -169,12 +169,21 @@ export class ListComponent implements OnInit, OnDestroy {
     });
   }
 
+  public openKanban() {
+    this.router.navigate(['/service-orders/kanban']);
+  }
+
+  // Orçamento de lead ainda não aprovado: mostra o lead no lugar do cliente.
+  public isLeadQuote(item: any): boolean {
+    return !item.customerId && !!item.leadId;
+  }
+
   public getCustomerName(item: any): string {
-    return item.customerId?.name ?? '—';
+    return item.customerId?.name ?? item.leadId?.name ?? '—';
   }
 
   public getCustomerPhone(item: any): string {
-    return item.customerId?.phone ?? '';
+    return item.customerId?.phone ?? item.leadId?.phone ?? '';
   }
 
   public getTechnicianName(item: any): string {

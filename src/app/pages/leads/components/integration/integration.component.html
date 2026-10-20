@@ -1,0 +1,87 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+
+  <p-card header="Chaves de API" class="mb-4">
+    <p class="text-gray-600 mb-4">
+      Use uma chave para que o seu site, landing page ou outro sistema envie leads e pedidos de orçamento direto para o Atendimento.
+      Cada chave pertence só à sua empresa. Gere uma chave por origem para poder revogá-las separadamente.
+    </p>
+
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <input pInputText type="text" [(ngModel)]="newKeyName" placeholder="Nome da chave (ex.: Site)" class="w-72" (keyup.enter)="createKey()" />
+      <p-button icon="pi pi-key" label="Gerar chave" (click)="createKey()"></p-button>
+    </div>
+
+    <p-table [value]="keys" [loading]="loading" dataKey="_id" [tableStyle]="{ 'min-width': '50rem' }">
+      <ng-template #header>
+        <tr>
+          <th>Nome</th>
+          <th>Chave</th>
+          <th>Criada em</th>
+          <th>Último uso</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-key>
+        <tr>
+          <td>{{ key.name }}</td>
+          <td class="font-mono">{{ key.keyPrefix }}…</td>
+          <td>{{ key.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ key.lastUsedAt ? (key.lastUsedAt | date:'dd/MM/yyyy HH:mm') : 'Nunca' }}</td>
+          <td>
+            <p-tag [value]="key.revokedAt ? 'Revogada' : 'Ativa'" [severity]="key.revokedAt ? 'danger' : 'success'" />
+          </td>
+          <td>
+            @if (!key.revokedAt) {
+              <p-button icon="pi pi-ban" label="Revogar" severity="danger" [text]="true" (click)="confirmRevoke(key)" />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="6">Nenhuma chave gerada.</td></tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <p-card header="Como usar" class="mb-4">
+    <p class="mb-2"><span class="font-semibold">POST</span> <code>{{ endpoint }}</code></p>
+    <ul class="list-disc ml-6 mb-4 text-gray-700">
+      <li><code>name</code> e <code>phone</code> são obrigatórios. Só com eles, é criado apenas o lead.</li>
+      <li>Com <code>description</code> (o problema), também é aberto um orçamento: uma Ordem de Serviço com status <b>Aberta</b> no nome do lead.</li>
+      <li>Fotos: envie como <code>multipart/form-data</code> no campo <code>photos</code> (até 10 imagens, 10MB cada). Exigem <code>description</code>.</li>
+      <li><code>externalId</code> (opcional): o ID no seu sistema. Reenviar o mesmo valor não duplica o lead nem o orçamento.</li>
+      <li>Quando o orçamento é <b>aprovado</b>, o lead vira cliente automaticamente.</li>
+      <li>Consulta: <code>GET {{ endpoint }}/&#123;externalId&#125;</code> devolve o status do lead e dos orçamentos.</li>
+      <li>Limite: 60 requisições por minuto por chave.</li>
+    </ul>
+
+    <div class="flex items-center justify-between mb-1">
+      <span class="font-semibold">JSON</span>
+      <p-button icon="pi pi-copy" [text]="true" (click)="copy(curlJson)" />
+    </div>
+    <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto mb-4">{{ curlJson }}</pre>
+
+    <div class="flex items-center justify-between mb-1">
+      <span class="font-semibold">Com fotos</span>
+      <p-button icon="pi pi-copy" [text]="true" (click)="copy(curlMultipart)" />
+    </div>
+    <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto">{{ curlMultipart }}</pre>
+  </p-card>
+</div>
+
+<p-dialog header="Chave gerada" [(visible)]="showCreatedDialog" [modal]="true" [closable]="false" [style]="{ width: '36rem' }">
+  <p class="mb-3">Copie a chave agora. <b>Ela não será exibida novamente.</b></p>
+  <div class="flex gap-2 items-center">
+    <input pInputText type="text" [value]="createdKey" readonly class="w-full font-mono" />
+    <p-button icon="pi pi-copy" (click)="copy(createdKey)" />
+  </div>
+  <ng-template #footer>
+    <p-button label="Já copiei" (click)="closeCreatedDialog()" />
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />
+<p-toast />

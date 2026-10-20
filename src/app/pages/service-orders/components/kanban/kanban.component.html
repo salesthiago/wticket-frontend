@@ -1,0 +1,73 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card>
+    <div class="flex justify-between items-center flex-wrap gap-2 mb-4">
+      <div class="flex items-center gap-2">
+        <p-button icon="pi pi-plus" label="Nova OS" (click)="add()"></p-button>
+        <p-button icon="pi pi-list" label="Lista" severity="secondary" [outlined]="true" (click)="goToList()"></p-button>
+        <p-button icon="pi pi-refresh" severity="secondary" [text]="true" [loading]="loading" (click)="loadData()"></p-button>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <label class="flex items-center gap-2 text-sm">
+          <p-toggleswitch [(ngModel)]="showClosed" (onChange)="buildColumns()" />
+          Mostrar entregues e canceladas
+        </label>
+        <input pInputText type="text" placeholder="Pesquisar OS, problema ou cliente..."
+          [(ngModel)]="search" (ngModelChange)="buildColumns()" class="w-72" />
+      </div>
+    </div>
+
+    @if (total > items.length) {
+      <p class="text-sm text-gray-500 mb-2">Exibindo as {{ items.length }} OS mais recentes de {{ total }}.</p>
+    }
+
+    <div class="kanban-board" cdkDropListGroup>
+      @for (column of columns; track column.status) {
+        <div class="kanban-column">
+          <div class="kanban-column-header" [style.borderTopColor]="column.color">
+            <span class="kanban-column-title">{{ column.label }}</span>
+            <span class="kanban-column-count">{{ column.orders.length }}</span>
+          </div>
+          <div
+            class="kanban-column-body"
+            cdkDropList
+            [id]="column.status"
+            [cdkDropListData]="column.orders"
+            (cdkDropListDropped)="drop($event, column)">
+            @for (item of column.orders; track item._id) {
+              <div class="kanban-card" cdkDrag (click)="view(item._id)">
+                <div class="kanban-card-header">
+                  <span class="kanban-card-number">{{ item.orderNumber }}</span>
+                  <p-tag [value]="getPriorityLabel(item.priority)" [severity]="getPriorityColor(item.priority)" />
+                </div>
+                <div class="kanban-card-title">{{ item.reportedIssue }}</div>
+                <div class="kanban-card-customer">
+                  <i class="pi pi-user"></i> {{ getCustomerName(item) }}
+                  @if (isLeadQuote(item)) {
+                    <p-tag value="Lead" severity="info" />
+                  }
+                </div>
+                @if (item.equipment?.type) {
+                  <div class="kanban-card-customer">
+                    <i class="pi pi-wrench"></i> {{ item.equipment.type }} {{ item.equipment.brand }} {{ item.equipment.model }}
+                  </div>
+                }
+                @if (item.estimatedCompletionDate) {
+                  <div class="kanban-card-date">
+                    <i class="pi pi-calendar"></i> {{ item.estimatedCompletionDate | date:'dd/MM/yyyy' }}
+                  </div>
+                }
+              </div>
+            } @empty {
+              <div class="kanban-column-empty">Nenhuma OS</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </p-card>
+</div>
+
+<p-confirmDialog />
+<p-toast />

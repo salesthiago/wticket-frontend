@@ -1,0 +1,101 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card class="flex align-items-center mb-4">
+    <p-table
+      [value]="items"
+      [loading]="loading"
+      [lazy]="true"
+      (onLazyLoad)="onLazyLoad($event)"
+      [totalRecords]="total"
+      class="my-4"
+      [rows]="rows"
+      [paginator]="true"
+      [tableStyle]="{ 'min-width': '75rem' }"
+      [rowHover]="true"
+      dataKey="_id"
+      currentPageReportTemplate=" {first} de {last} (total {totalRecords}) "
+      [showCurrentPageReport]="true">
+
+      <ng-template #caption>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <p-button icon="pi pi-plus" label="Novo Lead" (click)="add()"></p-button>
+            <p-button icon="pi pi-link" label="Integração API" severity="secondary" [outlined]="true" (click)="openIntegration()"></p-button>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <p-select
+              [options]="optionStatus"
+              [(ngModel)]="filterStatus"
+              optionLabel="name"
+              optionValue="value"
+              placeholder="Status"
+              (onChange)="onFilterChange()"
+              class="w-52" />
+            <p-iconfield iconPosition="left">
+              <p-inputicon>
+                <i class="pi pi-search"></i>
+              </p-inputicon>
+              <input pInputText type="text" placeholder="Pesquisar por nome, e-mail ou telefone..."
+                [(ngModel)]="search" (input)="onSearch()" class="w-72" />
+            </p-iconfield>
+            @if (search) {
+              <p-button icon="pi pi-times" severity="secondary" (click)="clearSearch()"></p-button>
+            }
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">Nenhum lead encontrado.</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #header>
+        <tr>
+          <th>Ações</th>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Problema</th>
+          <th>Status</th>
+          <th>Origem</th>
+          <th>Data</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-lead>
+        <tr>
+          <td>
+            <div class="flex gap-1">
+              <p-button icon="pi pi-pencil" (onClick)="edit(lead._id)" severity="primary" [rounded]="true" [text]="true" pTooltip="Editar" />
+              @if (lead.status !== 'lost') {
+                <p-button icon="pi pi-file-edit" (onClick)="createQuote(lead._id)" severity="info" [rounded]="true" [text]="true" pTooltip="Criar orçamento" />
+              }
+              @if (lead.status !== 'converted') {
+                <p-button icon="pi pi-user-plus" (onClick)="confirmConvert(lead)" severity="success" [rounded]="true" [text]="true" pTooltip="Converter em cliente" />
+              }
+              <p-button icon="pi pi-trash" (onClick)="confirmDelete(lead._id)" severity="danger" [rounded]="true" [text]="true" pTooltip="Excluir" />
+            </div>
+          </td>
+          <td>
+            <div>{{ lead.name }}</div>
+            <small class="text-gray-500">{{ lead.email }}</small>
+          </td>
+          <td>{{ lead.phone || '—' }}</td>
+          <td class="max-w-64 truncate" [pTooltip]="lead.description" tooltipPosition="top">{{ lead.description || '—' }}</td>
+          <td>
+            <p-tag [value]="getStatusLabel(lead.status)" [severity]="getStatusColor(lead.status)" />
+          </td>
+          <td>
+            <p-tag [value]="lead.source === 'api' ? 'API' : 'Manual'" [severity]="lead.source === 'api' ? 'info' : 'secondary'" />
+          </td>
+          <td>{{ lead.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<p-confirmDialog />
+<p-toast />

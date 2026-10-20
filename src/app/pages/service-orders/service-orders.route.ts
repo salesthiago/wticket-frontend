@@ -7,6 +7,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/list/list.component').then(m => m.ListComponent)
   },
   {
+    path: 'kanban',
+    loadComponent: () => import('./components/kanban/kanban.component').then(m => m.ServiceOrdersKanbanComponent)
+  },
+  {
     path: 'create',
     loadComponent: () => import('./components/form/form.component').then(m => m.FormComponent)
   },

@@ -96,6 +96,12 @@ export const routes: Routes = [
     canActivate: [authGuard, moduleGuard('attendance')]
   },
   {
+    path: 'leads',
+    loadChildren: () => import('./pages/leads/leads.route').then(m => m.routes),
+    // Leads ficam no Atendimento, mas o orçamento é uma OS: exige os dois módulos.
+    canActivate: [authGuard, moduleGuard('attendance'), moduleGuard('service_order'), notCustomerScopeGuard]
+  },
+  {
     path: 'appointments',
     loadChildren: () => import('./pages/appointments/appointments.route').then(m => m.routes),
     canActivate: [authGuard, moduleGuard('attendance'), notCustomerScopeGuard]

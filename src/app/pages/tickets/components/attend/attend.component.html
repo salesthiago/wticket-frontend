@@ -30,6 +30,17 @@
               <span class="status-badge" [style.background]="getStatusColor()">
                 {{ ticket.statusId?.label || 'Sem status' }}
               </span>
+              @if (canEditContent) {
+                <button
+                  pButton
+                  icon="pi pi-pencil"
+                  label="Editar"
+                  class="p-button-text p-button-sm ml-auto"
+                  pTooltip="Disponível enquanto o ticket não tiver respostas"
+                  tooltipPosition="left"
+                  (click)="openEditDialog()">
+                </button>
+              }
             </div>
 
             <div class="ticket-meta">
@@ -70,6 +81,54 @@
               </div>
             }
           </div>
+        </p-card>
+
+        <!-- Anexos: PDF ou imagens -->
+        <p-card>
+          <ng-template #header>
+            <div class="attachments-header">
+              <span class="attachments-title">Anexos</span>
+              <input #attachmentInput type="file" hidden [accept]="attachmentAccept" (change)="onAttachmentSelected($event)" />
+              <button
+                pButton
+                icon="pi pi-paperclip"
+                label="Anexar"
+                class="p-button-outlined p-button-sm"
+                [loading]="attachmentUploading"
+                (click)="attachmentInput.click()">
+              </button>
+            </div>
+          </ng-template>
+          @if (attachments.length) {
+            <ul class="attachment-list">
+              @for (attachment of attachments; track attachment._id) {
+                <li class="attachment-item">
+                  <a [href]="attachment.viewUrl" target="_blank" rel="noopener" class="attachment-link">
+                    @if (isImageAttachment(attachment) && attachment.viewUrl) {
+                      <img [src]="attachment.viewUrl" [alt]="attachment.filename" class="attachment-thumb" />
+                    } @else {
+                      <span class="attachment-icon"><i class="pi pi-file-pdf"></i></span>
+                    }
+                    <span class="attachment-info">
+                      <span class="attachment-name">{{ attachment.filename }}</span>
+                      <small>{{ formatFileSize(attachment.size) }} · {{ attachment.createdAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                    </span>
+                  </a>
+                  @if (canDeleteAttachment(attachment)) {
+                    <button
+                      pButton
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-danger p-button-sm"
+                      pTooltip="Excluir anexo"
+                      (click)="deleteAttachment(attachment, $event)">
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="no-attachments-msg">Nenhum anexo. Envie um PDF ou uma imagem (até 20MB).</p>
+          }
         </p-card>
 
         <!-- Alterar status -->
@@ -280,6 +339,71 @@
     </div>
   }
 </div>
+
+<!-- Dialog: Editar conteúdo do ticket (somente sem respostas) -->
+<p-dialog
+  header="Editar Ticket"
+  [(visible)]="showEditDialog"
+  [modal]="true"
+  [style]="{ width: '640px' }"
+  [breakpoints]="{ '700px': '95vw' }">
+  <div class="dialog-form">
+    <div class="field-group">
+      <div class="field">
+        <label>Categoria</label>
+        <p-select
+          [options]="editCategoryOptions"
+          [(ngModel)]="editForm.categoryId"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecionar categoria"
+          [showClear]="true"
+          (onChange)="onEditCategoryChange()"
+          styleClass="w-full" />
+      </div>
+      <div class="field">
+        <label>Assunto</label>
+        <p-select
+          [options]="editSubjectOptions"
+          [(ngModel)]="editForm.subjectId"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecionar assunto"
+          [showClear]="true"
+          [disabled]="!editForm.categoryId"
+          styleClass="w-full" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Prioridade</label>
+      <p-select
+        [options]="editPriorityOptions"
+        [(ngModel)]="editForm.priority"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full" />
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <app-rich-text-editor
+        [(value)]="editForm.notes"
+        placeholder="Observações adicionais..."
+        height="180px"
+        [uploader]="uploadImage">
+      </app-rich-text-editor>
+    </div>
+  </div>
+  <ng-template #footer>
+    <button pButton label="Cancelar" class="p-button-text" (click)="showEditDialog = false"></button>
+    <button
+      pButton
+      label="Salvar"
+      icon="pi pi-check"
+      [loading]="editLoading"
+      (click)="saveContent()">
+    </button>
+  </ng-template>
+</p-dialog>
 
 <!-- Dialog: Gerar Ordem de Serviço -->
 <p-dialog

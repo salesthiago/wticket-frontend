@@ -115,6 +115,18 @@
       </span>
     </div>
     <button
+      type="button"
+      (click)="toggleTheme()"
+      [pTooltip]="isCollapsed ? (isDarkMode ? 'Tema claro' : 'Tema escuro') : ''" tooltipPosition="right"
+      [attr.aria-label]="isDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'"
+      class="nav-link"
+      [class]="isDarkMode
+        ? 'w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-yellow-400 transition-colors text-sm'
+        : 'w-full flex items-center gap-2 px-3 py-2 mb-1 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors text-sm'">
+      <i class="pi" [ngClass]="isDarkMode ? 'pi-sun' : 'pi-moon'" style="font-size: 0.9rem;"></i>
+      <span class="nav-label">{{ isDarkMode ? 'Tema claro' : 'Tema escuro' }}</span>
+    </button>
+    <button
       (click)="logout()"
       [pTooltip]="isCollapsed ? 'Sair' : ''" tooltipPosition="right"
       class="nav-link"

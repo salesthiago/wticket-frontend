@@ -16,7 +16,10 @@
 
       <ng-template #caption>
         <div class="flex justify-between items-center flex-wrap gap-2">
-          <p-button icon="pi pi-plus" label="Nova OS" (click)="add()"></p-button>
+          <div class="flex items-center gap-2">
+            <p-button icon="pi pi-plus" label="Nova OS" (click)="add()"></p-button>
+            <p-button icon="pi pi-th-large" label="Kanban" severity="secondary" [outlined]="true" (click)="openKanban()"></p-button>
+          </div>
           <div class="flex items-center gap-2 flex-wrap">
             <p-select
               [options]="optionStatus"
@@ -79,7 +82,12 @@
           </td>
           <td class="font-semibold">{{ item.orderNumber }}</td>
           <td>
-            <div>{{ getCustomerName(item) }}</div>
+            <div>
+              {{ getCustomerName(item) }}
+              @if (isLeadQuote(item)) {
+                <p-tag value="Lead" severity="info" class="ml-1" />
+              }
+            </div>
             <small class="text-gray-500">{{ getCustomerPhone(item) }}</small>
           </td>
           <td>

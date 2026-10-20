@@ -7,18 +7,49 @@
     <h3 class="text-base font-semibold mb-3 mt-1">Dados Gerais</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-      <div class="field">
-        <label for="customerId" class="block mb-2">Cliente <span class="text-red-500">*</span></label>
-        <p-select
-          [options]="customers"
-          [(ngModel)]="order.customerId"
-          optionLabel="name"
-          optionValue="value"
-          placeholder="Selecione o cliente..."
-          [filter]="true"
-          filterPlaceholder="Buscar cliente..."
-          class="w-full" />
-      </div>
+      @if (editingLeadName) {
+        <div class="field">
+          <label class="block mb-2">Lead</label>
+          <div class="p-2 rounded bg-gray-100">{{ editingLeadName }}</div>
+          <small class="text-gray-500">Vira cliente quando o orçamento for aprovado.</small>
+        </div>
+      } @else {
+        @if (!id && canUseLeads) {
+          <div class="field md:col-span-3">
+            <label class="block mb-2">Para</label>
+            <p-selectbutton [options]="targetOptions" [(ngModel)]="target" optionLabel="label" optionValue="value" [allowEmpty]="false" />
+          </div>
+        }
+
+        @if (target === 'lead') {
+          <div class="field">
+            <label for="leadId" class="block mb-2">Lead <span class="text-red-500">*</span></label>
+            <p-select
+              [options]="leads"
+              [(ngModel)]="order.leadId"
+              optionLabel="name"
+              optionValue="value"
+              placeholder="Selecione o lead..."
+              [filter]="true"
+              filterPlaceholder="Buscar lead..."
+              class="w-full" />
+            <small class="text-gray-500">O lead vira cliente quando o orçamento for aprovado.</small>
+          </div>
+        } @else {
+          <div class="field">
+            <label for="customerId" class="block mb-2">Cliente <span class="text-red-500">*</span></label>
+            <p-select
+              [options]="customers"
+              [(ngModel)]="order.customerId"
+              optionLabel="name"
+              optionValue="value"
+              placeholder="Selecione o cliente..."
+              [filter]="true"
+              filterPlaceholder="Buscar cliente..."
+              class="w-full" />
+          </div>
+        }
+      }
 
       <div class="field">
         <label for="priority" class="block mb-2">Prioridade</label>
@@ -70,7 +101,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
       <div class="field">
-        <label for="equipmentType" class="block mb-2">Tipo <span class="text-red-500">*</span></label>
+        <label for="equipmentType" class="block mb-2">Tipo @if (target !== 'lead') {<span class="text-red-500">*</span>}</label>
         <input
           id="equipmentType"
           type="text"

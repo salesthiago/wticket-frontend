@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -12,6 +13,7 @@ import { MessageService, MenuItem } from 'primeng/api';
 import { SidebarComponent } from '../../layout/sidebar/sidebar.component';
 import { DashboardService } from './services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 interface DashboardOption {
   label: string;
@@ -46,10 +48,12 @@ export class DashboardComponent implements OnInit {
   private cd = inject(ChangeDetectorRef);
   private messageService = inject(MessageService);
 
-  private docStyle = getComputedStyle(document.documentElement);
-  private textColor = this.docStyle.getPropertyValue('--p-text-color');
-  private textColorSecondary = this.docStyle.getPropertyValue('--p-text-color-secondary');
-  private surfaceBorder = this.docStyle.getPropertyValue('--p-surface-border');
+  private themeService = inject(ThemeService);
+  private destroyRef = inject(DestroyRef);
+
+  private textColor = '';
+  private textColorSecondary = '';
+  private surfaceBorder = '';
 
   dashboardOptions: DashboardOption[] = [];
   selectedDashboard = '';
@@ -70,10 +74,33 @@ export class DashboardComponent implements OnInit {
   platformTrendChart: any = null;
 
   ngOnInit(): void {
+    // Cores dos gráficos vêm das variáveis CSS do tema atual; ao alternar
+    // claro/escuro, relê as variáveis e reconstrói os gráficos já carregados.
+    this.themeService.isDarkTheme$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.readThemeColors();
+        this.rebuildCharts();
+        this.cd.markForCheck();
+      });
+
     this.buildOptions();
     if (this.selectedDashboard) {
       this.loadDashboard();
     }
+  }
+
+  private readThemeColors(): void {
+    const docStyle = getComputedStyle(document.documentElement);
+    this.textColor = docStyle.getPropertyValue('--p-text-color');
+    this.textColorSecondary = docStyle.getPropertyValue('--p-text-color-secondary');
+    this.surfaceBorder = docStyle.getPropertyValue('--p-surface-border');
+  }
+
+  private rebuildCharts(): void {
+    if (this.attendance) this.buildAttendanceCharts();
+    if (this.serviceOrder) this.buildSOCharts();
+    if (this.platform) this.buildPlatformCharts();
   }
 
   private buildOptions(): void {

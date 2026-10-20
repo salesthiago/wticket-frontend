@@ -1,0 +1,80 @@
+<app-sidebar />
+<div class="p-4 sm:ml-64 pt-4">
+  <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome" class="mb-4 block" />
+  <p-card [header]="id ? 'Editar Lead' : 'Novo Lead'" class="align-items-center mb-4">
+
+    @if (isConverted) {
+      <div class="mb-4 p-3 rounded border border-green-300 bg-green-50 text-green-800">
+        <i class="pi pi-check-circle mr-2"></i>
+        Lead convertido em cliente{{ convertedCustomerName ? ': ' + convertedCustomerName : '' }}
+        @if (lead.convertedAt) { em {{ lead.convertedAt | date:'dd/MM/yyyy HH:mm' }} }.
+      </div>
+    }
+
+    <h3 class="text-base font-semibold mb-3 mt-1">Dados do Lead</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="field">
+        <label for="name" class="block mb-2">Nome <span class="text-red-500">*</span></label>
+        <input id="name" type="text" pInputText [(ngModel)]="lead.name" placeholder="Nome completo" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="phone" class="block mb-2">Telefone <span class="text-red-500">*</span></label>
+        <input id="phone" type="text" pInputText [(ngModel)]="lead.phone" placeholder="Ex: 11999999999" class="w-full" />
+      </div>
+
+      <div class="field">
+        <label for="email" class="block mb-2">E-mail</label>
+        <input id="email" type="email" pInputText [(ngModel)]="lead.email" placeholder="email@exemplo.com" class="w-full" />
+      </div>
+
+      @if (id && !isConverted) {
+        <div class="field">
+          <label class="block mb-2">Status</label>
+          <p-select [options]="optionStatus" [(ngModel)]="lead.status" optionLabel="name" optionValue="value" class="w-full" />
+        </div>
+      }
+    </div>
+
+    <h3 class="text-base font-semibold mb-3 mt-6">Problema / Observações</h3>
+    <div class="grid grid-cols-1 gap-4">
+      <div class="field">
+        <label for="description" class="block mb-2">Descrição do problema</label>
+        <textarea id="description" pTextarea [(ngModel)]="lead.description" rows="4"
+          placeholder="O que o lead relatou..." class="w-full"></textarea>
+      </div>
+      <div class="field">
+        <label for="notes" class="block mb-2">Observações internas</label>
+        <textarea id="notes" pTextarea [(ngModel)]="lead.notes" rows="3" class="w-full"></textarea>
+      </div>
+    </div>
+
+    <div class="flex mt-6 gap-2 flex-wrap">
+      <p-button label="Voltar" severity="secondary" [loading]="loading" (click)="onBack()"></p-button>
+      <p-button label="Salvar" [loading]="loading" (click)="onSubmit()"></p-button>
+      @if (lead.status !== 'lost') {
+        <p-button label="Salvar e criar orçamento" icon="pi pi-file-edit" severity="info" [loading]="loading" (click)="onSubmit(true)"></p-button>
+      }
+    </div>
+  </p-card>
+
+  @if (id) {
+    <p-card header="Orçamentos / Ordens de Serviço" class="mb-4">
+      @for (order of serviceOrders; track order._id) {
+        <div class="flex items-center justify-between gap-2 py-2 border-b border-gray-200 cursor-pointer" (click)="viewOrder(order._id)">
+          <div>
+            <span class="font-semibold mr-2">{{ order.orderNumber }}</span>
+            <span class="text-gray-600">{{ order.reportedIssue }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <small class="text-gray-500">{{ order.createdAt | date:'dd/MM/yyyy' }}</small>
+            <p-tag [value]="getOrderStatusLabel(order.status)" [severity]="getOrderStatusColor(order.status)" />
+          </div>
+        </div>
+      } @empty {
+        <p class="text-gray-500">Nenhum orçamento para este lead.</p>
+      }
+    </p-card>
+  }
+</div>
+<p-toast />

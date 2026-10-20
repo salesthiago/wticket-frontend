@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService, MenuItem } from 'primeng/api';
 import { ServiceOrdersService } from '../services/service-orders.service';
 import { CustomersService } from '../../../customers/components/services/customers.service';
+import { LeadsService } from '../../../leads/components/services/leads.service';
+import { AuthService } from '../../../../services/auth.service';
 import { UsersService } from '../../../users/components/services/users.service';
 import { ServiceOrderModel } from '../../service-order.interface';
 import { ButtonModule } from 'primeng/button';
@@ -12,6 +14,7 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TextareaModule } from 'primeng/textarea';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { Toast } from 'primeng/toast';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../../layout/sidebar/sidebar.component';
@@ -31,6 +34,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
     DatePickerModule,
     TextareaModule,
     InputNumberModule,
+    SelectButtonModule,
     Toast,
     FormsModule,
     SidebarComponent,
@@ -54,6 +58,18 @@ export class FormComponent implements OnInit {
 
   public loading = false;
   public customers: any[] = [];
+  public leads: any[] = [];
+
+  // Para quem é a OS: cliente já cadastrado ou orçamento de um lead (o lead
+  // vira cliente quando o orçamento for aprovado).
+  public target: 'customer' | 'lead' = 'customer';
+  public targetOptions = [
+    { label: 'Cliente', value: 'customer' },
+    { label: 'Lead (orçamento)', value: 'lead' }
+  ];
+  public canUseLeads = false;
+  // Edição de um orçamento de lead ainda não aprovado (sem cliente).
+  public editingLeadName = '';
   public technicians: any[] = [];
 
   public optionPriority = [
@@ -68,6 +84,8 @@ export class FormComponent implements OnInit {
   constructor(
     private service: ServiceOrdersService,
     private customersService: CustomersService,
+    private leadsService: LeadsService,
+    private authService: AuthService,
     private usersService: UsersService,
     private router: Router,
     private messageService: MessageService,
@@ -82,11 +100,19 @@ export class FormComponent implements OnInit {
       { label: this.id ? 'Editar OS' : 'Nova OS' }
     ];
 
+    this.canUseLeads = this.authService.hasModule('attendance');
     this.loadCustomers();
     this.loadTechnicians();
 
     if (this.id) {
       this.findById(this.id);
+      return;
+    }
+
+    if (this.canUseLeads) {
+      this.loadLeads();
+      const leadId = this.route.snapshot.queryParamMap.get('leadId');
+      if (leadId) this.preselectLead(leadId);
     }
   }
 
@@ -98,6 +124,38 @@ export class FormComponent implements OnInit {
           name: `${c.name} - ${c.phone}`,
           value: c._id
         }));
+      }
+    });
+  }
+
+  private loadLeads() {
+    this.leadsService.findAll({ limit: 1000 }).subscribe({
+      next: (resp: any) => {
+        const records = resp.records ?? resp;
+        this.leads = records
+          .filter((l: any) => l.status !== 'converted' && l.status !== 'lost')
+          .map((l: any) => ({ name: `${l.name}${l.phone ? ' - ' + l.phone : ''}`, value: l._id }));
+      }
+    });
+  }
+
+  // Vindo de "Criar orçamento" no lead: já seleciona o lead e traz o problema relatado.
+  private preselectLead(leadId: string) {
+    this.target = 'lead';
+    this.order.leadId = leadId;
+    this.leadsService.findById(leadId).subscribe({
+      next: (lead: any) => {
+        // Lead já convertido: o orçamento vai direto para o cliente.
+        if (lead.status === 'converted' && lead.convertedTo) {
+          this.target = 'customer';
+          this.order.customerId = lead.convertedTo._id ?? lead.convertedTo;
+          this.order.leadId = undefined;
+        } else if (!this.leads.some(l => l.value === lead._id)) {
+          this.leads = [{ name: `${lead.name}${lead.phone ? ' - ' + lead.phone : ''}`, value: lead._id }, ...this.leads];
+        }
+        if (!this.order.reportedIssue && lead.description) {
+          this.order.reportedIssue = lead.description;
+        }
       }
     });
   }
@@ -121,10 +179,15 @@ export class FormComponent implements OnInit {
         this.order = {
           ...resp,
           customerId: resp.customerId?._id ?? resp.customerId,
+          leadId: resp.leadId?._id ?? resp.leadId,
           technicianId: resp.technicianId?._id ?? resp.technicianId ?? '',
           equipment: resp.equipment ?? { type: '' },
           estimatedCompletionDate: resp.estimatedCompletionDate ? new Date(resp.estimatedCompletionDate) : undefined
         };
+        if (!resp.customerId && resp.leadId) {
+          this.target = 'lead';
+          this.editingLeadName = resp.leadId?.name ?? 'Lead';
+        }
         this.loading = false;
       },
       error: (error: any) => {
@@ -139,11 +202,17 @@ export class FormComponent implements OnInit {
   }
 
   public onSubmit(): void {
-    if (!this.order.customerId) {
+    const isLead = this.target === 'lead';
+    if (isLead && !this.order.leadId) {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Selecione um lead' });
+      return;
+    }
+    if (!isLead && !this.order.customerId) {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Selecione um cliente' });
       return;
     }
-    if (!this.order.equipment?.type || this.order.equipment.type.trim().length < 2) {
+    // No orçamento de lead o equipamento pode ser definido depois.
+    if (!isLead && (!this.order.equipment?.type || this.order.equipment.type.trim().length < 2)) {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Informe o tipo do equipamento' });
       return;
     }
@@ -155,7 +224,6 @@ export class FormComponent implements OnInit {
     this.loading = true;
 
     const payload: any = {
-      customerId: this.order.customerId,
       equipment: this.order.equipment,
       reportedIssue: this.order.reportedIssue,
       priority: this.order.priority,
@@ -166,6 +234,12 @@ export class FormComponent implements OnInit {
 
     if (this.order.technicianId) {
       payload.technicianId = this.order.technicianId;
+    }
+
+    if (isLead) {
+      if (!this.id) payload.leadId = this.order.leadId;
+    } else {
+      payload.customerId = this.order.customerId;
     }
 
     if (this.id) {

@@ -39,7 +39,10 @@ export interface StatusHistoryModel {
 export interface ServiceOrderModel {
   _id?: string;
   orderNumber?: string;
-  customerId: { _id: string; name: string; phone: string; email?: string; document?: string } | string;
+  customerId?: { _id: string; name: string; phone: string; email?: string; document?: string } | string;
+  // Orçamento de lead: o cliente só existe depois da aprovação.
+  leadId?: { _id: string; name: string; phone?: string; email?: string; status?: string } | string;
+  source?: 'manual' | 'api';
   equipment: EquipmentModel;
   reportedIssue: string;
   diagnosis?: string;
@@ -62,6 +65,10 @@ export interface ServiceOrderModel {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export const ServiceOrderStatusOrder: ServiceOrderStatus[] = [
+  'open', 'diagnosing', 'quoted', 'approved', 'in_progress', 'completed', 'delivered', 'cancelled'
+];
 
 export const ServiceOrderStatusLabels: Record<ServiceOrderStatus, string> = {
   open: 'Aberta',

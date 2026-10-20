@@ -1,4 +1,9 @@
 @use "tailwindcss";
+
+// Tailwind v4 usa prefers-color-scheme por padrão para a variante `dark:`.
+// O tema é controlado pelo ThemeService via classe `.dark` no <html>, então
+// a variante precisa seguir essa classe para o botão de alternância funcionar.
+@custom-variant dark (&:where(.dark, .dark *));
 @import "primeicons/primeicons.css";
 // Tema visual do Quill (usado pelo p-editor/app-rich-text-editor) — sem isso,
 // listas, blocos de código e outras formatações ficam sem estilo.

@@ -20,6 +20,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { TicketService } from '../services/ticket.service';
 import { TicketStatusService } from '../services/ticket-status.service';
+import { TicketCategoryService } from '../services/ticket-category.service';
+import { TicketSubjectService } from '../services/ticket-subject.service';
 import { ServiceOrdersService } from '../../../service-orders/components/services/service-orders.service';
 import { AppointmentsService } from '../../../appointments/components/services/appointments.service';
 import { UsersService } from '../../../users/components/services/users.service';
@@ -103,6 +105,26 @@ export class TicketAttendComponent implements OnInit {
     { label: 'Urgente', value: 'urgent' }
   ];
 
+  // Anexos (PDF/imagens)
+  attachments: any[] = [];
+  attachmentUploading = false;
+  readonly attachmentAccept = 'application/pdf,image/jpeg,image/png,image/webp,image/gif';
+  private readonly maxAttachmentSize = 20 * 1024 * 1024; // 20MB (mesmo limite da API)
+
+  // Edição do conteúdo (somente enquanto o ticket não tiver respostas)
+  showEditDialog = false;
+  editLoading = false;
+  editForm: any = { categoryId: '', subjectId: '', priority: 'medium', notes: '' };
+  editCategoryOptions: any[] = [];
+  editSubjectOptions: any[] = [];
+  private allSubjects: any[] = [];
+  editPriorityOptions = [
+    { label: 'Baixa', value: 'low' },
+    { label: 'Média', value: 'medium' },
+    { label: 'Alta', value: 'high' },
+    { label: 'Urgente', value: 'urgent' }
+  ];
+
   // Designar tarefa para outro usuário (somente administradores)
   assignableUsers: any[] = [];
   selectedAssignUserId = '';
@@ -113,6 +135,8 @@ export class TicketAttendComponent implements OnInit {
     private router: Router,
     private ticketService: TicketService,
     private ticketStatusService: TicketStatusService,
+    private ticketCategoryService: TicketCategoryService,
+    private ticketSubjectService: TicketSubjectService,
     private serviceOrdersService: ServiceOrdersService,
     private appointmentsService: AppointmentsService,
     private usersService: UsersService,
@@ -150,6 +174,18 @@ export class TicketAttendComponent implements OnInit {
     return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
   }
 
+  // Conteúdo do ticket só pode ser editado enquanto não houver respostas.
+  get canEditContent(): boolean {
+    return !!this.ticket && !(this.ticket.responses?.length > 0);
+  }
+
+  // Excluir um anexo: só quem o enviou ou um administrador.
+  canDeleteAttachment(attachment: any): boolean {
+    if (this.isAdmin) return true;
+    const ownerId = attachment?.uploadedBy?._id || attachment?.uploadedBy;
+    return !!ownerId && !!this.currentUserId && ownerId === this.currentUserId;
+  }
+
   // Diferencia no histórico quais respostas são do usuário logado (exibidas
   // à direita, como em um app de mensagens) das demais (à esquerda).
   isMyResponse(response: any): boolean {
@@ -161,6 +197,7 @@ export class TicketAttendComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadTicket(id);
+      this.loadAttachments(id);
     }
     this.loadStatuses();
     this.checkModules();
@@ -213,6 +250,142 @@ export class TicketAttendComponent implements OnInit {
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Erro ao carregar ticket' });
         this.loading = false;
+      }
+    });
+  }
+
+  loadAttachments(id: string): void {
+    this.ticketService.getAttachments(id).subscribe({
+      next: (attachments) => { this.attachments = attachments; },
+      error: () => { this.attachments = []; }
+    });
+  }
+
+  onAttachmentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permite reenviar o mesmo arquivo
+    if (!file) return;
+
+    if (!this.attachmentAccept.split(',').includes(file.type)) {
+      this.messageService.add({ severity: 'warn', summary: 'Tipo não permitido', detail: 'Envie um PDF ou uma imagem.' });
+      return;
+    }
+    if (file.size > this.maxAttachmentSize) {
+      this.messageService.add({ severity: 'warn', summary: 'Arquivo muito grande', detail: 'O limite é 20MB.' });
+      return;
+    }
+
+    this.attachmentUploading = true;
+    this.ticketService.addAttachment(this.ticket._id, file).subscribe({
+      next: (attachments) => {
+        this.attachments = attachments;
+        this.attachmentUploading = false;
+        this.messageService.add({ severity: 'success', summary: 'Anexo enviado' });
+      },
+      error: (error) => {
+        this.attachmentUploading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao enviar anexo'
+        });
+      }
+    });
+  }
+
+  deleteAttachment(attachment: any, event: Event): void {
+    this.confirmationService.confirm({
+      target: event.target as EventTarget,
+      message: `Excluir o anexo "${attachment.filename}"?`,
+      header: 'Excluir Anexo',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Excluir', severity: 'danger' },
+      accept: () => {
+        this.ticketService.deleteAttachment(this.ticket._id, attachment._id).subscribe({
+          next: (attachments) => {
+            this.attachments = attachments;
+            this.messageService.add({ severity: 'success', summary: 'Anexo excluído' });
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Erro',
+              detail: error?.error?.message || 'Erro ao excluir anexo'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  isImageAttachment(attachment: any): boolean {
+    return (attachment?.mimetype || '').startsWith('image/');
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  openEditDialog(): void {
+    this.editForm = {
+      categoryId: this.ticket.categoryId?._id || this.ticket.categoryId || '',
+      subjectId: this.ticket.subjectId?._id || this.ticket.subjectId || '',
+      priority: this.ticket.priority || 'medium',
+      notes: this.ticket.notes || ''
+    };
+    if (!this.editCategoryOptions.length) {
+      this.ticketCategoryService.findAll(true).subscribe({
+        next: (cats) => { this.editCategoryOptions = cats.map((c: any) => ({ label: c.name, value: c._id })); }
+      });
+    }
+    if (this.allSubjects.length) {
+      this.refreshEditSubjects();
+    } else {
+      this.ticketSubjectService.findAll().subscribe({
+        next: (data) => { this.allSubjects = data; this.refreshEditSubjects(); }
+      });
+    }
+    this.showEditDialog = true;
+  }
+
+  onEditCategoryChange(): void {
+    this.editForm.subjectId = '';
+    this.refreshEditSubjects();
+  }
+
+  private refreshEditSubjects(): void {
+    this.editSubjectOptions = this.allSubjects
+      .filter(s => (s.isActive || s._id === this.editForm.subjectId)
+        && (s.categoryId?._id ?? s.categoryId) === this.editForm.categoryId)
+      .map(s => ({ label: s.name, value: s._id }));
+  }
+
+  saveContent(): void {
+    this.editLoading = true;
+    this.ticketService.updateContent(this.ticket._id, {
+      categoryId: this.editForm.categoryId || null,
+      subjectId: this.editForm.subjectId || null,
+      priority: this.editForm.priority,
+      notes: this.editForm.notes || ''
+    }).subscribe({
+      next: (updated) => {
+        this.ticket = updated;
+        this.editLoading = false;
+        this.showEditDialog = false;
+        this.messageService.add({ severity: 'success', summary: 'Ticket atualizado' });
+      },
+      error: (error) => {
+        this.editLoading = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erro',
+          detail: error?.error?.message || 'Erro ao atualizar ticket'
+        });
       }
     });
   }

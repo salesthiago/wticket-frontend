@@ -468,8 +468,13 @@ export class ViewComponent implements OnInit {
     }
 
     this.service.updateStatus(this.id, { status: this.newStatus, notes: this.statusNotes }).subscribe({
-      next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Status atualizado!' });
+      next: (updated: any) => {
+        const converted = this.isLeadQuote && !!updated?.customerId;
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sucesso',
+          detail: converted ? 'Orçamento aprovado — o lead agora é cliente!' : 'Status atualizado!'
+        });
         this.showStatusDialog = false;
         this.loadOrder();
       },
@@ -664,7 +669,17 @@ export class ViewComponent implements OnInit {
   }
 
   // Helpers
-  public getStatusLabel(status: ServiceOrderStatus): string {
+  // Orçamento de lead ainda não aprovado (sem cliente vinculado).
+  get isLeadQuote(): boolean {
+    return !!this.order && !this.order.customerId && !!this.order.leadId;
+  }
+
+  // Quem aparece no card "Cliente": o cliente ou, antes da aprovação, o lead.
+  get party(): any {
+    return this.order?.customerId || this.order?.leadId || null;
+  }
+
+    public getStatusLabel(status: ServiceOrderStatus): string {
     return ServiceOrderStatusLabels[status] ?? status;
   }
 
