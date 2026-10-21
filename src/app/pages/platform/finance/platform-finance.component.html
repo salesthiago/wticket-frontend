@@ -1,0 +1,319 @@
+<app-sidebar />
+<p-toast />
+<p-confirmDialog />
+
+<div class="p-4 sm:ml-64">
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-color">Financeiro</h1>
+      <p class="text-sm text-color-secondary">Assinaturas e cobranças das empresas cadastradas</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <p-button icon="pi pi-plus" label="Gerar cobrança" (onClick)="openCharge()" />
+      <p-button icon="pi pi-refresh" severity="secondary" [text]="true" [loading]="loadingOverview || loadingPayments" (onClick)="reloadAll()" />
+    </div>
+  </div>
+
+  @if (overview) {
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+      <p-card>
+        <div class="text-sm text-color-secondary">Em dia</div>
+        <div class="text-2xl font-bold text-green-600">{{ overview.summary.upToDate }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-sm text-color-secondary">Em atraso</div>
+        <div class="text-2xl font-bold text-red-600">{{ overview.summary.overdue }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-sm text-color-secondary">Vencem em 7 dias</div>
+        <div class="text-2xl font-bold text-orange-500">{{ overview.summary.dueIn7Days }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-sm text-color-secondary">Recebido no mês</div>
+        <div class="text-xl font-bold text-color">{{ overview.summary.receivedThisMonth | currency:'BRL' }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-sm text-color-secondary">Pendente</div>
+        <div class="text-xl font-bold text-color">{{ overview.summary.pendingAmount | currency:'BRL' }}</div>
+      </p-card>
+      <p-card>
+        <div class="text-sm text-color-secondary">Estornado no mês</div>
+        <div class="text-xl font-bold text-color">{{ overview.summary.refundedThisMonth | currency:'BRL' }}</div>
+      </p-card>
+    </div>
+  }
+
+  <p-card>
+    <p-tabs [(value)]="tab">
+      <p-tablist>
+        <p-tab value="companies"><i class="pi pi-building mr-2"></i>Empresas</p-tab>
+        <p-tab value="payments"><i class="pi pi-receipt mr-2"></i>Cobranças</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <!-- ── Situação por empresa ── -->
+        <p-tabpanel value="companies">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
+            <p-iconfield>
+              <p-inputicon class="pi pi-search" />
+              <input pInputText type="text" placeholder="Buscar empresa" [(ngModel)]="companySearch" class="w-64" />
+            </p-iconfield>
+            <p-select [options]="situationOptions" [(ngModel)]="situationFilter" optionLabel="label" optionValue="value" styleClass="w-52" />
+          </div>
+
+          <p-table [value]="companies" [loading]="loadingOverview" [paginator]="true" [rows]="15" stripedRows
+            responsiveLayout="scroll" sortField="nextChargeAt" [sortOrder]="1">
+            <ng-template pTemplate="header">
+              <tr>
+                <th pSortableColumn="name">Empresa <p-sortIcon field="name" /></th>
+                <th>Plano</th>
+                <th pSortableColumn="situation">Situação <p-sortIcon field="situation" /></th>
+                <th pSortableColumn="nextChargeAt">Próxima cobrança <p-sortIcon field="nextChargeAt" /></th>
+                <th>Último pagamento</th>
+                <th>Em aberto</th>
+                <th style="width: 110px;">Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-c>
+              <tr>
+                <td>
+                  <div class="font-medium">{{ c.name }}</div>
+                  <div class="text-xs text-color-secondary">{{ c.document || c.email }}</div>
+                </td>
+                <td>
+                  @if (c.plan) {
+                    <div class="text-sm">{{ c.plan.name }}</div>
+                    <div class="text-xs text-color-secondary">{{ c.plan.price | currency:'BRL' }}</div>
+                  } @else {
+                    <span class="text-sm text-color-secondary">Sem plano</span>
+                  }
+                </td>
+                <td><p-tag [value]="situationLabel(c.situation)" [severity]="situationSeverity(c.situation)" /></td>
+                <td>
+                  @if (c.nextChargeAt) {
+                    <span [class.text-orange-500]="isDueSoon(c.nextChargeAt)" [class.font-semibold]="isDueSoon(c.nextChargeAt)">
+                      {{ c.nextChargeAt | date:'dd/MM/yyyy' }}
+                    </span>
+                    @if (c.situation === 'trial') {
+                      <div class="text-xs text-color-secondary">fim do teste</div>
+                    }
+                  } @else {
+                    <span class="text-color-secondary">—</span>
+                  }
+                </td>
+                <td>
+                  @if (c.lastPayment) {
+                    <div class="text-sm">{{ c.lastPayment.amount | currency:'BRL' }}</div>
+                    <div class="text-xs text-color-secondary">{{ c.lastPayment.paidAt | date:'dd/MM/yyyy' }}</div>
+                  } @else {
+                    <span class="text-color-secondary">—</span>
+                  }
+                </td>
+                <td>
+                  @if (c.pendingPayment) {
+                    <div class="text-sm">{{ c.pendingPayment.amount | currency:'BRL' }}</div>
+                    <div class="text-xs" [class.text-red-500]="isOverdueDate(c.pendingPayment.dueDate)"
+                      [class.text-color-secondary]="!isOverdueDate(c.pendingPayment.dueDate)">
+                      {{ c.pendingPayment.dueDate ? 'vence ' + (c.pendingPayment.dueDate | date:'dd/MM/yyyy') : 'gerada ' + (c.pendingPayment.createdAt | date:'dd/MM/yyyy') }}
+                    </div>
+                  } @else {
+                    <span class="text-color-secondary">—</span>
+                  }
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <p-button icon="pi pi-plus-circle" [text]="true" size="small" pTooltip="Gerar cobrança" (onClick)="openCharge(c)" />
+                    <p-button icon="pi pi-history" severity="secondary" [text]="true" size="small" pTooltip="Histórico de cobranças" (onClick)="showHistory(c)" />
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr><td colspan="7" class="text-center text-color-secondary py-6">Nenhuma empresa encontrada</td></tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+
+        <!-- ── Cobranças ── -->
+        <p-tabpanel value="payments">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
+            <p-select [options]="paymentCompanyOptions" [(ngModel)]="paymentCompanyFilter" (onChange)="loadPayments()"
+              optionLabel="label" optionValue="value" [filter]="true" filterBy="label" styleClass="w-64" />
+            <p-select [options]="paymentStatusOptions" [(ngModel)]="paymentStatusFilter" (onChange)="loadPayments()"
+              optionLabel="label" optionValue="value" styleClass="w-48" />
+          </div>
+
+          <p-table [value]="payments" [loading]="loadingPayments" [paginator]="true" [rows]="15" stripedRows responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Gerada em</th>
+                <th>Empresa</th>
+                <th>Descrição</th>
+                <th>Forma</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th style="width: 150px;">Ações</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-p>
+              <tr>
+                <td class="text-sm whitespace-nowrap">{{ p.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ p.companyId?.name || '—' }}</td>
+                <td class="text-sm">
+                  {{ p.description || (p.planId?.name ? 'Assinatura ' + p.planId.name : '—') }}
+                  @if (p.status === 'refunded' && p.refundReason) {
+                    <div class="text-xs text-red-500">Estorno: {{ p.refundReason }}</div>
+                  }
+                </td>
+                <td class="text-sm">{{ providerLabel(p.provider) }}</td>
+                <td class="whitespace-nowrap">{{ p.amount | currency:'BRL' }}</td>
+                <td class="text-sm">{{ p.dueDate ? (p.dueDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td>
+                  <p-tag [value]="paymentStatusLabel(p.status)" [severity]="paymentStatusSeverity(p.status)" />
+                  @if (p.paidAt) {
+                    <div class="text-xs text-color-secondary mt-1">pago {{ p.paidAt | date:'dd/MM/yyyy' }}</div>
+                  }
+                  @if (p.refundedAt) {
+                    <div class="text-xs text-color-secondary">estornado {{ p.refundedAt | date:'dd/MM/yyyy' }}</div>
+                  }
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    @if (p.status === 'pending' && p.checkoutUrl) {
+                      <p-button icon="pi pi-link" severity="secondary" [text]="true" size="small" pTooltip="Copiar link de pagamento" (onClick)="copy(p.checkoutUrl, 'Link copiado')" />
+                    }
+                    @if (p.status === 'pending' && p.pix?.copyPaste) {
+                      <p-button icon="pi pi-qrcode" severity="secondary" [text]="true" size="small" pTooltip="Copiar Pix copia e cola" (onClick)="copy(p.pix.copyPaste, 'Pix copiado')" />
+                    }
+                    @if (p.status === 'pending' || p.status === 'expired') {
+                      <p-button icon="pi pi-check" severity="success" [text]="true" size="small" pTooltip="Dar baixa (marcar como pago)" (onClick)="openMarkPaid(p)" />
+                    }
+                    @if (p.status === 'pending') {
+                      <p-button icon="pi pi-times" severity="secondary" [text]="true" size="small" pTooltip="Cancelar cobrança" (onClick)="cancelPayment(p)" />
+                    }
+                    @if (p.status === 'paid') {
+                      <p-button icon="pi pi-replay" severity="danger" [text]="true" size="small" pTooltip="Estornar" (onClick)="openRefund(p)" />
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr><td colspan="8" class="text-center text-color-secondary py-6">Nenhuma cobrança encontrada</td></tr>
+            </ng-template>
+          </p-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </p-card>
+</div>
+
+<!-- Dialog: gerar cobrança -->
+<p-dialog header="Gerar cobrança" [(visible)]="chargeVisible" [modal]="true" [style]="{ width: '520px' }" [breakpoints]="{ '640px': '95vw' }">
+  @if (!chargeResult) {
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="block mb-1 text-sm font-medium">Empresa <span class="text-red-500">*</span></label>
+        <p-select [options]="companyOptions" [(ngModel)]="chargeForm.companyId" (onChange)="onChargeCompanyChange()"
+          optionLabel="label" optionValue="value" [filter]="true" filterBy="label" placeholder="Selecione"
+          styleClass="w-full" appendTo="body" />
+        @if (chargeCompany) {
+          <div class="text-xs text-color-secondary mt-1">
+            Plano: {{ chargeCompany.plan ? chargeCompany.plan.name + ' — ' + (chargeCompany.plan.price | currency:'BRL') : 'nenhum' }}
+          </div>
+        }
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-medium">Forma de cobrança</label>
+        <p-selectbutton [options]="methodOptions" [(ngModel)]="chargeForm.method" optionLabel="label" optionValue="value" [allowEmpty]="false" />
+        <div class="text-xs text-color-secondary mt-1">
+          @switch (chargeForm.method) {
+            @case ('pix') { Gera um Pix no Itaú com o valor do plano. }
+            @case ('credit_card') { Gera um link de assinatura recorrente (AbacatePay) com o valor do plano. }
+            @case ('manual') { Só registra a cobrança (ex.: transferência). Dê baixa quando o pagamento entrar. }
+          }
+        </div>
+      </div>
+      @if (chargeForm.method === 'manual') {
+        <div>
+          <label class="block mb-1 text-sm font-medium">Valor <span class="text-red-500">*</span></label>
+          <p-inputNumber [(ngModel)]="chargeForm.amount" mode="currency" currency="BRL" locale="pt-BR" styleClass="w-full" inputStyleClass="w-full" />
+        </div>
+      }
+      <div>
+        <label class="block mb-1 text-sm font-medium">Vencimento</label>
+        <p-datepicker [(ngModel)]="chargeForm.dueDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Opcional" appendTo="body" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-medium">Descrição</label>
+        <input pInputText [(ngModel)]="chargeForm.description" class="w-full" placeholder="Ex.: Mensalidade novembro/2026" />
+      </div>
+    </div>
+  } @else {
+    <p-message severity="success" styleClass="w-full mb-4">Cobrança gerada para {{ chargeResult.companyId?.name || chargeCompany?.name }}.</p-message>
+    @if (chargeResult.checkoutUrl) {
+      <label class="block mb-1 text-sm font-medium">Link de pagamento</label>
+      <div class="flex gap-2">
+        <input pInputText [value]="chargeResult.checkoutUrl" readonly class="w-full" />
+        <p-button icon="pi pi-copy" (onClick)="copy(chargeResult.checkoutUrl, 'Link copiado')" />
+      </div>
+    }
+    @if (chargeResult.pix?.copyPaste) {
+      <label class="block mb-1 text-sm font-medium">Pix copia e cola</label>
+      <div class="flex gap-2">
+        <input pInputText [value]="chargeResult.pix!.copyPaste" readonly class="w-full" />
+        <p-button icon="pi pi-copy" (onClick)="copy(chargeResult.pix!.copyPaste, 'Pix copiado')" />
+      </div>
+    }
+  }
+  <ng-template #footer>
+    @if (!chargeResult) {
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="chargeVisible = false" />
+      <p-button label="Gerar" icon="pi pi-check" [loading]="charging" (onClick)="submitCharge()" />
+    } @else {
+      <p-button label="Fechar" (onClick)="chargeVisible = false" />
+    }
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: baixa manual -->
+<p-dialog header="Dar baixa na cobrança" [(visible)]="payVisible" [modal]="true" [style]="{ width: '420px' }" [breakpoints]="{ '640px': '95vw' }">
+  @if (payTarget) {
+    <p class="text-sm mb-4">
+      {{ payTarget.companyId?.name }} — <strong>{{ payTarget.amount | currency:'BRL' }}</strong>.
+      A assinatura será liberada/renovada por {{ payTarget.periodDays || 30 }} dias.
+    </p>
+    <label class="block mb-1 text-sm font-medium">Data do pagamento</label>
+    <p-datepicker [(ngModel)]="paidAt" dateFormat="dd/mm/yy" [showIcon]="true" [maxDate]="today" appendTo="body" styleClass="w-full" />
+  }
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="payVisible = false" />
+    <p-button label="Confirmar baixa" icon="pi pi-check" severity="success" [loading]="paying" (onClick)="submitMarkPaid()" />
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: estorno -->
+<p-dialog header="Estornar pagamento" [(visible)]="refundVisible" [modal]="true" [style]="{ width: '480px' }" [breakpoints]="{ '640px': '95vw' }">
+  @if (refundTarget) {
+    <p class="text-sm mb-3">
+      {{ refundTarget.companyId?.name }} — <strong>{{ refundTarget.amount | currency:'BRL' }}</strong>
+      pago em {{ refundTarget.paidAt | date:'dd/MM/yyyy' }} via {{ providerLabel(refundTarget.provider) }}.
+    </p>
+    @if (refundTarget.provider !== 'manual') {
+      <p-message severity="warn" styleClass="w-full mb-3">
+        Este registro não devolve o dinheiro automaticamente: faça a devolução no painel do provedor
+        ({{ providerLabel(refundTarget.provider) }}) e registre aqui.
+      </p-message>
+    }
+    <label class="block mb-1 text-sm font-medium">Motivo <span class="text-red-500">*</span></label>
+    <textarea pTextarea [(ngModel)]="refundReason" rows="3" class="w-full mb-3"></textarea>
+    <label class="flex items-center gap-2 text-sm">
+      <p-toggleswitch [(ngModel)]="refundRevokeAccess" />
+      Remover os {{ refundTarget.periodDays || 30 }} dias de acesso concedidos por este pagamento
+    </label>
+  }
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="refundVisible = false" />
+    <p-button label="Confirmar estorno" icon="pi pi-replay" severity="danger" [loading]="refunding" (onClick)="submitRefund()" />
+  </ng-template>
+</p-dialog>

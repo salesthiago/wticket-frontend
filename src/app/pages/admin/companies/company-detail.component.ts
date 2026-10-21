@@ -52,7 +52,7 @@ export class CompanyDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
-      this.router.navigate(['/admin/companies']);
+      this.router.navigate(['/platform/companies']);
       return;
     }
     this.loading = true;
@@ -136,7 +136,7 @@ export class CompanyDetailComponent implements OnInit {
     });
   }
 
-  back(): void { this.router.navigate(['/admin/companies']); }
+  back(): void { this.router.navigate(['/platform/companies']); }
 
   moduleName(code: ModuleCode): string {
     return this.catalog.find(m => m.code === code)?.name || code;

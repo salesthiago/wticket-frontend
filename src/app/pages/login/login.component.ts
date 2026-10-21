@@ -65,7 +65,10 @@ export class LoginComponent implements OnInit {
           summary: 'Sucesso',
           detail: 'Login realizado com sucesso!'
         });
-        this.router.navigate([this.authService.isCustomerScoped() ? '/projects' : '/dashboard']);
+        const home = this.authService.isSuperAdmin()
+          ? '/platform'
+          : this.authService.isCustomerScoped() ? '/projects' : '/dashboard';
+        this.router.navigate([home]);
       },
       error: (error) => {
         this.loading = false;

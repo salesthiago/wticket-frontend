@@ -25,6 +25,8 @@ interface NavItem {
   panelModel?: MenuItem[];
   /** grupo (panelModel) aberto no acordeão */
   expanded?: boolean;
+  /** ativo só com a URL exata (ex.: '/platform' não deve acender em '/platform/leads') */
+  exact?: boolean;
 }
 
 @Component({
@@ -48,27 +50,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       name: 'Dashboard',
       link: '/dashboard',
       icon: 'pi pi-home'
-    },
-    // Super-admin only
-    {
-      id: 100,
-      name: 'Painel Admin',
-      link: '',
-      icon: 'pi pi-shield',
-      roles: ['super_admin'],
-      panelModel: [
-        {
-          label: 'Painel Admin',
-          icon: 'pi pi-shield',
-          items: [
-            { label: 'Empresas', routerLink: '/admin/companies' },
-            { label: 'Módulos', routerLink: '/admin/modules' },
-            { label: 'Assinaturas', routerLink: '/admin/plans' },
-            { label: 'E-mail', routerLink: '/admin/email-config' },
-            { label: 'Pagamentos', routerLink: '/admin/billing-config' }
-          ]
-        }
-      ]
     },
     {
       id: 1,
@@ -230,6 +211,32 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   ];
 
+  // Menu exclusivo do super_admin: painel da plataforma, sem as telas das empresas.
+  private readonly platformItems: NavItem[] = [
+    { id: 200, name: 'Dashboard', link: '/platform', icon: 'pi pi-chart-bar', exact: true },
+    { id: 201, name: 'Empresas', link: '/platform/companies', icon: 'pi pi-building' },
+    { id: 202, name: 'Leads', link: '/platform/leads', icon: 'pi pi-user-plus' },
+    { id: 203, name: 'Financeiro', link: '/platform/finance', icon: 'pi pi-wallet' },
+    {
+      id: 204,
+      name: 'Configurações',
+      link: '',
+      icon: 'pi pi-cog',
+      panelModel: [
+        {
+          label: 'Configurações',
+          icon: 'pi pi-cog',
+          items: [
+            { label: 'Módulos', routerLink: '/admin/modules' },
+            { label: 'Assinaturas', routerLink: '/admin/plans' },
+            { label: 'E-mail', routerLink: '/admin/email-config' },
+            { label: 'Pagamentos', routerLink: '/admin/billing-config' }
+          ]
+        }
+      ]
+    }
+  ];
+
   public menuItems: NavItem[] = [];
 
   isDarkMode = false;
@@ -255,8 +262,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.isDarkMode = this.themeService.isDarkTheme();
     this.user = this.authService.getUser();
 
-    this.menuItems = this.filterMenuByAccess(this.allItems);
-    this.pruneModuleSubItems();
+    if (this.authService.isSuperAdmin()) {
+      this.menuItems = this.platformItems;
+    } else {
+      this.menuItems = this.filterMenuByAccess(this.allItems);
+      this.pruneModuleSubItems();
+    }
 
     this.themeSubscription = this.themeService.isDarkTheme$.subscribe(isDark => {
       this.isDarkMode = isDark;

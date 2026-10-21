@@ -52,3 +52,13 @@ export const notCustomerScopeGuard: CanActivateFn = () => {
   }
   return true;
 };
+
+/**
+ * Guard: o super_admin não usa o dashboard das empresas — a tela inicial dele
+ * é o painel da plataforma (/platform).
+ */
+export const platformHomeGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isSuperAdmin() ? router.createUrlTree(['/platform']) : true;
+};

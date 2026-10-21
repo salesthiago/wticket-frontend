@@ -1,0 +1,270 @@
+<app-sidebar />
+<p-toast />
+<p-confirmDialog />
+
+<div class="p-4 sm:ml-64">
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-color">Leads</h1>
+      <p class="text-sm text-color-secondary">Prospecção de novas empresas para a plataforma · {{ leads.length }} leads</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <p-button icon="pi pi-upload" label="Importar CSV" severity="secondary" [outlined]="true" (onClick)="openImport()" />
+      <p-button icon="pi pi-plus" label="Novo lead" (onClick)="openNew()" />
+    </div>
+  </div>
+
+  <p-card>
+    <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <div class="flex items-center gap-3 flex-wrap">
+        <p-iconfield>
+          <p-inputicon class="pi pi-search" />
+          <input pInputText type="text" placeholder="Nome, empresa, telefone ou e-mail"
+            [(ngModel)]="search" (ngModelChange)="buildColumns()" class="w-72" />
+        </p-iconfield>
+        @if (view === 'list') {
+          <p-select [options]="statusFilterOptions" [(ngModel)]="statusFilter" optionLabel="label" optionValue="value" styleClass="w-48" />
+        }
+        <p-select [options]="segmentFilterOptions" [(ngModel)]="segmentFilter" (onChange)="buildColumns()"
+          optionLabel="label" optionValue="value" styleClass="w-52" [filter]="segments.length > 8" />
+        <p-button icon="pi pi-refresh" severity="secondary" [text]="true" [loading]="loading" (onClick)="load()" />
+      </div>
+      <p-selectbutton [options]="viewOptions" [(ngModel)]="view" (onChange)="onViewChange()" optionValue="value" [allowEmpty]="false">
+        <ng-template #item let-option>
+          <i [class]="option.icon" [pTooltip]="option.tooltip" tooltipPosition="top"></i>
+        </ng-template>
+      </p-selectbutton>
+    </div>
+
+    <!-- ── KANBAN ── -->
+    @if (view === 'kanban') {
+      <div class="kanban-board" cdkDropListGroup>
+        @for (column of columns; track column.status) {
+          <div class="kanban-column">
+            <div class="kanban-column-header" [style.borderTopColor]="column.color">
+              <span class="kanban-column-title">{{ column.label }}</span>
+              <div class="flex items-center gap-1">
+                <span class="kanban-column-count">{{ column.leads.length }}</span>
+                <button type="button" class="kanban-add" (click)="openNew(column.status)" [attr.aria-label]="'Novo lead em ' + column.label">
+                  <i class="pi pi-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="kanban-column-body" cdkDropList [id]="column.status"
+              [cdkDropListData]="column.leads" (cdkDropListDropped)="drop($event, column)">
+              @for (lead of column.leads; track lead._id) {
+                <div class="kanban-card" cdkDrag (click)="edit(lead)">
+                  <div class="kanban-card-title">{{ lead.name }}</div>
+                  @if (lead.company) {
+                    <div class="kanban-card-line"><i class="pi pi-building"></i> {{ lead.company }}</div>
+                  }
+                  <div class="kanban-card-line">
+                    <i class="pi pi-phone"></i> {{ lead.phone }}
+                    <a [href]="whatsappUrl(lead.phone)" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
+                      class="kanban-whatsapp" pTooltip="Abrir no WhatsApp">
+                      <i class="pi pi-whatsapp"></i>
+                    </a>
+                  </div>
+                  @if (lead.email) {
+                    <div class="kanban-card-line"><i class="pi pi-envelope"></i> {{ lead.email }}</div>
+                  }
+                  @if (lead.segment) {
+                    <div class="mt-2"><span class="kanban-segment">{{ lead.segment }}</span></div>
+                  }
+                </div>
+              } @empty {
+                <div class="kanban-column-empty">Nenhum lead</div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── LISTA ── -->
+    @if (view === 'list') {
+      <p-table [value]="filtered" [loading]="loading" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[20, 50, 100]"
+        stripedRows responsiveLayout="scroll" sortField="createdAt" [sortOrder]="-1">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
+            <th pSortableColumn="company">Empresa <p-sortIcon field="company" /></th>
+            <th>Telefone</th>
+            <th>E-mail</th>
+            <th pSortableColumn="segment">Ramo <p-sortIcon field="segment" /></th>
+            <th pSortableColumn="status">Status <p-sortIcon field="status" /></th>
+            <th pSortableColumn="createdAt">Cadastro <p-sortIcon field="createdAt" /></th>
+            <th style="width: 130px;">Ações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-lead>
+          <tr>
+            <td class="font-medium">{{ lead.name }}</td>
+            <td>{{ lead.company || '—' }}</td>
+            <td class="whitespace-nowrap">{{ lead.phone }}</td>
+            <td>{{ lead.email || '—' }}</td>
+            <td>{{ lead.segment || '—' }}</td>
+            <td><p-tag [value]="statusLabel(lead.status)" [severity]="statusSeverity(lead.status)" /></td>
+            <td class="text-sm">{{ lead.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <div class="flex gap-1">
+                <a [href]="whatsappUrl(lead.phone)" target="_blank" rel="noopener">
+                  <p-button icon="pi pi-whatsapp" severity="success" [text]="true" size="small" pTooltip="WhatsApp" />
+                </a>
+                <p-button icon="pi pi-pencil" severity="secondary" [text]="true" size="small" pTooltip="Editar" (onClick)="edit(lead)" />
+                <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" pTooltip="Excluir" (onClick)="remove(lead)" />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="8" class="text-center text-color-secondary py-6">Nenhum lead encontrado</td></tr>
+        </ng-template>
+      </p-table>
+    }
+  </p-card>
+</div>
+
+<!-- Dialog: cadastro / edição -->
+<p-dialog [header]="editingId ? 'Editar lead' : 'Novo lead'" [(visible)]="formVisible" [modal]="true"
+  [style]="{ width: '560px' }" [breakpoints]="{ '640px': '95vw' }">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="sm:col-span-2">
+      <label class="block mb-1 text-sm font-medium">Nome <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="form.name" class="w-full" placeholder="Nome do contato" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="block mb-1 text-sm font-medium">Empresa</label>
+      <input pInputText [(ngModel)]="form.company" class="w-full" placeholder="Nome da empresa" />
+    </div>
+    <div>
+      <label class="block mb-1 text-sm font-medium">Telefone <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="form.phone" class="w-full" placeholder="(62) 99999-0000" />
+    </div>
+    <div>
+      <label class="block mb-1 text-sm font-medium">E-mail</label>
+      <input pInputText type="email" [(ngModel)]="form.email" class="w-full" placeholder="contato@empresa.com" />
+    </div>
+    <div>
+      <label class="block mb-1 text-sm font-medium">Status</label>
+      <p-select [options]="statusOptions" [(ngModel)]="form.status" optionLabel="label" optionValue="value" styleClass="w-full" appendTo="body" />
+    </div>
+    <div>
+      <label class="block mb-1 text-sm font-medium">Ramo</label>
+      <p-autoComplete [(ngModel)]="form.segment" [suggestions]="segmentSuggestions" (completeMethod)="filterSegments($event)"
+        [dropdown]="true" styleClass="w-full" inputStyleClass="w-full" placeholder="Ex.: Oficina mecânica" appendTo="body" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="block mb-1 text-sm font-medium">Observações</label>
+      <textarea pTextarea [(ngModel)]="form.notes" rows="3" class="w-full"></textarea>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex w-full justify-between">
+      <div>
+        @if (editingId) {
+          <p-button label="Excluir" icon="pi pi-trash" severity="danger" [text]="true" (onClick)="removeEditing()" />
+        }
+      </div>
+      <div class="flex gap-2">
+        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="formVisible = false" />
+        <p-button label="Salvar" icon="pi pi-check" [loading]="saving" (onClick)="save()" />
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Dialog: importação CSV -->
+<p-dialog header="Importar leads (CSV)" [(visible)]="importVisible" [modal]="true"
+  [style]="{ width: '760px' }" [breakpoints]="{ '800px': '95vw' }">
+  @if (!importResult) {
+    <p class="text-sm text-color-secondary mb-3">
+      O arquivo precisa de uma linha de cabeçalho. Colunas reconhecidas:
+      <strong>nome*</strong>, empresa, <strong>telefone*</strong>, email, status, ramo (e observacoes).
+      Separador <code>;</code> ou <code>,</code>. Telefones já cadastrados são ignorados.
+    </p>
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <label class="p-button p-button-outlined cursor-pointer inline-flex items-center gap-2">
+        <i class="pi pi-file"></i> Escolher arquivo
+        <input type="file" accept=".csv,text/csv" class="hidden" (change)="onFileSelected($event)" />
+      </label>
+      <p-button label="Baixar modelo" icon="pi pi-download" severity="secondary" [text]="true" (onClick)="downloadTemplate()" />
+      @if (importFileName) {
+        <span class="text-sm text-color-secondary">{{ importFileName }}</span>
+      }
+    </div>
+
+    @if (importMissingRequired.length) {
+      <p-message severity="error" styleClass="mb-3 w-full">
+        Coluna(s) obrigatória(s) não encontrada(s) no cabeçalho: {{ importMissingRequired.join(', ') }}
+      </p-message>
+    }
+    @if (importIgnoredHeaders.length) {
+      <p-message severity="warn" styleClass="mb-3 w-full">
+        Colunas ignoradas: {{ importIgnoredHeaders.join(', ') }}
+      </p-message>
+    }
+
+    @if (importRows.length) {
+      <p class="text-sm mb-2">
+        {{ importRows.length }} linha(s) no arquivo · <strong>{{ importValidCount }}</strong> válida(s) para importar
+      </p>
+      <p-table [value]="importRows" [scrollable]="true" scrollHeight="300px" size="small">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Linha</th><th>Nome</th><th>Empresa</th><th>Telefone</th><th>E-mail</th><th>Status</th><th>Ramo</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr [class.import-row-error]="rowProblem(row)">
+            <td>{{ row.line }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.company }}</td>
+            <td>{{ row.phone }}</td>
+            <td>{{ row.email }}</td>
+            <td>{{ row.status }}</td>
+            <td>
+              {{ row.segment }}
+              @if (rowProblem(row); as problem) {
+                <div class="text-xs text-red-500">{{ problem }}</div>
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  } @else {
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
+        <div class="text-2xl font-bold text-green-600">{{ importResult.created }}</div>
+        <div class="text-xs text-color-secondary">Importados</div>
+      </div>
+      <div class="text-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950">
+        <div class="text-2xl font-bold text-yellow-600">{{ importResult.duplicates }}</div>
+        <div class="text-xs text-color-secondary">Telefones duplicados</div>
+      </div>
+      <div class="text-center p-3 rounded-lg bg-red-50 dark:bg-red-950">
+        <div class="text-2xl font-bold text-red-600">{{ importResult.invalid }}</div>
+        <div class="text-xs text-color-secondary">Inválidos</div>
+      </div>
+    </div>
+    @if (importResult.errors.length) {
+      <div class="max-h-64 overflow-y-auto text-sm">
+        @for (e of importResult.errors; track $index) {
+          <div class="py-1 border-b border-surface"><strong>Linha {{ e.line }}:</strong> {{ e.message }}</div>
+        }
+      </div>
+    }
+  }
+
+  <ng-template #footer>
+    @if (!importResult) {
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="importVisible = false" />
+      <p-button [label]="'Importar ' + importValidCount + ' lead(s)'" icon="pi pi-upload" [loading]="importing"
+        [disabled]="!importValidCount || importMissingRequired.length > 0" (onClick)="confirmImport()" />
+    } @else {
+      <p-button label="Importar outro arquivo" severity="secondary" [text]="true" (onClick)="resetImport()" />
+      <p-button label="Fechar" (onClick)="importVisible = false" />
+    }
+  </ng-template>
+</p-dialog>

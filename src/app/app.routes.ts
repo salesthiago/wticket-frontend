@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { authGuard } from './guards/auth-guard';
-import { moduleGuard, superAdminGuard, notCustomerScopeGuard } from './guards/module-guard';
+import { moduleGuard, superAdminGuard, notCustomerScopeGuard, platformHomeGuard } from './guards/module-guard';
 import { roleGuard } from './guards/role-guard';
 import { RegisterComponent } from './pages/register/register.component';
 import { MyAccountComponent } from './pages/my-account/my-account.component';
@@ -21,7 +21,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [authGuard, notCustomerScopeGuard]
+    canActivate: [authGuard, notCustomerScopeGuard, platformHomeGuard]
   },
   {
     path: 'my-account',
@@ -38,12 +38,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/my-company/my-company.component').then(m => m.MyCompanyComponent),
     canActivate: [authGuard, notCustomerScopeGuard]
   },
-  // Super-admin
+  // Super-admin: painel da plataforma (tela inicial do super_admin)
   {
-    path: 'admin/companies',
-    loadComponent: () => import('./pages/admin/companies/companies-list.component').then(m => m.CompaniesListComponent),
+    path: 'platform',
+    loadChildren: () => import('./pages/platform/platform.route').then(m => m.routes),
     canActivate: [authGuard, superAdminGuard]
   },
+  // Lista antiga de empresas — substituída por /platform/companies.
+  { path: 'admin/companies', redirectTo: '/platform/companies', pathMatch: 'full' },
   {
     path: 'admin/companies/:id',
     loadComponent: () => import('./pages/admin/companies/company-detail.component').then(m => m.CompanyDetailComponent),

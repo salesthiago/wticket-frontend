@@ -98,6 +98,7 @@
             <a
               [routerLink]="menuItem.link"
               routerLinkActive="active-nav-item"
+              [routerLinkActiveOptions]="{ exact: !!menuItem.exact }"
               [pTooltip]="isCollapsed ? menuItem.name : ''"
               tooltipPosition="right"
               class="nav-link"

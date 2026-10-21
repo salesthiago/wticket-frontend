@@ -1,0 +1,131 @@
+<app-sidebar />
+<p-toast />
+
+<div class="p-4 sm:ml-64">
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-color">Painel da Plataforma</h1>
+      <p class="text-sm text-color-secondary">Visão geral da prospecção de leads</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <p-button icon="pi pi-users" label="Ver leads" severity="secondary" [outlined]="true" routerLink="/platform/leads" />
+      <p-button icon="pi pi-refresh" severity="secondary" [loading]="loading" (onClick)="load()" />
+    </div>
+  </div>
+
+  @if (loading && !data) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      @for (i of [1,2,3,4]; track $index) {
+        <p-skeleton height="5rem" borderRadius="0.75rem" />
+      }
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      @for (i of [1,2]; track $index) {
+        <p-skeleton height="18rem" borderRadius="0.75rem" />
+      }
+    </div>
+  }
+
+  @if (data) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <p-card>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900">
+            <i class="pi pi-users text-blue-600 dark:text-blue-300 text-xl"></i>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-color">{{ data.summary.total }}</div>
+            <div class="text-sm text-color-secondary">Total de leads</div>
+            <div class="text-xs text-color-secondary">+{{ data.summary.newThisMonth }} este mês</div>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900">
+            <i class="pi pi-comments text-orange-600 dark:text-orange-300 text-xl"></i>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-color">{{ data.summary.open }}</div>
+            <div class="text-sm text-color-secondary">Em andamento</div>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900">
+            <i class="pi pi-check-circle text-green-600 dark:text-green-300 text-xl"></i>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-color">{{ data.summary.won }}</div>
+            <div class="text-sm text-color-secondary">Fechados</div>
+            <div class="text-xs text-color-secondary">{{ data.summary.wonThisMonth }} este mês</div>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900">
+            <i class="pi pi-percentage text-purple-600 dark:text-purple-300 text-xl"></i>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-color">
+              {{ data.summary.conversionRate !== null ? (data.summary.conversionRate | number:'1.0-1') + '%' : '—' }}
+            </div>
+            <div class="text-sm text-color-secondary">Taxa de conversão</div>
+            <div class="text-xs text-color-secondary">fechados ÷ (fechados + perdidos)</div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <p-card>
+        <div style="height: 300px;">
+          <p-chart type="bar" [data]="funnelChart.data" [options]="funnelChart.options" height="300px" />
+        </div>
+      </p-card>
+      <p-card>
+        <div style="height: 300px;">
+          @if (data.bySegment.length) {
+            <p-chart type="doughnut" [data]="segmentChart.data" [options]="segmentChart.options" height="300px" />
+          } @else {
+            <div class="h-full flex items-center justify-center text-color-secondary text-sm">Nenhum lead cadastrado</div>
+          }
+        </div>
+      </p-card>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <p-card class="lg:col-span-2">
+        <div style="height: 300px;">
+          <p-chart type="bar" [data]="monthlyChart.data" [options]="monthlyChart.options" height="300px" />
+        </div>
+      </p-card>
+      <p-card>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-color">Leads recentes</h3>
+          <a routerLink="/platform/leads" class="text-sm text-primary">Ver todos</a>
+        </div>
+        <ul class="space-y-3">
+          @for (lead of data.recent; track lead._id) {
+            <li class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-color truncate">{{ lead.name }}</div>
+                <div class="text-xs text-color-secondary truncate">
+                  {{ lead.company || '—' }} · {{ lead.createdAt | date:'dd/MM/yyyy' }}
+                </div>
+              </div>
+              <p-tag [value]="statusLabel(lead.status)" [severity]="statusSeverity(lead.status)" />
+            </li>
+          } @empty {
+            <li class="text-sm text-color-secondary">Nenhum lead ainda. <a routerLink="/platform/leads" class="text-primary">Cadastre ou importe</a>.</li>
+          }
+        </ul>
+      </p-card>
+    </div>
+  }
+</div>
