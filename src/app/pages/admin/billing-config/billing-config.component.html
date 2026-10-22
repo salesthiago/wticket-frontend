@@ -213,11 +213,15 @@
     <p-card>
       <div class="flex items-center gap-2 mb-1">
         <h2 class="text-xl font-semibold">Stripe — Cartão</h2>
-        <p-tag severity="info" value="Em breve" />
       </div>
       <p class="text-sm text-gray-500 mb-4">
-        Integração de cartão futura. As credenciais já podem ser cadastradas
-        (cifradas); o fluxo de checkout ainda não está ativo.
+        Cartão via Stripe Checkout (página hospedada pela Stripe). Para usar, ative a
+        integração e selecione <strong>Stripe</strong> no método <strong>Cartão de crédito</strong> acima.
+        No dashboard da Stripe, cadastre o webhook
+        <code>{{ apiUrl }}/billing/webhook/stripe</code> com os eventos
+        <code>checkout.session.completed</code>, <code>checkout.session.async_payment_succeeded</code>,
+        <code>checkout.session.async_payment_failed</code> e <code>checkout.session.expired</code>,
+        e cole aqui o Signing secret (<code>whsec_…</code>).
       </p>
 
       <div class="flex items-center gap-2 mb-4">

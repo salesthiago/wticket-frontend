@@ -151,7 +151,7 @@ export const PaymentStatusSeverity: Record<PaymentStatus, 'warn' | 'success' | '
 export const PaymentProviderLabels: Record<PaymentProvider, string> = {
   abacatepay: 'AbacatePay (cartão)',
   itau: 'Itaú (Pix)',
-  stripe: 'Stripe',
+  stripe: 'Stripe (cartão)',
   manual: 'Manual'
 };
 

@@ -14,6 +14,7 @@ import { DividerModule } from 'primeng/divider';
 import { MessageModule } from 'primeng/message';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { SidebarComponent } from '../../../layout/sidebar/sidebar.component';
+import { environment } from '../../../../environments/enviroment';
 import {
   BillingConfigService,
   BillingSettings,
@@ -59,6 +60,8 @@ export class BillingConfigComponent implements OnInit {
   savingMethods = false;
   savingItau = false;
   savingStripe = false;
+  /** base da API — exibida na URL de webhook a cadastrar na Stripe */
+  apiUrl = environment.apiUrl;
   uploadingCert = false;
   uploadingKey = false;
 

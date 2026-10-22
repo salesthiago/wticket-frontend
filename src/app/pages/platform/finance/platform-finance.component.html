@@ -229,7 +229,7 @@
         <div class="text-xs text-color-secondary mt-1">
           @switch (chargeForm.method) {
             @case ('pix') { Gera um Pix no Itaú com o valor do plano. }
-            @case ('credit_card') { Gera um link de assinatura recorrente (AbacatePay) com o valor do plano. }
+            @case ('credit_card') { Gera um link de pagamento com cartão (Stripe ou AbacatePay, conforme Configurações › Pagamentos) com o valor do plano. }
             @case ('manual') { Só registra a cobrança (ex.: transferência). Dê baixa quando o pagamento entrar. }
           }
         </div>

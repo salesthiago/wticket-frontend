@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
@@ -45,6 +45,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   loadingPlans = false;
   selectedPlanId: string | null = null;
 
+  /** Retorno do checkout hospedado (Stripe): 'sucesso' | 'cancelado' (ver STRIPE_SUCCESS_URL/CANCEL_URL). */
+  paymentReturn: string | null = null;
+
   private pollSub?: Subscription;
 
   readonly methodLabels = METHOD_LABELS;
@@ -53,10 +56,21 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private billingService: BillingService,
     private planService: PlanService,
     private router: Router,
+    private route: ActivatedRoute,
     private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
+    this.paymentReturn = this.route.snapshot.queryParamMap.get('pagamento');
+    if (this.paymentReturn === 'cancelado') {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Pagamento não concluído',
+        detail: 'Você saiu da página de pagamento. Escolha uma forma de pagamento para tentar novamente.',
+        life: 6000
+      });
+    }
+
     this.billingService.refresh().subscribe(status => {
       this.status = status;
       // Cobrança já garantida pelo backend (job de expiração / gate de billing) —
@@ -179,7 +193,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       )
       .subscribe(p => {
         if (p.status === 'paid') {
-          this.billingService.refresh().subscribe();
+          this.billingService.refresh().subscribe(status => this.status = status);
           this.messageService.add({
             severity: 'success',
             summary: 'Pagamento confirmado',
