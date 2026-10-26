@@ -57,9 +57,17 @@ export interface ReceivableStatusHistoryItem {
   changedAt?: string;
 }
 
+export interface ReceivableBilledTask {
+  ticketId: string;
+  taskNumber?: string;
+  hours: number;
+}
+
 export interface ReceivableBillingBreakdown {
   workedHours?: number | null;
   hourlyRate?: number | null;
+  /** tarefas do projeto cobradas neste título */
+  tasks?: ReceivableBilledTask[];
 }
 
 export interface Receivable {
@@ -136,6 +144,8 @@ export interface ReceivableInvoiceFromOSInput {
 }
 
 export interface ReceivableInvoiceFromProjectInput {
+  /** tarefas (tickets) do projeto a faturar — cada uma só pode ser faturada uma vez */
+  ticketIds: string[];
   amount?: number;
   invoiceDescription?: string;
   dueDate: string | Date;

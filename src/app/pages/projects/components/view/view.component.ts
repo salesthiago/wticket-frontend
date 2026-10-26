@@ -100,6 +100,9 @@ export class ProjectViewComponent implements OnInit {
 
   showInvoiceDialog = false;
   invoicingProject = false;
+  /** tarefas ainda não faturadas (as únicas que podem entrar num novo título) */
+  invoiceableTasks: any[] = [];
+  invoiceSelectedTasks: any[] = [];
   invoiceDraft: {
     dueDate: Date;
     paymentMethod: PaymentMethod;
@@ -441,22 +444,22 @@ export class ProjectViewComponent implements OnInit {
     });
   }
 
-  hasActiveReceivable(): boolean {
-    return this.receivables.some(r => r.status !== 'cancelled');
+  /** Tarefas que ainda não entraram em nenhum título ativo. */
+  uninvoicedTasks(): any[] {
+    return (this.tasks || []).filter(t => !t.invoicedReceivableId);
   }
 
   canInvoiceProject(): boolean {
     if (!this.hasFinancialAccess) return false;
-    if (this.hasActiveReceivable()) return false;
-    return true;
+    return this.uninvoicedTasks().length > 0;
   }
 
   invoiceTooltip(): string {
     if (!this.hasFinancialAccess) {
       return 'Você precisa do módulo Financeiro e role administrator/finance para faturar.';
     }
-    if (this.hasActiveReceivable()) {
-      return 'Este projeto já possui título ativo. Cancele-o antes de faturar novamente.';
+    if (!this.uninvoicedTasks().length) {
+      return 'Todas as tarefas deste projeto já foram faturadas.';
     }
     return 'Gerar título a receber a partir deste projeto';
   }
@@ -465,6 +468,9 @@ export class ProjectViewComponent implements OnInit {
     if (!this.canInvoiceProject()) return;
     const due = new Date();
     due.setDate(due.getDate() + 30);
+    this.invoiceableTasks = this.uninvoicedTasks();
+    // Pré-seleciona as tarefas com horas lançadas.
+    this.invoiceSelectedTasks = this.invoiceableTasks.filter(t => Number(t.workedHours || 0) > 0);
     this.invoiceDraft = {
       dueDate: due,
       paymentMethod: 'pix',
@@ -487,9 +493,9 @@ export class ProjectViewComponent implements OnInit {
       .trim();
   }
 
-  // ─── Prévia do cálculo (horas trabalhadas x valor/hora) ───────────────────
+  // ─── Prévia do cálculo (horas das tarefas selecionadas x valor/hora) ──────
   invoiceWorkedHours(): number {
-    return (this.tasks || []).reduce((acc, t) => acc + Number(t?.workedHours || 0), 0);
+    return (this.invoiceSelectedTasks || []).reduce((acc, t) => acc + Number(t?.workedHours || 0), 0);
   }
   invoiceHourlyRate(): number {
     return Number(this.project?.hourlyRate || 0);
@@ -507,8 +513,13 @@ export class ProjectViewComponent implements OnInit {
       this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Forma de pagamento é obrigatória.' });
       return;
     }
+    if (!this.invoiceSelectedTasks.length) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Selecione ao menos uma tarefa para faturar.' });
+      return;
+    }
 
     const payload: ReceivableInvoiceFromProjectInput = {
+      ticketIds: this.invoiceSelectedTasks.map(t => t._id),
       dueDate: this.invoiceDraft.dueDate,
       paymentMethod: this.invoiceDraft.paymentMethod,
       invoiceDescription: this.invoiceDraft.invoiceDescription?.trim() || undefined,
@@ -526,6 +537,8 @@ export class ProjectViewComponent implements OnInit {
           detail: `Título ${created.number} criado com sucesso.`
         });
         this.loadLinkedReceivables(this.id!);
+        // Atualiza horas faturadas e a marcação das tarefas.
+        this.refresh();
       },
       error: (err) => {
         this.invoicingProject = false;
@@ -534,6 +547,8 @@ export class ProjectViewComponent implements OnInit {
           summary: 'Falha ao faturar',
           detail: err?.error?.message || 'Erro ao gerar título'
         });
+        // 409 = tarefa faturada em outro título enquanto o diálogo estava aberto.
+        if (err?.status === 409) this.refresh();
       }
     });
   }

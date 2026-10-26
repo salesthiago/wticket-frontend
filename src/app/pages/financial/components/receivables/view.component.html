@@ -92,6 +92,16 @@
           R$ {{ (item.billingBreakdown.hourlyRate || 0) | number:'1.2-2' }}/h =
           R$ {{ ((item.billingBreakdown.workedHours || 0) * (item.billingBreakdown.hourlyRate || 0)) | number:'1.2-2' }}
         </p>
+        @if (item.billingBreakdown.tasks?.length) {
+          <small class="text-gray-500 block mt-2 mb-1">Tarefas faturadas ({{ item.billingBreakdown.tasks!.length }})</small>
+          <div class="flex flex-wrap gap-1">
+            @for (t of item.billingBreakdown.tasks; track t.ticketId) {
+              <span class="text-xs font-mono border border-gray-200 rounded px-2 py-0.5">
+                {{ t.taskNumber || '—' }} · {{ t.hours | number:'1.2-2' }}h
+              </span>
+            }
+          </div>
+        }
       }
       @if (item.notes) {
         <p-divider />

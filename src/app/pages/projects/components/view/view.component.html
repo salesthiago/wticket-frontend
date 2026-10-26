@@ -62,10 +62,18 @@
       </div>
     </p-card>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
       <p-card>
         <div class="text-gray-500 text-sm">Total de Horas Trabalhadas</div>
         <div class="text-2xl font-semibold">{{ project.stats?.totalWorkedHours ?? 0 }}h</div>
+      </p-card>
+      <p-card>
+        <div class="text-gray-500 text-sm">Horas Faturadas</div>
+        <div class="text-2xl font-semibold">{{ project.stats?.invoicedHours ?? 0 }}h</div>
+        <small class="text-gray-500">
+          {{ (project.stats?.invoicedValue ?? 0) | currency:'BRL' }} ·
+          {{ project.stats?.uninvoicedHours ?? 0 }}h a faturar
+        </small>
       </p-card>
       <p-card>
         <div class="text-gray-500 text-sm">Valor do Projeto</div>
@@ -121,6 +129,9 @@
               <th>Responsável</th>
               <th>Prazo</th>
               <th>Horas Trabalhadas</th>
+              @if (hasFinancialAccess) {
+                <th>Faturamento</th>
+              }
               <th>Ações</th>
             </tr>
           </ng-template>
@@ -147,6 +158,16 @@
               <td>{{ task.assignedTo?.name ?? '—' }}</td>
               <td>{{ task.endDate ? (task.endDate | date:'dd/MM/yyyy') : '—' }}</td>
               <td>{{ task.workedHours ?? 0 }}h</td>
+              @if (hasFinancialAccess) {
+                <td>
+                  @if (task.invoicedReceivableId) {
+                    <p-tag value="Faturada" severity="success"
+                      [pTooltip]="'Faturada em ' + (task.invoicedAt | date:'dd/MM/yyyy') + ' · ' + (task.invoicedHours ?? 0) + 'h cobradas'" />
+                  } @else {
+                    <p-tag value="A faturar" severity="secondary" />
+                  }
+                </td>
+              }
               <td>
                 <p-button icon="pi pi-arrow-up-right" [rounded]="true" [text]="true" (onClick)="openTask(task)" pTooltip="Abrir tarefa"></p-button>
               </td>
@@ -328,11 +349,48 @@
 
 <!-- Dialog Faturar Projeto -->
 <p-dialog header="Faturar Projeto" [(visible)]="showInvoiceDialog"
-  [modal]="true" [style]="{ width: '500px' }" [closable]="!invoicingProject">
+  [modal]="true" [style]="{ width: '720px' }" [breakpoints]="{ '768px': '95vw' }" [closable]="!invoicingProject">
   <div class="grid grid-cols-1 gap-4 p-2">
     <p class="text-gray-500 text-sm m-0">
       O título será gerado com a descrição <strong>{{ project?.projectNumber }}</strong> (número do projeto).
     </p>
+
+    <!-- Tarefas a faturar: só as que ainda não foram faturadas -->
+    <div>
+      <label class="block mb-1 text-sm">Tarefas a faturar <span class="text-red-500">*</span></label>
+      <p-table [value]="invoiceableTasks" [(selection)]="invoiceSelectedTasks" dataKey="_id"
+        [scrollable]="true" scrollHeight="240px" size="small">
+        <ng-template #header>
+          <tr>
+            <th style="width: 3rem"><p-tableHeaderCheckbox /></th>
+            <th>Tarefa</th>
+            <th>Assunto / contato</th>
+            <th>Status</th>
+            <th class="text-right">Horas</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-task>
+          <tr>
+            <td><p-tableCheckbox [value]="task" /></td>
+            <td class="font-semibold whitespace-nowrap">{{ task.taskNumber || '—' }}</td>
+            <td>{{ task.subjectId?.name || task.contactName || task.contactNumber || '—' }}</td>
+            <td>
+              @if (task.statusId) {
+                <span class="status-badge" [style.background]="task.statusId?.color">{{ task.statusId?.label }}</span>
+              }
+            </td>
+            <td class="text-right font-mono">{{ (task.workedHours ?? 0) | number:'1.2-2' }}h</td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr><td colspan="5" class="text-center text-gray-400 py-3">Todas as tarefas já foram faturadas.</td></tr>
+        </ng-template>
+      </p-table>
+      <small class="text-gray-500">
+        {{ invoiceSelectedTasks.length }} de {{ invoiceableTasks.length }} tarefa(s) selecionada(s).
+        Tarefas já faturadas não aparecem aqui; voltam a ficar disponíveis se o título for cancelado.
+      </small>
+    </div>
 
     <!-- Memória de cálculo: horas trabalhadas x valor/hora do projeto -->
     <div class="rounded border border-gray-200 bg-gray-50 p-3 text-sm">
