@@ -437,6 +437,32 @@
   [draggable]="false">
 
   <div class="space-y-6">
+    <!-- Numeração da DPS (correção manual) -->
+    <div>
+      <h4 class="text-sm font-semibold mb-2">Numeração da DPS</h4>
+      <div class="grid grid-cols-2 gap-3 max-w-md">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Série</label>
+          <p-inputnumber [(ngModel)]="editDraft.serie" [min]="1" [max]="99999" [useGrouping]="false"
+            styleClass="w-full" inputStyleClass="w-full font-mono" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Número da DPS / NFS-e</label>
+          <p-inputnumber [(ngModel)]="editDraft.nDPS" [min]="1" [max]="999999999999999" [useGrouping]="false"
+            styleClass="w-full" inputStyleClass="w-full font-mono" />
+        </div>
+      </div>
+      @if (numberingChanged()) {
+        <p class="text-xs text-amber-600 mt-1">
+          <i class="pi pi-exclamation-triangle mr-1"></i>
+          A DPS passará de {{ item?.serie }}/{{ item?.nDPS }} para {{ editDraft.serie }}/{{ editDraft.nDPS }}.
+          A configuração da NFS-e será atualizada: série {{ editDraft.serie }} e próximas emissões a partir do número seguinte.
+        </p>
+      } @else {
+        <p class="text-xs text-gray-500 mt-1">Série: até 5 dígitos. Altere só se a prefeitura rejeitou a numeração.</p>
+      }
+    </div>
+
     <!-- Competência -->
     <div>
       <label class="block text-sm font-medium mb-1">Data de competência</label>
@@ -567,7 +593,8 @@
 
   <ng-template #footer>
     <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="editVisible = false" />
-    <p-button label="Salvar e regenerar XML" icon="pi pi-refresh" [loading]="saving" (onClick)="saveEdit()" />
+    <p-button label="Salvar e regenerar XML" icon="pi pi-refresh" severity="secondary" [loading]="saving" (onClick)="saveEdit()" />
+    <p-button label="Salvar e retransmitir" icon="pi pi-send" severity="warn" [loading]="saving || retransmitting" (onClick)="saveEdit(true)" />
   </ng-template>
 </p-dialog>
 

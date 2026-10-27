@@ -117,6 +117,8 @@ export class IssuanceViewComponent implements OnInit {
     const s = item?.servico;
     const v = item?.valores;
     return {
+      serie: item?.serie ?? null,
+      nDPS: item?.nDPS ?? null,
       dCompet: item?.dCompet ? new Date(item.dCompet).toISOString().substring(0, 10) : '',
       tomador: {
         documentType: t?.documentType || 'cnpj',
@@ -151,14 +153,26 @@ export class IssuanceViewComponent implements OnInit {
     };
   }
 
-  saveEdit(): void {
+  /** Série/número diferentes dos atuais — a DPS ganha nova numeração ao salvar. */
+  numberingChanged(): boolean {
+    const d = this.editDraft;
+    return !!this.item && (Number(d.serie) !== this.item.serie || Number(d.nDPS) !== this.item.nDPS);
+  }
+
+  saveEdit(retransmitAfter = false): void {
     if (!this.item?._id || this.saving) return;
+    if (!this.editDraft.serie || !this.editDraft.nDPS) {
+      this.messageService.add({ severity: 'warn', summary: 'Numeração', detail: 'Informe a série e o número da DPS.' });
+      return;
+    }
     this.saving = true;
 
     // Monta o patch — tomador null se não preencheu documento
     const d = this.editDraft;
     const tomadorDoc = (d.tomador?.document || '').replace(/\D/g, '');
     const patch: any = {
+      serie: d.serie,
+      nDPS: d.nDPS,
       dCompet: d.dCompet || undefined,
       servico: d.servico,
       valoresInput: d.valoresInput
@@ -172,6 +186,10 @@ export class IssuanceViewComponent implements OnInit {
         this.item = data;
         this.saving = false;
         this.editVisible = false;
+        if (retransmitAfter) {
+          this.retransmit();
+          return;
+        }
         this.messageService.add({
           severity: 'success',
           summary: 'Dados corrigidos',
