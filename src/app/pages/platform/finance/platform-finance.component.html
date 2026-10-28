@@ -182,6 +182,9 @@
                     @if (p.status === 'pending' && p.checkoutUrl) {
                       <p-button icon="pi pi-link" severity="secondary" [text]="true" size="small" pTooltip="Copiar link de pagamento" (onClick)="copy(p.checkoutUrl, 'Link copiado')" />
                     }
+                    @if (p.status === 'pending' && p.boleto?.linhaDigitavel) {
+                      <p-button icon="pi pi-barcode" severity="secondary" [text]="true" size="small" pTooltip="Copiar linha digitável" (onClick)="copy(p.boleto.linhaDigitavel, 'Linha digitável copiada')" />
+                    }
                     @if (p.status === 'pending' && p.pix?.copyPaste) {
                       <p-button icon="pi pi-qrcode" severity="secondary" [text]="true" size="small" pTooltip="Copiar Pix copia e cola" (onClick)="copy(p.pix.copyPaste, 'Pix copiado')" />
                     }
@@ -228,7 +231,8 @@
         <p-selectbutton [options]="methodOptions" [(ngModel)]="chargeForm.method" optionLabel="label" optionValue="value" [allowEmpty]="false" />
         <div class="text-xs text-color-secondary mt-1">
           @switch (chargeForm.method) {
-            @case ('pix') { Gera um Pix no Itaú com o valor do plano. }
+            @case ('pix') { Gera um Pix (Itaú ou Inter, conforme Configurações › Pagamentos) com o valor do plano. }
+            @case ('boleto') { Emite um boleto com Pix no Inter com o valor do plano. Sem vencimento informado, usa o prazo padrão da configuração. }
             @case ('credit_card') { Gera um link de pagamento com cartão (Stripe ou AbacatePay, conforme Configurações › Pagamentos) com o valor do plano. }
             @case ('manual') { Só registra a cobrança (ex.: transferência). Dê baixa quando o pagamento entrar. }
           }
@@ -257,6 +261,17 @@
         <input pInputText [value]="chargeResult.checkoutUrl" readonly class="w-full" />
         <p-button icon="pi pi-copy" (onClick)="copy(chargeResult.checkoutUrl, 'Link copiado')" />
       </div>
+    }
+    @if (chargeResult.boleto) {
+      <label class="block mb-1 text-sm font-medium">Linha digitável do boleto</label>
+      @if (chargeResult.boleto.linhaDigitavel) {
+        <div class="flex gap-2 mb-3">
+          <input pInputText [value]="chargeResult.boleto.linhaDigitavel" readonly class="w-full" />
+          <p-button icon="pi pi-copy" (onClick)="copy(chargeResult.boleto.linhaDigitavel!, 'Linha digitável copiada')" />
+        </div>
+      } @else {
+        <p class="text-sm text-color-secondary mb-3">O Inter ainda está emitindo o boleto. A linha digitável aparece na lista em instantes.</p>
+      }
     }
     @if (chargeResult.pix?.copyPaste) {
       <label class="block mb-1 text-sm font-medium">Pix copia e cola</label>

@@ -4,15 +4,33 @@ import { BehaviorSubject, Observable, catchError, of, tap } from 'rxjs';
 import { environment } from '../../environments/enviroment';
 
 export type BillingBlockReason = 'trial_expired' | 'subscription_expired';
-export type PaymentMethodCode = 'pix' | 'credit_card' | 'debit_card';
+export type PaymentMethodCode = 'pix' | 'boleto' | 'credit_card' | 'debit_card';
+
+export interface BillingPix {
+  qrCode: string;
+  copyPaste: string;
+  txid: string;
+  expiresAt: string;
+}
+
+/** Boleto com Pix (Inter). A linha digitável pode vir vazia enquanto o banco processa a emissão. */
+export interface BillingBoleto {
+  codigoSolicitacao: string;
+  seuNumero?: string;
+  nossoNumero?: string;
+  linhaDigitavel?: string;
+  codigoBarras?: string;
+  dueDate?: string;
+}
 
 export interface BillingPayment {
   id: string;
-  provider: 'abacatepay' | 'itau' | 'stripe';
+  provider: 'abacatepay' | 'itau' | 'inter' | 'stripe';
   amount: number;
   status: string;
   checkoutUrl: string | null;
-  pix: { qrCode: string; copyPaste: string; txid: string; expiresAt: string } | null;
+  pix: BillingPix | null;
+  boleto: BillingBoleto | null;
   createdAt: string;
 }
 
@@ -42,7 +60,8 @@ export interface CheckoutResponse {
   amount: number;
   status: string;
   url?: string;
-  pix?: { qrCode: string; copyPaste: string; txid: string; expiresAt: string };
+  pix?: BillingPix | null;
+  boleto?: BillingBoleto | null;
 }
 
 /**
@@ -91,5 +110,9 @@ export class BillingService {
 
   getPayment(id: string): Observable<CheckoutResponse & { paidAt?: string }> {
     return this.http.get<CheckoutResponse & { paidAt?: string }>(`${this.apiUrl}/${id}`);
+  }
+
+  getBoletoPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/boleto.pdf`, { responseType: 'blob' });
   }
 }

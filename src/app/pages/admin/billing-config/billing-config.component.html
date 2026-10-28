@@ -164,10 +164,10 @@
               }
             </p>
           }
-          <input type="file" accept=".crt,.pem,.cer" (change)="onCertSelected($event)" class="text-sm" />
+          <input type="file" accept=".crt,.pem,.cer" (change)="onCertSelected($event, 'itau')" class="text-sm" />
           <div class="mt-2">
             <p-button label="Enviar .crt" icon="pi pi-upload" size="small"
-              [loading]="uploadingCert" [disabled]="!certFile" (onClick)="uploadCert()" />
+              [loading]="uploadingCert === 'itau'" [disabled]="!certFiles.itau" (onClick)="uploadCert('itau')" />
           </div>
         </div>
 
@@ -186,13 +186,157 @@
               enviada em {{ settings.itau.privateKey.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
             </p>
           }
-          <input type="file" accept=".key,.pem" (change)="onKeySelected($event)" class="text-sm" />
+          <input type="file" accept=".key,.pem" (change)="onKeySelected($event, 'itau')" class="text-sm" />
           <div class="mt-2">
             <p-button label="Enviar .key" icon="pi pi-upload" size="small"
-              [loading]="uploadingKey" [disabled]="!keyFile" (onClick)="uploadKey()" />
+              [loading]="uploadingKey === 'itau'" [disabled]="!keyFiles.itau" (onClick)="uploadKey('itau')" />
           </div>
         </div>
       </div>
+    </p-card>
+
+    <!-- ─── Banco Inter ──────────────────────────────────────────────── -->
+    <p-card>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-xl font-semibold">Banco Inter — Pix e Boleto</h2>
+        @if (settings.inter.clientSecretConfigured && settings.inter.certificate.configured && settings.inter.privateKey.configured) {
+          <p-tag severity="success" value="Configurado" />
+        } @else {
+          <p-tag severity="warn" value="Incompleto" />
+        }
+        @if (settings.inter.environment === 'sandbox') {
+          <p-tag severity="info" value="Sandbox" />
+        }
+      </div>
+      <p class="text-sm text-gray-500 mb-4">
+        Credenciais da integração criada no Internet Banking PJ do Inter (APIs <strong>Pix</strong> e
+        <strong>Cobrança v3</strong>). O boleto sai com Pix (BolePix): a empresa paga pela linha digitável
+        ou pelo Pix copia e cola. Para usar, selecione <strong>Banco Inter</strong> no método
+        <strong>Boleto</strong> e/ou <strong>PIX</strong> acima. Escopos necessários no app:
+        <code>boleto-cobranca.read/write</code> e, para Pix, <code>cob.read/write</code> e <code>webhook.read/write</code>.
+      </p>
+
+      <div class="flex items-center gap-2 mb-4">
+        <p-toggleSwitch [(ngModel)]="inter.enabled" inputId="interEnabled" />
+        <label for="interEnabled" class="text-sm">
+          Integração <strong>{{ inter.enabled ? 'ativa' : 'inativa' }}</strong>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Ambiente</label>
+          <p-select [options]="environmentOptions" [(ngModel)]="inter.environment"
+            optionLabel="label" optionValue="value" styleClass="w-full" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Client ID</label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="inter.clientId"
+            placeholder="00000000-0000-0000-0000-000000000000" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Client Secret
+            <span class="text-xs text-gray-500 ml-1">
+              ({{ settings.inter.clientSecretConfigured ? 'configurado — em branco mantém' : 'não configurado' }})
+            </span>
+          </label>
+          <p-password [(ngModel)]="inter.clientSecret" [feedback]="false" [toggleMask]="true"
+            styleClass="w-full" inputStyleClass="w-full font-mono" placeholder="••••••••" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Conta corrente
+            <span class="text-xs text-gray-500 ml-1">(opcional — só se tiver mais de uma conta no Inter)</span>
+          </label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="inter.contaCorrente" placeholder="12345678" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">
+            Chave PIX
+            <span class="text-xs text-gray-500 ml-1">— obrigatória só para o método PIX</span>
+          </label>
+          <input pInputText class="w-full font-mono" [(ngModel)]="inter.pixKey"
+            placeholder="CNPJ, e-mail ou chave aleatória" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Vencimento do boleto (dias após a emissão)</label>
+          <input pInputText type="number" min="1" max="30" class="w-full" [(ngModel)]="inter.boletoDueDays" />
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <p-button label="Salvar Inter" icon="pi pi-save"
+          [loading]="savingInter" (onClick)="saveInter()" />
+      </div>
+
+      <p-divider />
+
+      <h3 class="text-base font-semibold mb-3">Certificado mTLS</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border rounded-lg p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium">Certificado (.crt)</span>
+            @if (settings.inter.certificate.configured) {
+              <p-tag severity="success" value="Enviado" />
+            } @else {
+              <p-tag severity="warn" value="Pendente" />
+            }
+          </div>
+          @if (settings.inter.certificate.configured) {
+            <p class="text-xs text-gray-500 mb-2">
+              {{ settings.inter.certificate.subjectCN }} ·
+              válido até {{ settings.inter.certificate.notAfter | date:'dd/MM/yyyy' }}
+              @if (settings.inter.certificate.daysToExpire != null) {
+                ({{ settings.inter.certificate.daysToExpire }} dias)
+              }
+              @if (settings.inter.certificate.expired) {
+                <span class="text-red-500 font-semibold"> — VENCIDO</span>
+              }
+            </p>
+          }
+          <input type="file" accept=".crt,.pem,.cer" (change)="onCertSelected($event, 'inter')" class="text-sm" />
+          <div class="mt-2">
+            <p-button label="Enviar .crt" icon="pi pi-upload" size="small"
+              [loading]="uploadingCert === 'inter'" [disabled]="!certFiles.inter" (onClick)="uploadCert('inter')" />
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium">Chave privada (.key)</span>
+            @if (settings.inter.privateKey.configured) {
+              <p-tag severity="success" value="Enviada" />
+            } @else {
+              <p-tag severity="warn" value="Pendente" />
+            }
+          </div>
+          @if (settings.inter.privateKey.configured) {
+            <p class="text-xs text-gray-500 mb-2">
+              {{ settings.inter.privateKey.filename }} ·
+              enviada em {{ settings.inter.privateKey.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
+            </p>
+          }
+          <input type="file" accept=".key,.pem" (change)="onKeySelected($event, 'inter')" class="text-sm" />
+          <div class="mt-2">
+            <p-button label="Enviar .key" icon="pi pi-upload" size="small"
+              [loading]="uploadingKey === 'inter'" [disabled]="!keyFiles.inter" (onClick)="uploadKey('inter')" />
+          </div>
+        </div>
+      </div>
+
+      <p-divider />
+
+      <h3 class="text-base font-semibold mb-1">Webhook</h3>
+      <p class="text-sm text-gray-500 mb-3">
+        O Inter avisa os pagamentos por webhook, cadastrado pela própria API. Depois de salvar as credenciais e
+        enviar o certificado, clique abaixo. É preciso que a API esteja publicada em HTTPS.
+        @if (settings.inter.webhookRegisteredAt) {
+          <br />Último cadastro: <strong>{{ settings.inter.webhookRegisteredAt | date:'dd/MM/yyyy HH:mm' }}</strong>.
+        }
+      </p>
+      <p-button label="Cadastrar webhook no Inter" icon="pi pi-link" severity="secondary"
+        [loading]="registeringInterWebhook" (onClick)="registerInterWebhook()" />
     </p-card>
 
     <!-- ─── AbacatePay ───────────────────────────────────────────────── -->

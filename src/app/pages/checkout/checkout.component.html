@@ -76,7 +76,7 @@
               @for (m of methods; track m.method) {
                 <p-button
                   [label]="'Pagar com ' + methodLabel(m.method)"
-                  [icon]="m.method === 'pix' ? 'pi pi-qrcode' : 'pi pi-credit-card'"
+                  [icon]="methodIcon(m.method)"
                   styleClass="w-full"
                   [disabled]="needsPlanSelection && !selectedPlanId"
                   [loading]="generating"
@@ -92,8 +92,61 @@
           }
         }
 
-        <!-- Cobrança Pix (Itaú): QR + copia-e-cola -->
-        @if (payment?.pix) {
+        <!-- Boleto com Pix (Inter): linha digitável + Pix copia-e-cola + PDF -->
+        @if (payment?.boleto) {
+          <div class="max-w-sm mx-auto text-center space-y-3">
+            <div class="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
+              <span class="text-sm text-gray-600">Valor</span>
+              <span class="text-lg font-bold text-blue-700">R$ {{ payment!.amount | number:'1.2-2' }}</span>
+            </div>
+            @if (payment!.boleto!.dueDate) {
+              <p class="text-sm text-gray-600">Vencimento: <strong>{{ payment!.boleto!.dueDate | date:'dd/MM/yyyy' }}</strong></p>
+            }
+
+            @if (payment!.boleto!.linhaDigitavel) {
+              <div class="text-left">
+                <label class="block text-xs text-gray-500 mb-1">Linha digitável do boleto</label>
+                <div class="flex gap-2">
+                  <input readonly class="flex-1 border border-gray-300 rounded-md p-2 text-xs truncate"
+                    [value]="payment!.boleto!.linhaDigitavel" />
+                  <p-button icon="pi pi-copy" severity="secondary" (click)="copyBoletoCode()"></p-button>
+                </div>
+              </div>
+
+              @if (payment!.pix?.copyPaste) {
+                <img [src]="pixQrImageUrl" alt="QR Code Pix" class="mx-auto border rounded-lg p-2" width="200" height="200" />
+                <div class="text-left">
+                  <label class="block text-xs text-gray-500 mb-1">Ou pague com Pix copia e cola</label>
+                  <div class="flex gap-2">
+                    <input readonly class="flex-1 border border-gray-300 rounded-md p-2 text-xs truncate"
+                      [value]="payment!.pix!.copyPaste" />
+                    <p-button icon="pi pi-copy" severity="secondary" (click)="copyPixCode()"></p-button>
+                  </div>
+                </div>
+              }
+
+              <p-button label="Baixar boleto (PDF)" icon="pi pi-file-pdf" severity="secondary" [outlined]="true"
+                styleClass="w-full" (click)="openBoletoPdf()"></p-button>
+            } @else {
+              <div class="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <i class="pi pi-spin pi-spinner"></i>
+                O banco está emitindo o boleto...
+              </div>
+            }
+
+            <div class="flex items-center justify-center gap-2 text-sm text-gray-500 pt-2">
+              <i class="pi pi-spin pi-spinner"></i>
+              Aguardando confirmação do pagamento...
+            </div>
+            <p class="text-xs text-gray-500">Pagamentos por boleto podem levar até 1 dia útil para compensar.</p>
+
+            <p-button label="Escolher outra forma de pagamento" [text]="true" severity="secondary"
+              styleClass="w-full" (click)="payment = null"></p-button>
+          </div>
+        }
+
+        <!-- Cobrança Pix (Itaú / Inter): QR + copia-e-cola -->
+        @if (payment?.pix && !payment?.boleto) {
           <div class="max-w-sm mx-auto text-center space-y-3">
             <div class="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
               <span class="text-sm text-gray-600">Valor</span>
@@ -122,7 +175,7 @@
         }
 
         <!-- Voltou da página da Stripe após pagar: aguarda o webhook liberar -->
-        @if (payment && !payment.pix && paymentReturn === 'sucesso') {
+        @if (payment && !payment.pix && !payment.boleto && paymentReturn === 'sucesso') {
           <div class="max-w-sm mx-auto text-center space-y-3">
             <div class="flex items-center justify-center gap-2 text-sm text-gray-600">
               <i class="pi pi-spin pi-spinner"></i>
@@ -135,7 +188,7 @@
         }
 
         <!-- Cobrança com checkout hospedado (cartão) -->
-        @if (payment && !payment.pix && paymentReturn !== 'sucesso') {
+        @if (payment && !payment.pix && !payment.boleto && paymentReturn !== 'sucesso') {
           <div class="max-w-sm mx-auto text-center space-y-3">
             <div class="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
               <span class="text-sm text-gray-600">Valor</span>

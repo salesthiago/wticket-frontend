@@ -19,12 +19,14 @@ import {
   BillingConfigService,
   BillingSettings,
   MethodRoute,
+  MtlsProviderKey,
   PaymentProviderKey,
   UpdateBillingSettings
 } from '../../../services/billing-config.service';
 
 const METHOD_LABELS: Record<string, string> = {
   pix: 'PIX',
+  boleto: 'Boleto (com Pix)',
   credit_card: 'Cartão de crédito',
   debit_card: 'Cartão de débito'
 };
@@ -59,11 +61,13 @@ export class BillingConfigComponent implements OnInit {
   loading = false;
   savingMethods = false;
   savingItau = false;
+  savingInter = false;
+  registeringInterWebhook = false;
   savingStripe = false;
   /** base da API — exibida na URL de webhook a cadastrar na Stripe */
   apiUrl = environment.apiUrl;
-  uploadingCert = false;
-  uploadingKey = false;
+  uploadingCert: MtlsProviderKey | null = null;
+  uploadingKey: MtlsProviderKey | null = null;
 
   settings: BillingSettings | null = null;
 
@@ -100,6 +104,15 @@ export class BillingConfigComponent implements OnInit {
     clientSecret: '',
     webhookSecret: ''
   };
+  inter = {
+    enabled: false,
+    environment: 'sandbox' as 'sandbox' | 'production',
+    clientId: '',
+    clientSecret: '',
+    contaCorrente: '',
+    pixKey: '',
+    boletoDueDays: 3
+  };
   stripe = {
     enabled: false,
     environment: 'test' as 'test' | 'live',
@@ -108,8 +121,8 @@ export class BillingConfigComponent implements OnInit {
     webhookSecret: ''
   };
 
-  certFile: File | null = null;
-  keyFile: File | null = null;
+  certFiles: Record<MtlsProviderKey, File | null> = { itau: null, inter: null };
+  keyFiles: Record<MtlsProviderKey, File | null> = { itau: null, inter: null };
 
   constructor(
     private billingConfig: BillingConfigService,
@@ -152,6 +165,15 @@ export class BillingConfigComponent implements OnInit {
       clientSecret: '',
       webhookSecret: ''
     };
+    this.inter = {
+      enabled: s.inter.enabled,
+      environment: s.inter.environment,
+      clientId: s.inter.clientId ?? '',
+      clientSecret: '',
+      contaCorrente: s.inter.contaCorrente ?? '',
+      pixKey: s.inter.pixKey ?? '',
+      boletoDueDays: s.inter.boletoDueDays ?? 3
+    };
     this.stripe = {
       enabled: s.stripe.enabled,
       environment: s.stripe.environment,
@@ -162,7 +184,13 @@ export class BillingConfigComponent implements OnInit {
   }
 
   providerLabel(key: PaymentProviderKey): string {
-    return key === 'abacatepay' ? 'AbacatePay' : key === 'itau' ? 'Itaú' : 'Stripe';
+    const labels: Record<PaymentProviderKey, string> = {
+      abacatepay: 'AbacatePay',
+      itau: 'Itaú',
+      inter: 'Banco Inter',
+      stripe: 'Stripe'
+    };
+    return labels[key] ?? key;
   }
 
   /** Provedores que suportam o método da linha (para o <select>). */
@@ -218,6 +246,47 @@ export class BillingConfigComponent implements OnInit {
     });
   }
 
+  saveInter(): void {
+    const payload: UpdateBillingSettings = {
+      inter: {
+        enabled: this.inter.enabled,
+        environment: this.inter.environment,
+        clientId: this.inter.clientId.trim(),
+        contaCorrente: this.inter.contaCorrente.trim(),
+        pixKey: this.inter.pixKey.trim(),
+        boletoDueDays: Number(this.inter.boletoDueDays),
+        ...(this.inter.clientSecret ? { clientSecret: this.inter.clientSecret } : {})
+      }
+    };
+    this.savingInter = true;
+    this.billingConfig.update(payload).subscribe({
+      next: (s) => {
+        this.apply(s);
+        this.savingInter = false;
+        this.toastOk('Configuração do Inter salva');
+      },
+      error: (err) => {
+        this.savingInter = false;
+        this.toastError(err?.error?.message || 'Falha ao salvar configuração do Inter');
+      }
+    });
+  }
+
+  registerInterWebhook(): void {
+    this.registeringInterWebhook = true;
+    this.billingConfig.registerInterWebhook().subscribe({
+      next: (res) => {
+        this.apply(res.settings);
+        this.registeringInterWebhook = false;
+        this.toastOk(`Webhook cadastrado no Inter (${res.registered.join(' e ')})`);
+      },
+      error: (err) => {
+        this.registeringInterWebhook = false;
+        this.toastError(err?.error?.message || 'Falha ao cadastrar o webhook no Inter');
+      }
+    });
+  }
+
   saveStripe(): void {
     const payload: UpdateBillingSettings = {
       stripe: {
@@ -242,51 +311,53 @@ export class BillingConfigComponent implements OnInit {
     });
   }
 
-  onCertSelected(event: Event): void {
+  onCertSelected(event: Event, provider: MtlsProviderKey): void {
     const input = event.target as HTMLInputElement;
-    this.certFile = input.files?.[0] ?? null;
+    this.certFiles[provider] = input.files?.[0] ?? null;
   }
 
-  onKeySelected(event: Event): void {
+  onKeySelected(event: Event, provider: MtlsProviderKey): void {
     const input = event.target as HTMLInputElement;
-    this.keyFile = input.files?.[0] ?? null;
+    this.keyFiles[provider] = input.files?.[0] ?? null;
   }
 
-  uploadCert(): void {
-    if (!this.certFile) {
+  uploadCert(provider: MtlsProviderKey): void {
+    const file = this.certFiles[provider];
+    if (!file) {
       this.toastError('Selecione o arquivo .crt');
       return;
     }
-    this.uploadingCert = true;
-    this.billingConfig.uploadCertificate(this.certFile).subscribe({
+    this.uploadingCert = provider;
+    this.billingConfig.uploadCertificate(file, provider).subscribe({
       next: (s) => {
         this.apply(s);
-        this.certFile = null;
-        this.uploadingCert = false;
+        this.certFiles[provider] = null;
+        this.uploadingCert = null;
         this.toastOk('Certificado enviado');
       },
       error: (err) => {
-        this.uploadingCert = false;
+        this.uploadingCert = null;
         this.toastError(err?.error?.message || 'Falha ao enviar o certificado');
       }
     });
   }
 
-  uploadKey(): void {
-    if (!this.keyFile) {
+  uploadKey(provider: MtlsProviderKey): void {
+    const file = this.keyFiles[provider];
+    if (!file) {
       this.toastError('Selecione o arquivo .key');
       return;
     }
-    this.uploadingKey = true;
-    this.billingConfig.uploadPrivateKey(this.keyFile).subscribe({
+    this.uploadingKey = provider;
+    this.billingConfig.uploadPrivateKey(file, provider).subscribe({
       next: (s) => {
         this.apply(s);
-        this.keyFile = null;
-        this.uploadingKey = false;
+        this.keyFiles[provider] = null;
+        this.uploadingKey = null;
         this.toastOk('Chave privada enviada');
       },
       error: (err) => {
-        this.uploadingKey = false;
+        this.uploadingKey = null;
         this.toastError(err?.error?.message || 'Falha ao enviar a chave privada');
       }
     });

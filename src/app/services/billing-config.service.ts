@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/enviroment';
 
-export type PaymentProviderKey = 'abacatepay' | 'itau' | 'stripe';
-export type BillingPaymentMethod = 'pix' | 'credit_card' | 'debit_card';
+export type PaymentProviderKey = 'abacatepay' | 'itau' | 'inter' | 'stripe';
+export type BillingPaymentMethod = 'pix' | 'boleto' | 'credit_card' | 'debit_card';
+export type MtlsProviderKey = 'itau' | 'inter';
 
 export interface MethodRoute {
   method: BillingPaymentMethod;
@@ -41,6 +42,18 @@ export interface BillingSettings {
     certificate: ItauCertificateInfo;
     privateKey: { configured: boolean; filename?: string; uploadedAt?: string };
   };
+  inter: {
+    enabled: boolean;
+    environment: 'sandbox' | 'production';
+    clientId: string | null;
+    contaCorrente: string | null;
+    pixKey: string | null;
+    boletoDueDays: number;
+    clientSecretConfigured: boolean;
+    webhookRegisteredAt: string | null;
+    certificate: ItauCertificateInfo;
+    privateKey: { configured: boolean; filename?: string; uploadedAt?: string };
+  };
   stripe: {
     enabled: boolean;
     environment: 'test' | 'live';
@@ -66,6 +79,15 @@ export interface UpdateBillingSettings {
     clientSecret?: string;
     webhookSecret?: string;
   };
+  inter?: {
+    enabled?: boolean;
+    environment?: 'sandbox' | 'production';
+    clientId?: string;
+    clientSecret?: string;
+    contaCorrente?: string;
+    pixKey?: string;
+    boletoDueDays?: number;
+  };
   stripe?: {
     enabled?: boolean;
     environment?: 'test' | 'live';
@@ -89,15 +111,20 @@ export class BillingConfigService {
     return this.http.put<BillingSettings>(this.apiUrl, data);
   }
 
-  uploadCertificate(file: File): Observable<BillingSettings> {
+  uploadCertificate(file: File, provider: MtlsProviderKey = 'itau'): Observable<BillingSettings> {
     const fd = new FormData();
     fd.append('file', file);
-    return this.http.post<BillingSettings>(`${this.apiUrl}/itau/certificate`, fd);
+    return this.http.post<BillingSettings>(`${this.apiUrl}/${provider}/certificate`, fd);
   }
 
-  uploadPrivateKey(file: File): Observable<BillingSettings> {
+  uploadPrivateKey(file: File, provider: MtlsProviderKey = 'itau'): Observable<BillingSettings> {
     const fd = new FormData();
     fd.append('file', file);
-    return this.http.post<BillingSettings>(`${this.apiUrl}/itau/private-key`, fd);
+    return this.http.post<BillingSettings>(`${this.apiUrl}/${provider}/private-key`, fd);
+  }
+
+  /** Cadastra no Inter a URL de webhook (boletos e, se houver chave Pix, Pix). */
+  registerInterWebhook(): Observable<{ registered: string[]; settings: BillingSettings }> {
+    return this.http.post<{ registered: string[]; settings: BillingSettings }>(`${this.apiUrl}/inter/webhook`, {});
   }
 }

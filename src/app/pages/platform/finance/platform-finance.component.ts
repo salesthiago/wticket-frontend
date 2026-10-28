@@ -77,7 +77,8 @@ export class PlatformFinanceComponent implements OnInit {
   chargeForm: { companyId: string; method: ChargeMethod; amount: number | null; dueDate: Date | null; description: string } = this.emptyCharge();
   chargeResult: PlatformPayment | null = null;
   methodOptions = [
-    { value: 'pix', label: 'Pix (Itaú)' },
+    { value: 'pix', label: 'Pix' },
+    { value: 'boleto', label: 'Boleto' },
     { value: 'credit_card', label: 'Cartão (link)' },
     { value: 'manual', label: 'Manual' }
   ];
@@ -223,7 +224,7 @@ export class PlatformFinanceComponent implements OnInit {
         this.charging = false;
         this.messageService.add({ severity: 'success', summary: 'Cobrança gerada', detail: this.chargeCompany?.name });
         // Pix/cartão: mantém o diálogo aberto para copiar o link / código.
-        if (payment.checkoutUrl || payment.pix?.copyPaste) this.chargeResult = payment;
+        if (payment.checkoutUrl || payment.pix?.copyPaste || payment.boleto) this.chargeResult = payment;
         else this.chargeVisible = false;
         this.reloadAll();
       },

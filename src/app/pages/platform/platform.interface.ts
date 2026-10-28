@@ -129,8 +129,8 @@ export interface BillingOverview {
 }
 
 export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
-export type PaymentProvider = 'abacatepay' | 'itau' | 'stripe' | 'manual';
-export type ChargeMethod = 'pix' | 'credit_card' | 'manual';
+export type PaymentProvider = 'abacatepay' | 'itau' | 'inter' | 'stripe' | 'manual';
+export type ChargeMethod = 'pix' | 'boleto' | 'credit_card' | 'manual';
 
 export const PaymentStatusLabels: Record<PaymentStatus, string> = {
   pending: 'Pendente',
@@ -151,6 +151,7 @@ export const PaymentStatusSeverity: Record<PaymentStatus, 'warn' | 'success' | '
 export const PaymentProviderLabels: Record<PaymentProvider, string> = {
   abacatepay: 'AbacatePay (cartão)',
   itau: 'Itaú (Pix)',
+  inter: 'Banco Inter (Pix/boleto)',
   stripe: 'Stripe (cartão)',
   manual: 'Manual'
 };
@@ -167,6 +168,7 @@ export interface PlatformPayment {
   dueDate?: string;
   checkoutUrl?: string;
   pix?: { qrCode?: string; copyPaste?: string; expiresAt?: string } | null;
+  boleto?: { codigoSolicitacao?: string; linhaDigitavel?: string; dueDate?: string } | null;
   paidAt?: string;
   refundedAt?: string;
   refundReason?: string;

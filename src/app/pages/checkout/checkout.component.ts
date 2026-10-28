@@ -18,6 +18,7 @@ import { Plan, PlanService } from '../../services/plan.service';
 
 const METHOD_LABELS: Record<PaymentMethodCode, string> = {
   pix: 'Pix',
+  boleto: 'Boleto',
   credit_card: 'Cartão de crédito',
   debit_card: 'Cartão de débito'
 };
@@ -82,7 +83,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           amount: status.payment.amount,
           status: status.payment.status,
           url: status.payment.checkoutUrl || undefined,
-          pix: status.payment.pix || undefined
+          pix: status.payment.pix || undefined,
+          boleto: status.payment.boleto || undefined
         };
         this.startPolling(status.payment.id);
       } else if (status?.blocked && !status?.planId) {
@@ -137,6 +139,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return METHOD_LABELS[code] || code;
   }
 
+  methodIcon(code: PaymentMethodCode): string {
+    return code === 'pix' ? 'pi pi-qrcode' : code === 'boleto' ? 'pi pi-barcode' : 'pi pi-credit-card';
+  }
+
   choose(method: PaymentMethodCode): void {
     if (this.needsPlanSelection && !this.selectedPlanId) {
       this.messageService.add({ severity: 'warn', summary: 'Selecione um plano', detail: 'Escolha um plano de assinatura antes de continuar' });
@@ -180,6 +186,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     });
   }
 
+  copyBoletoCode(): void {
+    const code = this.payment?.boleto?.linhaDigitavel;
+    if (!code) return;
+    navigator.clipboard?.writeText(code).then(() => {
+      this.messageService.add({ severity: 'success', summary: 'Copiado', detail: 'Linha digitável copiada', life: 2500 });
+    });
+  }
+
+  openBoletoPdf(): void {
+    if (!this.payment?.paymentId) return;
+    this.billingService.getBoletoPdf(this.payment.paymentId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível baixar o boleto' })
+    });
+  }
+
   goToDashboard(): void {
     this.router.navigate(['/dashboard']);
   }
@@ -192,6 +218,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         takeWhile((p) => p.status === 'pending', true)
       )
       .subscribe(p => {
+        // Boleto Inter: a linha digitável/Pix chegam depois quando a emissão demora.
+        if (this.payment && p.boleto?.linhaDigitavel && !this.payment.boleto?.linhaDigitavel) {
+          this.payment = { ...this.payment, boleto: p.boleto, pix: p.pix || this.payment.pix };
+        }
         if (p.status === 'paid') {
           this.billingService.refresh().subscribe(status => this.status = status);
           this.messageService.add({
